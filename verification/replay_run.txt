@@ -1,0 +1,6 @@
+HYPOTHETICAL; not historical backtest or actual tax savings
+index: terminal USD 1,562,448.70; vs index +0.00
+long_only_di: terminal USD 1,566,921.04; vs index +4,472.34
+core_130_30: terminal USD 1,577,073.18; vs index +14,624.48
+Annual ST outside-gain break-even roots (USD): [47442.995118]
+Status: crossing_found

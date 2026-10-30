@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+private/
+restricted/
+data/raw/
+source_files/
+results_private/
+*.xlsx
+*.pdf
+*.docx
+*.mp4
+*.m4a
+*.zip
+*.bundle
+work/
+*.log
+*.pid
+.DS_Store
+Thumbs.db
+results_csv/
+reproduced/
+# Store restricted configurations and source-based outputs only under private/.

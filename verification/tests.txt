@@ -1,0 +1,42 @@
+test_capital_and_basis_identities (test_model.AccountingTests.test_capital_and_basis_identities) ... ok
+test_carryforward_has_no_cash_terminal_value_in_market_loss (test_model.AccountingTests.test_carryforward_has_no_cash_terminal_value_in_market_loss) ... ok
+test_carryforward_survives_until_exit (test_model.AccountingTests.test_carryforward_survives_until_exit) ... ok
+test_equal_initial_cash_and_exposure (test_model.AccountingTests.test_equal_initial_cash_and_exposure) ... ok
+test_expense_sales_generate_realizations (test_model.AccountingTests.test_expense_sales_generate_realizations) ... ok
+test_final_year_netting_does_not_allocate_lt_losses_to_st_first (test_model.AccountingTests.test_final_year_netting_does_not_allocate_lt_losses_to_st_first) ... ok
+test_financing_rebate_and_borrow_signs (test_model.AccountingTests.test_financing_rebate_and_borrow_signs) ... ok
+test_full_loss_or_invalid_net_exposure_rejected (test_model.AccountingTests.test_full_loss_or_invalid_net_exposure_rejected) ... ok
+test_global_wealth_conservation (test_model.AccountingTests.test_global_wealth_conservation) ... ok
+test_harvest_creates_equal_embedded_gain_increase (test_model.AccountingTests.test_harvest_creates_equal_embedded_gain_increase) ... ok
+test_higher_borrow_cost_reduces_wealth (test_model.AccountingTests.test_higher_borrow_cost_reduces_wealth) ... ok
+test_invalid_horizon_and_negative_basis_fail (test_model.AccountingTests.test_invalid_horizon_and_negative_basis_fail) ... ok
+test_long_term_harvesting_is_supported (test_model.AccountingTests.test_long_term_harvesting_is_supported) ... ok
+test_no_mutation_of_inputs (test_model.AccountingTests.test_no_mutation_of_inputs) ... ok
+test_no_outside_gains_no_outside_tax_relief (test_model.AccountingTests.test_no_outside_gains_no_outside_tax_relief) ... ok
+test_one_year_manual_core_with_costs_and_exit (test_model.AccountingTests.test_one_year_manual_core_with_costs_and_exit) ... ok
+test_one_year_manual_index_calculation (test_model.AccountingTests.test_one_year_manual_index_calculation) ... ok
+test_provider_net_return_input_rejected (test_model.AccountingTests.test_provider_net_return_input_rejected) ... ok
+test_rebate_ordinary_tax_switch (test_model.AccountingTests.test_rebate_ordinary_tax_switch) ... ok
+test_same_rates_full_exit_eliminates_free_tax_alpha (test_model.AccountingTests.test_same_rates_full_exit_eliminates_free_tax_alpha) ... ok
+test_tax_sales_when_outside_cash_absent (test_model.AccountingTests.test_tax_sales_when_outside_cash_absent) ... ok
+test_terminal_bridge (test_model.AccountingTests.test_terminal_bridge) ... ok
+test_two_year_manual_index_calculation (test_model.AccountingTests.test_two_year_manual_index_calculation) ... ok
+test_breakeven_bracket_and_residual (test_model.SourceAndReproTests.test_breakeven_bracket_and_residual) ... ok
+test_breakeven_includes_partial_final_interval (test_model.SourceAndReproTests.test_breakeven_includes_partial_final_interval) ... ok
+test_breakeven_rejects_invalid_search_parameters (test_model.SourceAndReproTests.test_breakeven_rejects_invalid_search_parameters) ... ok
+test_byte_identical_csv_and_json_reproduction (test_model.SourceAndReproTests.test_byte_identical_csv_and_json_reproduction) ... ok
+test_no_root_is_reported_without_fabrication (test_model.SourceAndReproTests.test_no_root_is_reported_without_fabrication) ... ok
+test_public_input_manifest_hashes_and_classification (test_model.SourceAndReproTests.test_public_input_manifest_hashes_and_classification) ... ok
+test_public_schedule_matches_config_and_is_labeled (test_model.SourceAndReproTests.test_public_schedule_matches_config_and_is_labeled) ... ok
+test_run_metadata_excludes_old_files_and_records_effective_inputs (test_model.SourceAndReproTests.test_run_metadata_excludes_old_files_and_records_effective_inputs) ... ok
+test_carryforward_preserves_character (test_model.TaxTests.test_carryforward_preserves_character) ... ok
+test_long_losses_cross_to_short_gains (test_model.TaxTests.test_long_losses_cross_to_short_gains) ... ok
+test_loss_usage_capped_at_eligible_gains (test_model.TaxTests.test_loss_usage_capped_at_eligible_gains) ... ok
+test_negative_or_nan_rejected (test_model.TaxTests.test_negative_or_nan_rejected) ... ok
+test_same_character_before_cross_character (test_model.TaxTests.test_same_character_before_cross_character) ... ok
+test_unused_losses_have_no_cash_credit (test_model.TaxTests.test_unused_losses_have_no_cash_credit) ... ok
+
+----------------------------------------------------------------------
+Ran 37 tests in 0.844s
+
+OK

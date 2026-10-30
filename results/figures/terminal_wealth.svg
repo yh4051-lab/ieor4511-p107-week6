@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="780" height="430" preserveAspectRatio="xMinYMin meet" viewBox="0 0 780 430" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="780" height="430"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-430)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="0" width="780" height="430" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
+			<text x="32" y="393" style="font-family: Helvetica-Bold; font-size: 18px;fill: rgb(9%,19%,30%); stroke:none;" transform="translate(0,786) scale(1,-1)">Terminal wealth after all modeled taxes</text>
+			<text x="32" y="370" style="font-family: Times-Roman; font-size: 10px;fill: rgb(32%,39%,45%); stroke:none;" transform="translate(0,740) scale(1,-1)">5-year scenario; starting cash $1,000,000; identical outside cash flows; values in $ thousands</text>
+			<text x="32" y="18" style="font-family: Times-Roman; font-size: 9px;fill: rgb(32%,39%,45%); stroke:none;" transform="translate(0,36) scale(1,-1)">HYPOTHETICAL | P107 Week 6 | Full liquidation | See configs and methodology</text>
+			<g transform="">
+				<g transform="">
+					<rect x="160.0" y="105.02136752136752" width="425.76727067340175" height="68.2905982905983" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(21%,33%,46%); fill-rule: evenodd;"/>
+					<rect x="160.0" y="183.35470085470084" width="426.9859826796476" height="68.2905982905983" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(21%,33%,46%); fill-rule: evenodd;"/>
+					<rect x="160.0" y="261.6880341880341" width="429.75244107567005" height="68.29059829059833" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(21%,33%,46%); fill-rule: evenodd;"/>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,593.767271,139.166667)">
+							<text x="-15.125" y="-4.4" style="font-family: Times-Roman; font-size: 11px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">1562.4</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,594.985983,217.5)">
+							<text x="-15.125" y="-4.4" style="font-family: Times-Roman; font-size: 11px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">1566.9</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,597.752441,295.833333)">
+							<text x="-15.125" y="-4.4" style="font-family: Times-Roman; font-size: 11px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">1577.1</text>
+						</g>
+					</g>
+				</g>
+				<g transform="">
+					<g transform="">
+						<path d="M 160,100 L 160,335 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<path d="M 160,100 L 155,100 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 160,178.333333 L 155,178.333333 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 160,256.666667 L 155,256.666667 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 160,335 L 155,335 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,155,139.166667)">
+							<text x="-27.324" y="-4.800000000000001" style="font-family: Times-Roman; font-size: 12px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-9) scale(1,-1)">Index</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,155,217.5)">
+							<text x="-66.324" y="-4.800000000000001" style="font-family: Times-Roman; font-size: 12px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-9) scale(1,-1)">Long-only DI</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,155,295.833333)">
+							<text x="-59.664" y="-4.800000000000001" style="font-family: Times-Roman; font-size: 12px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-9) scale(1,-1)">Core 130/30</text>
+						</g>
+					</g>
+				</g>
+				<g transform="">
+					<g transform="">
+						<path d="M 160,100 L 705,100 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<path d="M 160,100 L 160,95 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 269,100 L 269,95 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 378,100 L 378,95 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 487,100 L 487,95 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 596,100 L 596,95 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 705,100 L 705,95 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,160,95)">
+							<text x="-2.5" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">0</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,269,95)">
+							<text x="-7.5" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">400</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,378,95)">
+							<text x="-7.5" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">800</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,487,95)">
+							<text x="-10.0" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">1200</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,596,95)">
+							<text x="-10.0" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">1600</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,705,95)">
+							<text x="-10.0" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">2000</text>
+						</g>
+					</g>
+				</g>
+			</g>
+			<text x="160" y="60" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,120) scale(1,-1)">Includes the same outside gain proceeds for every strategy; this is not a portfolio return.</text>
+		</g>
+	</g>
+</svg>

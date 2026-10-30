@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P107 · Strategy Comparison</title>
+  <meta name="description" content="Explore after-tax wealth, fees, loss usage, and full liquidation in the initial P107 scenario model.">
+  <link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#tab-summary">Skip to results</a>
+  <header class="topbar">
+    <a class="brand" href="#top"><span class="brand-symbol">P107</span><span>Wedmont <span class="brand-divider">/</span> Columbia<small>IEOR E4511 · PROJECT STUDY</small></span></a>
+    <div class="top-right"><span class="local-badge"><i></i> Local calculation</span><span class="stage-badge">Week 6 · Initial model</span></div>
+  </header>
+  <main id="top">
+    <section class="intro"><div><p class="eyebrow">LONG-SHORT DIRECT INDEXING</p><h1>After-tax strategy comparison</h1><p class="subtitle">Same starting cash. Modeled costs. Full liquidation taxes.</p></div><p class="scenario-label">Hypothetical scenarios<br><span>Independent illustrative inputs</span></p></section>
+    <div class="workspace">
+      <aside class="controls panel" aria-label="Scenario inputs">
+        <div class="controls-head"><div class="section-title"><h2>Scenario inputs</h2><button id="reset" class="text-button" type="button" disabled>Reset defaults</button></div><p>Adjust the assumptions, then run the comparison.</p></div>
+        <form id="scenario-form" novalidate>
+          <div class="controls-scroll">
+            <label for="example-picker" class="example-label">Start with an example</label>
+            <select id="example-picker" disabled><option value="default">Default · $100k outside ST gains</option><option value="no-gains">No outside gains</option><option value="high-financing">Higher financing · 6.5%</option><option value="custom" disabled>Custom inputs</option></select>
+            <p class="field-note">Examples reset all inputs and run automatically.</p>
+            <div id="input-error" class="input-error" role="alert" hidden></div>
+            <fieldset id="input-fields" disabled>
+            <p class="input-section-label">Portfolio</p><label for="initial_cash">Starting cash</label><div class="input-wrap"><span>$</span><input id="initial_cash" name="initial_cash" type="number" min="10000" max="100000000" step="any" required><span>USD</span></div>
+            <label for="horizon_years">Holding period</label><div class="input-wrap"><input id="horizon_years" name="horizon_years" type="number" min="1" max="10" step="1" required><span>years</span></div>
+            <label for="price_return_pct">Annual price return</label><div class="input-wrap"><input id="price_return_pct" name="price_return_pct" type="number" min="-20" max="20" step="any" required><span>% / year</span></div><p class="field-note">The same price return applies to all strategies. No dividends or manager alpha.</p>
+            <div class="divider"></div><p class="input-section-label">Outside gains</p>
+            <label for="outside_gains">Annual outside capital gains</label><div class="input-wrap"><span>$</span><input id="outside_gains" name="outside_gains" type="number" min="0" max="10000000" step="any" required><span>/ year</span></div>
+            <p class="field-note">Realized gains from other investments that losses may offset. Enter 0 if none; these are not additional portfolio contributions.</p>
+            <label for="outside_character">Outside gain type</label><select id="outside_character" name="outside_character"><option value="st">Short-term capital gains</option><option value="lt">Long-term capital gains</option></select>
+            <details class="advanced"><summary>Costs and tax rates <span class="details-mark" aria-hidden="true">+</span></summary><div class="advanced-body">
+              <p class="field-note">Scenario assumptions, not verified client tax rates or quoted contract terms.</p>
+              <div class="pair"><div><label for="tax_st_pct">ST tax rate %</label><input id="tax_st_pct" name="tax_st_pct" type="number" min="0" max="60" step="any" required></div><div><label for="tax_lt_pct">LT tax rate %</label><input id="tax_lt_pct" name="tax_lt_pct" type="number" min="0" max="60" step="any" required></div></div>
+              <label for="core_manager_pct">Core management fee % / year</label><input id="core_manager_pct" name="core_manager_pct" type="number" min="0" max="5" step="any" required>
+              <label for="advisor_pct">Common advisor fee % / year</label><input id="advisor_pct" name="advisor_pct" type="number" min="0" max="5" step="any" required>
+              <label for="financing_pct">Core long financing rate % / year</label><input id="financing_pct" name="financing_pct" type="number" min="0" max="20" step="any" required>
+              <label for="rebate_pct">Core short rebate rate % / year</label><input id="rebate_pct" name="rebate_pct" type="number" min="0" max="10" step="any" required>
+              <label for="borrow_pct">Core short borrow rate % / year</label><input id="borrow_pct" name="borrow_pct" type="number" min="0" max="10" step="any" required>
+              <p class="field-note">Financing, rebate, and borrow rates each apply to a 30% notional. The ordinary income tax rate follows the ST rate.</p>
+              <label for="loss_scale_pct">Core loss curve applied %</label><input id="loss_scale_pct" name="loss_scale_pct" type="number" min="0" max="100" step="any" required><p class="field-note">100 = the illustrative curve; 50 = half that assumption; 0 = no Core loss harvesting.</p>
+            </div></details>
+          </fieldset>
+          </div>
+          <div class="run-bar"><button id="run" class="primary-button" type="submit" disabled>Run comparison <span aria-hidden="true">→</span></button><p id="status" class="status" role="status" aria-live="polite">Connecting to the local model…</p></div>
+        </form>
+      </aside>
+      <div class="results-column">
+        <div class="results-toolbar">
+          <div class="tabs" role="tablist" aria-label="Model views">
+            <button id="tab-summary" role="tab" aria-selected="true" aria-controls="view-summary" data-view="summary" tabindex="0">Summary</button>
+            <button id="tab-ledger" role="tab" aria-selected="false" aria-controls="view-ledger" data-view="ledger" tabindex="-1">Annual ledger</button>
+            <button id="tab-scope" role="tab" aria-selected="false" aria-controls="view-scope" data-view="scope" tabindex="-1">Assumptions & scope</button>
+          </div>
+          <button id="download" class="secondary-button" disabled aria-describedby="download-note">Download results <span aria-hidden="true">↓</span></button>
+        </div>
+        <span id="download-note" class="sr-only">A ZIP with full inputs, CSV outputs, source hashes, and instructions to reproduce this run.</span>
+        <section id="results-section" aria-busy="true" aria-label="Scenario results">
+          <div id="error" class="error" role="alert" hidden></div>
+          <div id="pending" class="pending" hidden><strong>Inputs changed.</strong> These results are from the last run. Run comparison to update.</div>
+          <div id="loading" class="loading panel">Calculating returns, costs, and taxes…</div>
+          <div id="result-content" hidden>
+            <section id="view-summary" class="tab-view" role="tabpanel" aria-labelledby="tab-summary" tabindex="0">
+              <div class="takeaway"><p class="eyebrow">CURRENT SCENARIO · AFTER FULL LIQUIDATION</p><h2 id="takeaway-title"></h2><p id="scenario-caption"></p></div>
+              <div class="metric-heading"><h3>Terminal after-tax wealth</h3><span>USD · Rounded to whole dollars</span></div>
+              <div id="strategy-cards" class="strategy-cards"></div>
+              <p id="wealth-note" class="wealth-note"></p>
+              <div class="chart-grid">
+                <section class="panel chart-panel"><p class="eyebrow">OUTSIDE GAINS</p><h3>When does Core break even?</h3><div id="breakeven-number" class="threshold"></div><p id="breakeven-description" class="chart-note"></p><div id="breakeven-chart" class="svg-chart"></div><p class="axis-note">X: Annual outside gains (USD)<br>Y: Core minus Index, terminal after-tax wealth (USD)</p><details class="chart-details"><summary>Search range and limitations</summary><p id="search-note"></p></details></section>
+                <section class="panel chart-panel"><p class="eyebrow">HOLDING PERIOD</p><h3>How does time change the result?</h3><p class="chart-note">Terminal wealth relative to Index. Only the holding period changes; all other inputs stay fixed.</p><div id="horizon-table"></div><div class="callout"><strong>Tax relief today is not the final benefit.</strong><p>Harvesting losses reduces cost basis and can increase taxable gains at exit. These results include the full sale.</p></div></section>
+              </div>
+              <div class="summary-footnote"><span>Returns and losses are assumptions, not observed performance.</span><button class="text-button" data-go-view="scope">Review assumptions & scope →</button></div>
+            </section>
+            <section id="view-ledger" class="tab-view" role="tabpanel" aria-labelledby="tab-ledger" tabindex="0" hidden>
+              <section class="panel ledger-panel">
+                <div class="section-heading"><div><p class="eyebrow">ANNUAL LEDGER</p><h2>Follow the calculations</h2></div><span class="unit-label">All values in USD</span></div>
+                <div class="ledger-filters"><div><label for="ledger-strategy">Strategy</label><select id="ledger-strategy"><option value="core_130_30">Core 130/30</option><option value="long_only_di">Long-only DI</option><option value="index">Index</option></select></div><div><label for="ledger-view">View</label><select id="ledger-view"><option value="tax">Returns & taxes</option><option value="costs">Fees & financing</option><option value="basis">Basis & embedded gains</option></select></div></div>
+                <p id="ledger-note" class="chart-note"></p>
+                <div id="ledger-table" class="table-scroll" tabindex="0" role="region" aria-label="Annual ledger, scroll horizontally if needed"></div>
+                <p class="table-hint">Download results includes every annual field for all three strategies.</p>
+              </section>
+              <section class="panel ledger-panel"><div class="section-heading"><div><p class="eyebrow">CUMULATIVE COMPARISON</p><h2>Costs, tax relief, and exit liability</h2></div></div><div id="tax-table" class="table-scroll" tabindex="0" role="region" aria-label="Cumulative costs and taxes"></div><p class="chart-note">Pre-exit tax relief is already reflected in the cash account; do not add it to wealth again. Incremental exit tax is the change in the final-year tax bill when the full sale is included. Unused loss carryforwards have no terminal cash value.</p></section>
+            </section>
+          </div>
+        </section>
+        <section id="view-scope" class="tab-view" role="tabpanel" aria-labelledby="tab-scope" tabindex="0" hidden>
+          <section id="guide" class="panel guide"><p class="eyebrow">METHOD</p><h2>Three strategies, one comparison</h2><div class="explain-grid"><article><span class="strategy-dot index"></span><h3>Index <small>The benchmark</small></h3><p>A low-cost index strategy used as the benchmark. No intentional tax-loss harvesting.</p></article><article><span class="strategy-dot di"></span><h3>Long-only DI <small>Direct indexing</small></h3><p>Holds individual stocks and realizes losses that may offset capital gains. Its loss curve here is an illustrative assumption.</p></article><article><span class="strategy-dot core"></span><h3>Core 130/30 <small>Long-short investing</small></h3><p>For each $100 of net capital, holds $130 long and $30 short. The model includes financing, rebates, borrowing costs, and loss offsets.</p></article></div><details id="assumptions"><summary>Sources, assumptions, and what is still missing</summary><div class="assumption-content"><p><strong>Core loss curve: </strong>15%, 10%, 7%, 4%, then 2% annually for Years 5-10, applied to beginning-of-year NAV. These are independent illustrative assumptions, not provider estimates or observed account losses.</p><p><strong>Restricted course run: </strong>The original source-based configuration and workbook are available separately through the course data link. Use the reproduction instructions in <code>docs/RESTRICTED_DATA.md</code>; this browser example uses the public inputs.</p><p><strong>Long-only DI: </strong>The illustrative loss curve is 5%, 3%, 2%, 1%, 0.5%, then 0.3% annually. It has not been calibrated to historical data. Index has no intentional harvesting.</p><p><strong>Fixed assumptions: </strong>Index / DI management fees are 0.03% / 0.25%. Annual trading cost rates for Index / DI / Core are 0 / 0.03% / 0.05%; exit trading rates are 0.01% / 0.01% / 0.02% of gross exposure. Side cash earns 0%; there are no dividends or alpha. Interest deductions are capped at modeled rebate income; fees are not given a blanket tax deduction.</p><p><strong>Tax simplifications: </strong>Losses offset gains of the same character first, then the other character; unused losses carry forward. All realizations at exactly one year are ST. Later, assumed ST shares for Index / DI / Core are 0% / 5% / 10%. Individual brackets, state tax details, and capital-loss deductions against ordinary income are omitted.</p><p><strong>Not yet included: </strong>Observed market prices, individual tax lots, wash-sale checks, actual trades, margin calls, and calibrated risk estimates. Return paths and loss curves are independent assumptions; the model does not establish that these losses can be realized in practice.</p><p>This first-stage scenario model supports accounting checks and discussion of assumptions. It does not establish suitability for a real client. Full inputs and source notes are in <code>scenario.json</code> in the download and in the original Python project documentation.</p></div></details></section>
+          <section class="panel scope-panel"><p class="eyebrow">SPONSOR REQUIREMENTS · PAGES 2–4</p><h2>What this version covers</h2><p class="chart-note">This is the first-stage model for Week 6. Coverage below refers to implemented scenario calculations, not validated investment outcomes.</p>
+            <div class="table-scroll" tabindex="0" role="region" aria-label="Sponsor requirement coverage"><table class="scope-table"><thead><tr><th>Requirement</th><th>Status</th><th>Current scope / next work</th></tr></thead><tbody>
+              <tr><td>Returns, fees, financing, short costs<br><small>Specification p. 2</small></td><td><span class="scope-status">Implemented</span></td><td>Annual price returns, management and advisor fees, long financing, short rebates, borrow and trading costs. Assumptions still need confirmation.</td></tr>
+              <tr><td>Loss usage and tax treatment<br><small>Specification pp. 2–3</small></td><td><span class="scope-status partial">Partial</span></td><td>ST/LT netting, outside gains, and carryforwards. Flat tax rates and an aggregate basis proxy; no individual tax lots or separate state tax rules.</td></tr>
+              <tr><td>Portfolio comparisons<br><small>Specification pp. 3–4</small></td><td><span class="scope-status partial">Partial</span></td><td>Index, illustrative long-only DI, and Core 130/30. 150/50 and 200/100 remain to be modeled.</td></tr>
+              <tr><td>Exit scenarios and terminal wealth<br><small>Specification pp. 3–4</small></td><td><span class="scope-status partial">Partial</span></td><td>Full liquidation after 1–10 years, with exit taxes. Gradual exits, liquidity shocks, immediate exit, long or indefinite holding, and death-related basis treatment remain open.</td></tr>
+              <tr><td>Deferral versus lasting benefit<br><small>Specification pp. 3, 5</small></td><td><span class="scope-status partial">Partial</span></td><td>Pre-exit relief, embedded gains per dollar harvested, and exit liability are tracked. A full attribution of permanent savings versus deferral across exit paths remains open.</td></tr>
+              <tr><td>Break-even and sensitivities<br><small>Specification p. 4</small></td><td><span class="scope-status partial">Partial</span></td><td>An outside-gain break-even search, holding-period comparisons, and adjustable cost and tax assumptions. Full fee, financing, tax-rate, and exposure thresholds remain open.</td></tr>
+              <tr><td>Market regimes and investment risk<br><small>Specification pp. 2–4</small></td><td><span class="scope-status open">Not calibrated</span></td><td>No historical price backtest, tracking error, margin model, or calibrated harvesting response to volatility. This interface uses a constant price-return path.</td></tr>
+              <tr><td>Client decision matrix and research paper<br><small>Specification p. 4</small></td><td><span class="scope-status open">Not completed</span></td><td>Require broader scenarios, data validation, and review with Dom. No client recommendation is established here.</td></tr>
+            </tbody></table></div>
+          </section>
+        </section>
+        <footer><span>P107 · Hypothetical scenario · USD</span><span id="run-reference">Full liquidation included</span></footer>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

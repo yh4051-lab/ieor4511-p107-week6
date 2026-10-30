@@ -1,0 +1,3 @@
+file,classification,sha256,source
+configs/example_hypothetical.json,independent illustrative assumptions,5644301f528161c6af96691c6aa15da8691e7c3f3da41bb6546cf2516899a9c4,Project educational example; not market or provider observations
+data/illustrative_loss_schedule.csv,independent illustrative assumptions,d1a9eb6fff5db390fae2e480fb49cf31890342ef0ac1c82e6c926ef6b185a229,Project educational example; not market or provider observations

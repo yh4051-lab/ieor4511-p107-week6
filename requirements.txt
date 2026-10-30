@@ -1,0 +1,4 @@
+# Optional chart dependencies. The model and tests use the Python standard library.
+reportlab==4.4.9
+pypdfium2==5.14.0
+pillow==12.3.0

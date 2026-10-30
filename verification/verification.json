@@ -1,0 +1,162 @@
+{
+  "verification_time_utc": "2026-10-30T05:50:47+00:00",
+  "python": "3.12.14",
+  "commands": [
+    {
+      "name": "tests",
+      "command": [
+        "python",
+        "-X",
+        "utf8",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "example_run",
+      "command": [
+        "python",
+        "-X",
+        "utf8",
+        "-m",
+        "p107",
+        "--config",
+        "configs/example_hypothetical.json",
+        "--out",
+        "results"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "replay_run",
+      "command": [
+        "python",
+        "-X",
+        "utf8",
+        "-m",
+        "p107",
+        "--config",
+        "configs/example_hypothetical.json",
+        "--out",
+        "work/full_replay"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "web_tests",
+      "command": [
+        "python",
+        "-X",
+        "utf8",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "web/tests",
+        "-v"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "source_audit_rerun": false,
+  "tests_run": 37,
+  "tests_passed": true,
+  "web_tests_run": 11,
+  "web_tests_passed": true,
+  "output_files_compared": 14,
+  "all_outputs_byte_identical": true,
+  "output_checks": [
+    {
+      "file": "annual_ledger.csv",
+      "sha256": "3bdf52524cd13bf44063d33f26594c8682a49b2fe792d6737c23b2c474c00523",
+      "byte_identical": true
+    },
+    {
+      "file": "baseline_comparison.csv",
+      "sha256": "5faff3516ee92061e77a259cd4b6f2532791f95dce1c2063e293f30d1ea4bbc4",
+      "byte_identical": true
+    },
+    {
+      "file": "breakeven.json",
+      "sha256": "6019087a609375001a68bc73b17c8a423d6bd1a1e522613d2cd2ba8e53d5a43c",
+      "byte_identical": true
+    },
+    {
+      "file": "breakeven_curve.csv",
+      "sha256": "bebeb86b85dfa855cb881da0829e6d972368dcb52f5cb0a5159c2bc0dac0a59e",
+      "byte_identical": true
+    },
+    {
+      "file": "figures/financing_sensitivity.png",
+      "sha256": "13da1aa4197575adbb3b6347d9006059334eb45234478828597e5db74e32a5db",
+      "byte_identical": true
+    },
+    {
+      "file": "figures/financing_sensitivity.svg",
+      "sha256": "b67a98967c633d337784bb4febcd221c5f19012cdec47fb6e6fd6c90c4cac50f",
+      "byte_identical": true
+    },
+    {
+      "file": "figures/outside_gains_breakeven.png",
+      "sha256": "2cc6781245743ed9170e0222c9d19119d75185678aa81279c82c1125a642adf5",
+      "byte_identical": true
+    },
+    {
+      "file": "figures/outside_gains_breakeven.svg",
+      "sha256": "15bb98bf02999d7986126943246e2cabcb4fc4af6d0e2a99dd0688d7b1f1a193",
+      "byte_identical": true
+    },
+    {
+      "file": "figures/terminal_wealth.png",
+      "sha256": "a287a245d2edb7cffb676f19f269f95a359c48b7f00bf0fb09a7649250c25c38",
+      "byte_identical": true
+    },
+    {
+      "file": "figures/terminal_wealth.svg",
+      "sha256": "fa0824b958ce5679f3d69d30e7db40bbad4908d0fa3734d5d13c419c49dbc950",
+      "byte_identical": true
+    },
+    {
+      "file": "run_metadata.json",
+      "sha256": "facd775bcb6a977d0621f5f525c7417f659b4f9a2b4084b9407125a294d06b16",
+      "byte_identical": true
+    },
+    {
+      "file": "scenario_comparison.csv",
+      "sha256": "07315fbb10e187da3360628b1d0c1b24b8c0c7f7b9f333597a114c1afd9b14b9",
+      "byte_identical": true
+    },
+    {
+      "file": "scenario_ledgers.csv",
+      "sha256": "f1d8a6a996eace71d010c4bbb82e7e7a25c44b3b2ad14524ee29fe7ce5a4f43c",
+      "byte_identical": true
+    },
+    {
+      "file": "sensitivity.csv",
+      "sha256": "8af5d5d04e32577306b114508b2cf32c7bc8ef8fcbf0779920088552e58c2db2",
+      "byte_identical": true
+    }
+  ],
+  "baseline_comparison.csv_rows": 3,
+  "annual_ledger.csv_rows": 15,
+  "scenario_comparison.csv_rows": 36,
+  "scenario_ledgers.csv_rows": 180,
+  "sensitivity.csv_rows": 153,
+  "breakeven_curve.csv_rows": 201,
+  "source_code_sha256": {
+    "p107/__init__.py": "7d36be4630d08e93b1a6f73346dfd132b00956f53f5c9652c34c876ab5dba907",
+    "p107/__main__.py": "b84dc05cc3e739e3bc0083a36a5d2cd1058f8e69b971ffaa323513767eb55d08",
+    "p107/analysis.py": "af16117a9b31d7571667bd7b06c1a56ffd9da37d1b8efbdc8d98c7714c84903d",
+    "p107/model.py": "e0afce3c87d4e78d9e2c79771fcd1178ffdd826bb04952e48f28b58dd7f1d824",
+    "p107/reporting.py": "bd52d4422020ed8836ff8c4eb40f8f4c5892648a9ffd5857b7f0d0ab57719a99",
+    "p107/taxes.py": "77e06ce23863be93e7abfda72075bd2c1ebce3e8b639b7733a88b00c3074ebf0",
+    "tests/test_model.py": "de3b06e4aed1f19c85a157f848db26e9b370fbad5a14f8bb0935d940fe5bdeec",
+    "tools/verify_project.py": "01a02ebd95b32c262f7aaa7aa1d1ce17dd95fe40c5dc8802eb96550971de3d16"
+  },
+  "requirements_sha256": "e332046d3c9250bb16e2f7e9f818584fb3a8245f1c24f573fb375859bedae8f7"
+}

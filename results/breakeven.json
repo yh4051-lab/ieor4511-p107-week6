@@ -1,0 +1,36 @@
+{
+  "st": {
+    "horizon_years": 5,
+    "outside_character": "st",
+    "schedule": "same_nominal_amount_each_year",
+    "search_min": 0,
+    "search_max": 1000000.0,
+    "scan_step": 5000.0,
+    "status": "crossing_found",
+    "roots_annual_usd": [
+      47442.995118
+    ],
+    "root_residual_usd": [
+      2.5727786123752594e-07
+    ],
+    "delta_at_zero": -47424.165078486316,
+    "delta_at_max": 17757.22775115352,
+    "nondecreasing_on_scan": true,
+    "limitation": "Finite grid detects sign-changing roots; does not prove monotonicity or exclude tangencies."
+  },
+  "lt": {
+    "horizon_years": 5,
+    "outside_character": "lt",
+    "schedule": "same_nominal_amount_each_year",
+    "search_min": 0,
+    "search_max": 1000000.0,
+    "scan_step": 5000.0,
+    "status": "no_crossing_in_range",
+    "roots_annual_usd": [],
+    "root_residual_usd": [],
+    "delta_at_zero": -47424.165078486316,
+    "delta_at_max": -56589.729555820115,
+    "nondecreasing_on_scan": false,
+    "limitation": "Finite grid detects sign-changing roots; does not prove monotonicity or exclude tangencies."
+  }
+}
