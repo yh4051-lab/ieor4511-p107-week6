@@ -1,18 +1,31 @@
 # Local browser interface
 
-From the repository root, run `python web/launch.py` with Python 3.12. On Windows, `py -3.12 web/launch.py` and `py -3.12 web/launch_stock.py` now open the same integrated interface at **http://127.0.0.1:8754**. The recommended Windows entry is **START-STOCK.bat**, which also installs `requirements-stock.txt` for Yahoo historical data. When starting manually, install those dependencies with `py -3.12 -m pip install -r requirements-stock.txt`. The original illustrative model uses only the standard library and starts from the independent public example in `configs/example_hypothetical.json`. For the restricted source-based run, use the command-line instructions in `docs/RESTRICTED_DATA.md`.
+From the repository root, run `python web/launch.py` with Python 3.12. On Windows, `py -3.12 web/launch.py` and `py -3.12 web/launch_stock.py` open the same integrated interface, preferring **http://127.0.0.1:8754**. The launcher reuses only a matching source/interface/configuration build; if the port holds an older build or another app it tries ports through 8764. Use the actual URL printed/opened by the launcher. The recommended Windows entry is **START-STOCK.bat**, which also installs `requirements-stock.txt` for Yahoo historical data. When starting manually, install those dependencies with `py -3.12 -m pip install -r requirements-stock.txt`. The original illustrative model uses only the standard library and starts from the independent public example in `configs/example_hypothetical.json`. For the restricted source-based run, use the command-line instructions in `docs/RESTRICTED_DATA.md`.
 
-Expand **Portfolio → Custom Stock Research — After-Tax Loss Harvesting** for manually selected US stocks, adjustable long/short allocations and integrated after-tax harvesting research. See [README-STOCK.md](../README-STOCK.md) for its inputs, results and exports. The original illustrative scenario described below remains separate.
+Expand **Portfolio → Custom Stock Research — After-Tax Loss Harvesting** for manually selected US stocks, adjustable long/short allocations and integrated after-tax harvesting research. Click **Run After-Tax Research** to populate the main **Summary** and **Annual ledger** on the right. **Results source** switches between completed historical research and the original illustrative scenario without rerunning either. See [README-STOCK.md](../README-STOCK.md) for inputs, results and exports.
 
-Use the inputs on the left and click **Run comparison**. The example menu resets every input before running; **Reset defaults** restores the baseline. Valid inputs are kept in the browser tab's session storage. Changed inputs are marked until rerun, and stale results cannot be downloaded.
+The main result views follow **Results source**:
 
-- **Summary:** terminal after-tax wealth, differences from Index, an outside-gain break-even search, and holding-period comparisons.
-- **Annual ledger:** returns and taxes, fees and financing, or basis and embedded gains. Select a strategy to inspect its annual rows.
-- **Assumptions & scope:** source references, model limitations, and the sponsor requirements that still need further work.
+| View | Historical stock research | Illustrative scenario |
+|---|---|---|
+| **Summary** | Harvesting/no-harvest/benchmark wealth cards, three equity paths and harvesting tax/cost bridge. | Index/DI/Core wealth cards, outside-gain break-even search and holding-period comparisons. |
+| **Annual ledger** | Select strategy, no-harvest control or benchmark; inspect annual taxes, trades, accounting/exposure, costs and initial holdings. | Select Index, DI or Core and returns/taxes, fees/financing or basis/embedded gains. |
+| Toolbar download | **Download research JSON**, containing the full research inputs, prices, results and assumptions. | **Download scenario ZIP**, containing scenario/UI inputs, CSV outputs, code hashes and reproduction instructions. |
 
-Strategy colors stay consistent: slate for Index, blue for DI, and teal for Core. Signed numbers and text identify positive and negative comparisons alongside color.
+The historical Annual ledger also offers **Download trades CSV** for its selected
+portfolio. The compact **View research results** sidebar button returns to its
+Summary. **Scenario method** describes only the original illustrative model and
+selects that source. Break-even and holding-period charts are not historical
+research outputs.
 
-**Download results** produces a ZIP containing the effective scenario, UI inputs, CSV outputs, code hashes, and reproduction instructions. It does not contain the private original source documents.
+**Run comparison** selects and recalculates the illustrative scenario. Its
+example menu resets the original inputs before running; **Reset defaults**
+restores that baseline without clearing custom stock selections. Starting cash
+is shared and changes mark both models stale; other inputs affect only their
+own model. Stale results are marked and their downloads are disabled. Input
+drafts survive a same-tab refresh through session storage; completed historical
+results must be rerun after refresh. The original scenario retains slate Index,
+blue DI and teal Core colors; signed text identifies comparison direction.
 
 ## Original illustrative model scope
 
@@ -30,7 +43,7 @@ The server binds only to `127.0.0.1` and serves a limited set of interface files
 py -3.12 web/server.py --port 8755
 ```
 
-Open `http://127.0.0.1:8755` and press Ctrl+C in the terminal when finished. You can choose another free port with `--port` and use that number in the browser URL. The automatic launchers use port 8754.
+Open `http://127.0.0.1:8755` and press Ctrl+C in the terminal when finished. You can choose another free port with `--port` and use that number in the browser URL. The automatic launchers prefer port 8754 and can select another port through 8764 when a matching server is unavailable there.
 
 From the repository root, run:
 

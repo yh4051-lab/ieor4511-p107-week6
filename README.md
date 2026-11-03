@@ -16,9 +16,9 @@ Download this repository using **Code > Download ZIP** and extract it into a new
 python web/launch.py
 ```
 
-On Windows, use `py -3.12 web/launch.py` or `py -3.12 web/launch_stock.py`; both now open the same integrated interface at **http://127.0.0.1:8754**. On macOS or Linux, use `python3` if needed. The original illustrative scenario uses only the standard library. Historical stock research requires `python -m pip install -r requirements-stock.txt`, which `START-STOCK.bat` runs automatically. Expand **Portfolio → Custom Stock Research — After-Tax Loss Harvesting** to configure historical positions; use **Run comparison** for the separate original illustrative scenario.
+On Windows, use `py -3.12 web/launch.py` or `py -3.12 web/launch_stock.py`; both open the same integrated interface, preferring **http://127.0.0.1:8754**. If an older build or another app occupies that port, the launcher chooses another port through 8764; follow the actual URL it prints and opens. It reuses only a server whose build fingerprint matches this source and interface. On macOS or Linux, use `python3` if needed. The original illustrative scenario uses only the standard library. Historical stock research requires `python -m pip install -r requirements-stock.txt`, which `START-STOCK.bat` runs automatically. Expand **Portfolio → Custom Stock Research — After-Tax Loss Harvesting** to configure historical positions. **Run After-Tax Research** displays that run in the right-side **Summary** and **Annual ledger**. Use **Run comparison** for the original illustrative scenario, or **Results source** to switch between completed results.
 
-Use **Summary** for wealth and break-even comparisons, **Annual ledger** for costs and tax calculations, and **Assumptions & scope** for current coverage. **Download results** saves the effective inputs and outputs. This is a local Python application; GitHub does not host its running interface.
+The right-side **Summary** and **Annual ledger** follow the selected **Results source**. Historical research shows three wealth comparisons, equity curves, a harvesting bridge and portfolio-specific ledgers. The original scenario retains its break-even and holding-period comparisons; **Scenario method** describes that model. Downloads follow the source: **Download research JSON** for historical runs and **Download scenario ZIP** for illustrative scenarios. This is a local Python application; GitHub does not host its running interface.
 
 ## Reproduce the public results
 
@@ -59,9 +59,10 @@ other exposures and split each leg across stocks using relative weights. The
 engine converts initial budgets to fractional shares using historical entry
 prices; optional Manual shares mode preserves direct quantity entry.
 
-Results compare modeled after-tax wealth for the harvesting strategy, the same
-initial portfolio without harvesting, and a 100%-long benchmark funded with the
-same initial equity. The no-harvest comparison and exit-tax bridge help assess
+The main **Summary** compares modeled after-tax wealth for the harvesting
+strategy, the same initial portfolio without harvesting, and a 100%-long benchmark
+funded with the same initial equity. The main **Annual ledger** lets you inspect
+any of these three portfolios, including its taxes, trades, costs and holdings. The no-harvest comparison and exit-tax bridge help assess
 harvesting separately from the effect of initial leverage and stock selection.
 Target exposures apply at entry; the engine does not continuously rebalance.
 

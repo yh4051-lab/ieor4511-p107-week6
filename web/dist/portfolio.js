@@ -8,6 +8,10 @@
   const shortExposure = document.getElementById('research-short-exposure');
   const status = document.getElementById('stock-status');
   const result = document.getElementById('stock-result');
+  const summaryPanel = document.getElementById('research-summary-panel');
+  const ledgerPanel = document.getElementById('research-ledger-panel');
+  const researchDownload = document.getElementById('research-download');
+  const pending = document.getElementById('research-pending');
   const button = document.getElementById('stock-calculate');
   const addButton = document.getElementById('stock-add');
   const initialCash = document.getElementById('initial_cash');
@@ -22,6 +26,9 @@
   };
   let busy = false;
   let revision = 0;
+  let lastRun = null;
+  let resultRevision = -1;
+  let ledgerStrategy = 'strategy';
   const rows = () => Array.from(list.querySelectorAll('.stock-position'));
   const field = (row, name) => row.querySelector('[data-field="' + name + '"]');
   const finite = value => typeof value === 'number' && Number.isFinite(value);
@@ -60,9 +67,32 @@
   function changed() {
     revision++;
     updateAllocation();
-    result.classList.add('stock-stale');
-    if (!result.hidden) status.textContent = 'Inputs changed. The displayed research result is from the previous run.';
+    if (lastRun) status.textContent = 'Inputs changed. Run After-Tax Research to update the right-side results.';
+    syncResultState();
     save();
+  }
+
+  function syncResultState() {
+    const stale = !!lastRun && revision !== resultRevision;
+    result.classList.toggle('stock-stale', stale || busy);
+    summaryPanel?.classList.toggle('stock-stale', stale || busy);
+    ledgerPanel?.classList.toggle('stock-stale', stale || busy);
+    if (researchDownload) researchDownload.disabled = !lastRun || stale || busy;
+    for (const control of document.querySelectorAll('[data-research-export]')) control.disabled = !lastRun || stale || busy;
+    if (pending) {
+      pending.hidden = window.P107Results?.currentMode() !== 'research' || !lastRun || !(stale || busy);
+      pending.textContent = busy ? 'Historical research is running. The displayed results are from the previous completed run.' : 'Research inputs changed. These results are from the previous run; run After-Tax Research to update.';
+    }
+  }
+
+  function showResearch(view = 'summary') {
+    window.P107Results?.show('research', view);
+    document.querySelector('.results-column')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+
+  function downloadJson() {
+    if (!lastRun || busy || revision !== resultRevision) return;
+    download('p107-after-tax-research.json', JSON.stringify(lastRun, null, 2), 'application/json');
   }
 
   function updateAllocation() {
@@ -204,84 +234,159 @@
     return '\ufeff' + [columns.join(','), ...records.map(record => columns.map(key => cell(record[key])).join(','))].join('\r\n');
   }
 
-  function render(data, inputs) {
-    result.replaceChildren();
-    const summary = data.summary || {};
-    const positions = (Array.isArray(data.positions) ? data.positions : []).map(position => ({...position, initial_value: position.shares * position.start_price, initial_allocation_pct: position.shares * position.start_price / summary.initial_cash * 100}));
-    const initialLegValue = side => positions.filter(position => position.side === side).reduce((sum, position) => sum + position.initial_value, 0);
-    heading(result, 'Integrated After-Tax Loss-Harvesting Results');
-    paragraph(result, 'Historical prices, dividends, financing, trading, annual taxes and full liquidation are included in one calculation.', 'research-table-note');
-    const metrics = [
-      ['After-tax wealth — with harvesting', summary.terminal_wealth, money],
-      ['After-tax wealth — same portfolio, no harvesting', data.no_harvest_control?.summary?.terminal_wealth, money],
-      ['After-tax wealth — 100% long benchmark', summary.benchmark_wealth, money],
-      ['Incremental wealth vs benchmark', summary.incremental_wealth, money],
-      ['Incremental wealth from harvesting', summary.incremental_wealth_vs_no_harvest, money],
-      ['Simple gain / initial equity (outside cash removed; not CAGR)', summary.return_pct, percent]
-    ];
-    for (const [label, value, format] of metrics) {
-      const metric = document.createElement('div'); metric.className = 'research-metric';
-      const name = document.createElement('span'); name.textContent = label;
-      const amount = document.createElement('strong'); amount.textContent = format(value); metric.append(name, amount); result.appendChild(metric);
-    }
-    paragraph(result, 'The benchmark starts 100% long with the same initial equity and outside cash flows. Its leverage differs from your selected portfolio. The no-harvest control starts with your exact holdings, exposure, costs and tax settings. Allocation percentages set the initial positions; there is no continuous exposure rebalancing.', 'research-table-note');
-    if (inputs.outside_st_gain || inputs.outside_lt_gain) paragraph(result, 'Terminal wealth includes outside gain proceeds. The simple gain ratio removes gross outside proceeds and divides by initial equity; it is not TWR, IRR or CAGR.', 'research-warning');
-    heading(result, 'Historical equity path'); curve(result, Array.isArray(data.daily) ? data.daily : [], Array.isArray(data.benchmark?.daily) ? data.benchmark.daily : [], Array.isArray(data.no_harvest_control?.daily) ? data.no_harvest_control.daily : []);
-    heading(result, 'Accounting and exposure');
-    const entries = [
+  function card(parent, title, value, description, kind) {
+    const article = document.createElement('article');
+    article.className = 'strategy-card research-wealth-card research-card-' + kind;
+    paragraph(article, title, 'card-name');
+    paragraph(article, description, 'card-desc');
+    paragraph(article, money(value), 'wealth-value');
+    parent.appendChild(article);
+  }
+
+  function researchEntries(simulation) {
+    const summary = simulation.summary || {};
+    const positions = (Array.isArray(simulation.positions) ? simulation.positions : []).map(position => ({...position, initial_value: position.shares * position.start_price, initial_allocation_pct: position.shares * position.start_price / summary.initial_cash * 100}));
+    const initialValue = side => positions.filter(position => position.side === side).reduce((sum, position) => sum + position.initial_value, 0);
+    return {positions, entries: [
       ['Initial equity', money(summary.initial_cash)],
-      ['Initial long position value', money(initialLegValue('long')) + ' (' + percent(initialLegValue('long') / summary.initial_cash * 100) + ')'],
-      ['Initial short position value', money(initialLegValue('short')) + ' (' + percent(initialLegValue('short') / summary.initial_cash * 100) + ')'],
+      ['Terminal after-tax wealth', money(summary.terminal_wealth)],
+      ['Initial long position value', money(initialValue('long')) + ' (' + percent(initialValue('long') / summary.initial_cash * 100) + ')'],
+      ['Initial short position value', money(initialValue('short')) + ' (' + percent(initialValue('short') / summary.initial_cash * 100) + ')'],
       ['Initial net exposure', percent(finite(summary.initial_net_exposure) ? summary.initial_net_exposure * 100 : null)],
       ['Initial gross exposure', percent(finite(summary.initial_gross_exposure) ? summary.initial_gross_exposure * 100 : null)],
       ['Price P&L', money(summary.price_pnl)],
       ['Dividend cash flow', money(summary.dividend_cash)],
       ['Dividend tax', money(summary.dividend_tax)],
       ['Tax on short rebate (ST-rate proxy)', money(summary.rebate_tax)],
-      ['Modeled costs', typeof summary.costs === 'object' ? plain(summary.costs) : money(summary.costs)],
-      ['Capital-gains tax', money(summary.capital_tax)],
+      ['Modeled net costs', money(summary.costs)],
+      ['Capital-gains tax, including final liquidation', money(summary.capital_tax)],
       ['Incremental exit tax', money(summary.exit_tax)],
-      ['Unrealized P&L before exit', money(summary.unrealized_before_exit)]
-    ];
-    entries.push(['Harvested loss', money(summary.harvested_loss)], ['Loss used against gains', money(summary.loss_used)], ['Remaining ST carryforward', money(summary.remaining_carry_st)], ['Remaining LT carryforward', money(summary.remaining_carry_lt)]);
-    table(result, [['Measure', 'label'], ['Value', 'value']], entries.map(([label, value]) => ({label, value})));
+      ['Unrealized P&L immediately before final exit', money(summary.unrealized_before_exit)],
+      ['Harvested loss', money(summary.harvested_loss)],
+      ['Loss used against gains', money(summary.loss_used)],
+      ['Remaining ST carryforward', money(summary.remaining_carry_st)],
+      ['Remaining LT carryforward', money(summary.remaining_carry_lt)]
+    ].map(([label, value]) => ({label, value}))};
+  }
+
+  function selectedSimulation() {
+    if (!lastRun) return null;
+    return ledgerStrategy === 'strategy' ? lastRun.result : lastRun.result[ledgerStrategy];
+  }
+
+  function renderResearchLedger() {
+    const content = document.getElementById('research-ledger-content');
+    const simulation = selectedSimulation();
+    if (!content || !simulation) return;
+    content.replaceChildren();
+    const summary = simulation.summary || {};
+    const {positions, entries} = researchEntries(simulation);
+    heading(content, 'Annual tax ledger');
+    paragraph(content, 'Actual modeled realized gains, losses, annual tax settlement and full final liquidation. Unused loss carryforwards are not cash.', 'research-table-note');
+    table(content, [['Year', 'year'], ['ST gain', 'gain_st', money], ['LT gain', 'gain_lt', money], ['ST loss', 'loss_st', money], ['LT loss', 'loss_lt', money], ['Tax', 'tax', money], ['Loss used', 'loss_used', money], ['ST carry', 'carry_st', money], ['LT carry', 'carry_lt', money], ['Outside proceeds', 'outside_proceeds', money], ['Exit tax', 'exit_tax', money]], Array.isArray(simulation.annual) ? simulation.annual : []);
+    heading(content, 'Trade ledger');
+    const trades = Array.isArray(simulation.trades) ? simulation.trades : [];
+    table(content, [['Date', 'date'], ['Ticker', 'ticker'], ['Direction', 'side'], ['Event', 'event'], ['Shares', 'shares', value => finite(value) ? value.toLocaleString('en-US', {maximumFractionDigits: 6}) : '—'], ['Price', 'price', money], ['Realized P&L', 'pnl', money], ['Tax character', 'character']], trades.slice(0, 300));
+    if (trades.length > 300) paragraph(content, 'Showing the first 300 trades. The selected portfolio CSV includes all ' + trades.length + ' trades.', 'research-table-note');
+    heading(content, 'Accounting and exposure');
+    table(content, [['Measure', 'label'], ['Value', 'value']], entries);
     if (summary.cost_breakdown && typeof summary.cost_breakdown === 'object') {
-      heading(result, 'Cost breakdown');
-      table(result, [['Component', 'label'], ['Amount', 'value']], [
+      heading(content, 'Cost breakdown');
+      table(content, [['Component', 'label'], ['Amount', 'value']], [
         ['Financing', 'financing'], ['Short borrow', 'borrow'], ['Management', 'management'],
         ['Trading', 'trading'], ['Short rebate received (reduces costs)', 'rebate']
       ].map(([label, key]) => ({label, value: money(summary.cost_breakdown[key])})));
     }
-    if (finite(summary.incremental_wealth_vs_no_harvest)) {
-      heading(result, 'Harvesting vs the same portfolio without harvesting');
-      paragraph(result, 'This control uses the same manually selected starting holdings and assumptions, with harvesting disabled. It separates the harvesting decision from the choice of stocks.', 'research-table-note');
-      table(result, [['Difference vs no-harvest control', 'label'], ['Amount', 'value']], [
-        ['Incremental terminal wealth', 'incremental_wealth_vs_no_harvest'],
-        ['Pre-exit capital-tax relief', 'tax_relief_before_exit_vs_no_harvest'],
-        ['Extra exit tax', 'extra_exit_tax_vs_no_harvest'],
-        ['Total modeled capital-tax saving', 'total_capital_tax_saving_vs_no_harvest'],
-        ['Extra net costs', 'extra_cost_vs_no_harvest'],
-        ['Price P&L difference', 'price_pnl_difference_vs_no_harvest']
-      ].map(([label, key]) => ({label, value: money(summary[key])})));
-      paragraph(result, 'Pre-exit capital-tax relief minus extra exit tax equals total modeled capital-tax saving. Relief before exit can reverse when positions are sold. Terminal wealth also changes with price exposure, dividends, costs and rebate taxes while positions are out of the market; the wealth difference is not pure tax alpha.', 'research-warning');
+    heading(content, 'Starting positions and historical prices');
+    table(content, [['Ticker', 'ticker'], ['Direction', 'side'], ['Entry shares', 'shares', value => finite(value) ? value.toLocaleString('en-US', {maximumFractionDigits: 6}) : '—'], ['Initial position value', 'initial_value', money], ['% of initial equity', 'initial_allocation_pct', percent], ['Start price', 'start_price', money], ['End price', 'end_price', money]], positions);
+  }
+
+  function render(data, inputs, stamp) {
+    lastRun = {inputs, result: data};
+    resultRevision = stamp;
+    result.replaceChildren();
+    paragraph(result, 'Research results are displayed in Summary and Annual ledger on the right.', 'research-table-note');
+    const viewButton = document.createElement('button'); viewButton.type = 'button'; viewButton.textContent = 'View research results';
+    viewButton.addEventListener('click', () => showResearch()); result.appendChild(viewButton); result.hidden = false;
+
+    summaryPanel.replaceChildren(); summaryPanel.classList.add('research-main');
+    const summary = data.summary || {};
+    const actualStart = data.metadata?.actual_start || inputs.start_date;
+    const actualEnd = data.metadata?.actual_end || inputs.end_date;
+    const runReference = document.getElementById('research-run-reference');
+    if (runReference) runReference.textContent = 'Historical research · ' + actualStart + ' to ' + actualEnd + (data.metadata?.run_id ? ' · Run ' + data.metadata.run_id.slice(0, 8) : '');
+    const introduction = document.createElement('div'); introduction.className = 'takeaway research-takeaway';
+    paragraph(introduction, 'HISTORICAL RESEARCH · AFTER FULL LIQUIDATION', 'eyebrow');
+    const title = document.createElement('h2'); title.textContent = 'After-tax loss-harvesting results'; introduction.appendChild(title);
+    paragraph(introduction, actualStart + ' to ' + actualEnd + ' · Initial equity ' + money(summary.initial_cash) + ' · Benchmark ' + inputs.benchmark);
+    summaryPanel.appendChild(introduction);
+    const cards = document.createElement('div'); cards.className = 'strategy-cards research-wealth-cards';
+    card(cards, 'With harvesting', summary.terminal_wealth, 'Your selected stocks and harvesting rule', 'strategy');
+    card(cards, 'Same portfolio, no harvesting', data.no_harvest_control?.summary?.terminal_wealth, 'Same initial positions, costs and tax settings', 'control');
+    card(cards, '100% long benchmark', summary.benchmark_wealth, inputs.benchmark + ' · Same equity and outside cash flows', 'benchmark');
+    summaryPanel.appendChild(cards);
+    const metrics = document.createElement('div'); metrics.className = 'research-summary-metrics';
+    for (const [label, value, format] of [
+      ['Incremental wealth vs benchmark', summary.incremental_wealth, money],
+      ['Incremental wealth from harvesting', summary.incremental_wealth_vs_no_harvest, money],
+      ['Simple gain / initial equity (not CAGR)', summary.return_pct, percent]
+    ]) {
+      const metric = document.createElement('div'); metric.className = 'research-metric';
+      const name = document.createElement('span'); name.textContent = label;
+      const amount = document.createElement('strong'); amount.textContent = format(value); metric.append(name, amount); metrics.appendChild(metric);
     }
-    heading(result, 'Manual positions and historical prices');
-    table(result, [['Ticker', 'ticker'], ['Direction', 'side'], ['Entry shares', 'shares', value => finite(value) ? value.toLocaleString('en-US', {maximumFractionDigits: 6}) : '—'], ['Initial position value', 'initial_value', money], ['% of initial equity', 'initial_allocation_pct', percent], ['Start price', 'start_price', money], ['End price', 'end_price', money]], positions);
-    heading(result, 'Annual tax ledger');
-    table(result, [['Year', 'year'], ['ST gain', 'gain_st', money], ['LT gain', 'gain_lt', money], ['ST loss', 'loss_st', money], ['LT loss', 'loss_lt', money], ['Tax', 'tax', money], ['Loss used', 'loss_used', money], ['ST carry', 'carry_st', money], ['LT carry', 'carry_lt', money], ['Outside proceeds', 'outside_proceeds', money], ['Exit tax', 'exit_tax', money]], Array.isArray(data.annual) ? data.annual : []);
-    heading(result, 'Trade ledger');
-    const trades = Array.isArray(data.trades) ? data.trades : [];
-    table(result, [['Date', 'date'], ['Ticker', 'ticker'], ['Direction', 'side'], ['Event', 'event'], ['Shares', 'shares'], ['Price', 'price', money], ['Realized P&L', 'pnl', money], ['Tax character', 'character']], trades.slice(0, 300));
-    if (trades.length > 300) paragraph(result, 'Showing the first 300 trades. Export includes all ' + trades.length + ' trades.', 'research-table-note');
-    paragraph(result, 'Modeled tax results use simplified rules, a same-ticker cooldown and no broker margin enforcement. Complete model notes and historical data are included in the JSON export.', 'research-table-note');
-    const provenance = document.createElement('details'); const label = document.createElement('summary'); label.textContent = 'Data and reproducibility metadata';
-    const pre = document.createElement('pre'); pre.style.whiteSpace = 'pre-wrap'; pre.textContent = JSON.stringify({metadata: data.metadata, data: data.data}, null, 2); provenance.append(label, pre); result.appendChild(provenance);
+    summaryPanel.appendChild(metrics);
+    paragraph(summaryPanel, 'Historical prices, dividends, financing, trading, annual taxes and full liquidation are included. The benchmark starts 100% long; its leverage differs from your selected portfolio. The no-harvest control uses your exact initial holdings. Initial exposure targets are not continuously rebalanced.', 'research-table-note');
+    if (inputs.outside_st_gain || inputs.outside_lt_gain) paragraph(summaryPanel, 'Every curve includes the same outside gain proceeds. The simple gain ratio removes gross outside proceeds from wealth change and divides by initial equity; it is not TWR, IRR or CAGR.', 'research-warning');
+    const analysis = document.createElement('div'); analysis.className = 'research-analysis-grid';
+    const chartPanel = document.createElement('section'); chartPanel.className = 'panel research-chart-panel';
+    heading(chartPanel, 'Historical equity path');
+    curve(chartPanel, Array.isArray(data.daily) ? data.daily : [], Array.isArray(data.benchmark?.daily) ? data.benchmark.daily : [], Array.isArray(data.no_harvest_control?.daily) ? data.no_harvest_control.daily : []);
+    analysis.appendChild(chartPanel);
+    const bridge = document.createElement('section'); bridge.className = 'panel research-bridge-panel';
+    heading(bridge, 'Harvesting vs the same portfolio without harvesting');
+    table(bridge, [['Difference vs no-harvest control', 'label'], ['Amount', 'value']], [
+      ['Incremental terminal wealth', 'incremental_wealth_vs_no_harvest'],
+      ['Pre-exit capital-tax relief', 'tax_relief_before_exit_vs_no_harvest'],
+      ['Extra exit tax', 'extra_exit_tax_vs_no_harvest'],
+      ['Total modeled capital-tax saving', 'total_capital_tax_saving_vs_no_harvest'],
+      ['Extra net costs', 'extra_cost_vs_no_harvest'],
+      ['Price P&L difference', 'price_pnl_difference_vs_no_harvest']
+    ].map(([label, key]) => ({label, value: money(summary[key])})));
+    paragraph(bridge, 'Pre-exit capital-tax relief minus extra exit tax equals total modeled capital-tax saving. Terminal wealth also changes with time out of the market, dividends and costs; this difference is not pure tax alpha.', 'research-table-note');
+    analysis.appendChild(bridge); summaryPanel.appendChild(analysis);
+    const ledgerButton = document.createElement('button'); ledgerButton.type = 'button'; ledgerButton.className = 'secondary-button research-view-ledger'; ledgerButton.textContent = 'View annual tax and trade ledgers'; ledgerButton.addEventListener('click', () => showResearch('ledger')); summaryPanel.appendChild(ledgerButton);
+    paragraph(summaryPanel, 'Modeled tax results use simplified rules, a same-ticker cooldown and no broker margin enforcement. Complete model notes and historical data are included in the JSON export.', 'research-table-note');
+
+    ledgerPanel.replaceChildren(); ledgerPanel.classList.add('research-main', 'panel', 'research-ledger-panel');
+    const ledgerTitle = document.createElement('h2'); ledgerTitle.textContent = 'Historical research ledgers'; ledgerPanel.appendChild(ledgerTitle);
+    const selectorLabel = document.createElement('label'); selectorLabel.htmlFor = 'research-ledger-strategy'; selectorLabel.textContent = 'Portfolio';
+    const selector = document.createElement('select'); selector.id = 'research-ledger-strategy';
+    const choices = [['strategy', 'Harvesting strategy'], ['no_harvest_control', 'Same portfolio, no harvesting'], ['benchmark', '100% long benchmark']];
+    for (const [value, label] of choices) {
+      const option = document.createElement('option'); option.value = value; option.textContent = label; selector.appendChild(option);
+    }
+    selector.value = ledgerStrategy;
+    selector.addEventListener('change', () => { ledgerStrategy = selector.value; renderResearchLedger(); });
+    const filter = document.createElement('div'); filter.className = 'research-ledger-filter'; filter.append(selectorLabel, selector); ledgerPanel.appendChild(filter);
+    const content = document.createElement('div'); content.id = 'research-ledger-content'; ledgerPanel.appendChild(content);
+    renderResearchLedger();
     const exports = document.createElement('div'); exports.className = 'research-export-buttons';
-    const jsonButton = document.createElement('button'); jsonButton.type = 'button'; jsonButton.textContent = 'Download full research JSON';
-    jsonButton.addEventListener('click', () => download('p107-after-tax-research.json', JSON.stringify({inputs, result: data}, null, 2), 'application/json'));
-    const csvButton = document.createElement('button'); csvButton.type = 'button'; csvButton.textContent = 'Download trades CSV';
-    csvButton.addEventListener('click', () => download('p107-after-tax-trades.csv', csv(trades), 'text/csv;charset=utf-8'));
-    exports.append(jsonButton, csvButton); result.appendChild(exports); result.hidden = false;
+    const jsonButton = document.createElement('button'); jsonButton.type = 'button'; jsonButton.textContent = 'Download full research JSON'; jsonButton.dataset.researchExport = '';
+    jsonButton.addEventListener('click', downloadJson);
+    const csvButton = document.createElement('button'); csvButton.type = 'button'; csvButton.textContent = 'Download trades CSV'; csvButton.dataset.researchExport = '';
+    csvButton.addEventListener('click', () => {
+      if (!lastRun || busy || revision !== resultRevision) return;
+      const suffix = ledgerStrategy === 'strategy' ? '' : '-' + ledgerStrategy.replaceAll('_', '-');
+      download('p107-after-tax-trades' + suffix + '.csv', csv(selectedSimulation()?.trades || []), 'text/csv;charset=utf-8');
+    });
+    exports.append(jsonButton, csvButton); ledgerPanel.appendChild(exports);
+    const provenance = document.createElement('details'); provenance.className = 'research-provenance';
+    const label = document.createElement('summary'); label.textContent = 'Data and reproducibility metadata';
+    const pre = document.createElement('pre'); pre.textContent = JSON.stringify({metadata: data.metadata, data: data.data}, null, 2); provenance.append(label, pre); ledgerPanel.appendChild(provenance);
+    window.P107Results?.setResearchAvailable(true);
+    showResearch();
+    syncResultState();
   }
 
   async function run() {
@@ -306,24 +411,26 @@
     const stamp = revision;
     const previous = Array.from(section.querySelectorAll('input,select,button')).map(control => [control, control.disabled]);
     previous.forEach(([control]) => { control.disabled = true; });
-    busy = true; result.classList.add('stock-stale'); status.textContent = 'Loading historical prices and comparing after-tax wealth with harvesting, without harvesting and against your benchmark. This may take a moment…';
+    busy = true; syncResultState(); document.dispatchEvent(new CustomEvent('p107:research-busy', {detail: {busy: true}})); status.textContent = 'Loading historical prices and comparing after-tax wealth with harvesting, without harvesting and against your benchmark. This may take a moment…';
     try {
       const response = await fetch('/api/research/run', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(inputs)});
       let data;
       try { data = await response.json(); } catch (_) { throw new Error('The server returned an invalid response. Check the server log and retry.'); }
       if (!response.ok) throw new Error(data.error || 'Historical data or research calculation is unavailable.');
       if (!data.summary) throw new Error('The server response is missing the research summary.');
-      render(data, inputs);
-      result.classList.toggle('stock-stale', revision !== stamp); save();
-      status.textContent = revision === stamp ? 'After-tax research complete. Compare ending wealth, harvesting effects and the annual tax ledger below.' : 'Initial equity changed during this run. The displayed result uses the earlier input; run again to update.';
+      render(data, inputs, stamp);
+      syncResultState(); save();
+      status.textContent = revision === stamp ? 'After-tax research complete. Summary and Annual ledger on the right show this historical run.' : 'Initial equity changed during this run. The displayed result uses the earlier input; run again to update.';
     } catch (error) {
       status.textContent = error.message === 'Failed to fetch' ? 'The Python server is unavailable. Restart START-STOCK.bat or web/launch_stock.py and try again.' : error.message;
     } finally {
       previous.forEach(([control, disabled]) => { control.disabled = disabled; });
-      busy = false; updateAllocation();
+      busy = false; updateAllocation(); syncResultState(); document.dispatchEvent(new CustomEvent('p107:research-busy', {detail: {busy: false}}));
     }
   }
 
+  researchDownload?.addEventListener('click', downloadJson);
+  document.addEventListener('p107:result-mode', syncResultState);
   addButton.addEventListener('click', () => { add({side: rows().length === 1 && field(rows()[0], 'side').value === 'long' ? 'short' : 'long'}); changed(); });
   button.addEventListener('click', run);
   section.addEventListener('input', changed); section.addEventListener('change', changed);

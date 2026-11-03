@@ -10,10 +10,10 @@
   <a class="skip-link" href="#tab-summary">Skip to results</a>
   <header class="topbar">
     <a class="brand" href="#top"><span class="brand-symbol">P107</span><span>Wedmont <span class="brand-divider">/</span> Columbia<small>IEOR E4511 · PROJECT STUDY</small></span></a>
-    <div class="top-right"><span class="local-badge"><i></i> Local calculation</span><span class="stage-badge">Week 6 · Initial model</span></div>
+    <div class="top-right"><span class="local-badge"><i></i> Local calculation</span><span id="model-stage" class="stage-badge">Week 6 · Initial model</span></div>
   </header>
   <main id="top">
-    <section class="intro"><div><p class="eyebrow">LONG-SHORT DIRECT INDEXING</p><h1>After-tax strategy comparison</h1><p class="subtitle">Same starting cash. Modeled costs. Full liquidation taxes.</p></div><p class="scenario-label">Hypothetical scenarios<br><span>Independent illustrative inputs</span></p></section>
+    <section class="intro"><div><p class="eyebrow">LONG-SHORT DIRECT INDEXING</p><h1>After-tax strategy comparison</h1><p class="subtitle">Same starting cash. Modeled costs. Full liquidation taxes.</p></div><p id="analysis-label" class="scenario-label">Hypothetical scenarios<br><span>Independent illustrative inputs</span></p></section>
     <div class="workspace">
       <aside class="controls panel" aria-label="Scenario inputs">
         <div class="controls-head"><div class="section-title"><h2>Scenario inputs</h2><button id="reset" class="text-button" type="button" disabled>Reset defaults</button></div><p>Adjust the assumptions, then run the comparison.</p></div>
@@ -79,7 +79,7 @@
   <button type="button" id="stock-calculate">Run After-Tax Research</button>
   <p id="stock-status" role="status" aria-live="polite">Set your allocations and select your long and short tickers to start.</p>
   <div id="stock-result" hidden></div>
-  <p class="field-note">Custom research results appear here. The original hypothetical scenario on the right uses its own inputs. This historical model uses simplified tax rules and does not enforce broker margin requirements. Full model notes are included in the research JSON export.</p>
+  <p class="field-note">Run this research to display its results in Summary and Annual ledger on the right. Use Results source to switch back to the original illustrative scenario. This historical model uses simplified tax rules and does not enforce broker margin requirements. Full model notes are included in the research JSON export.</p>
 </details>
 
             <label for="horizon_years">Holding period</label><div class="input-wrap"><input id="horizon_years" name="horizon_years" type="number" min="1" max="10" step="1" required><span>years</span></div>
@@ -109,17 +109,24 @@
           <div class="tabs" role="tablist" aria-label="Model views">
             <button id="tab-summary" role="tab" aria-selected="true" aria-controls="view-summary" data-view="summary" tabindex="0">Summary</button>
             <button id="tab-ledger" role="tab" aria-selected="false" aria-controls="view-ledger" data-view="ledger" tabindex="-1">Annual ledger</button>
-            <button id="tab-scope" role="tab" aria-selected="false" aria-controls="view-scope" data-view="scope" tabindex="-1">Assumptions & scope</button>
+            <button id="tab-scope" role="tab" aria-selected="false" aria-controls="view-scope" data-view="scope" tabindex="-1">Scenario method</button>
           </div>
-          <button id="download" class="secondary-button" disabled aria-describedby="download-note">Download results <span aria-hidden="true">↓</span></button>
+          <div class="result-mode-control"><label for="result-mode">Results source</label><select id="result-mode"><option value="scenario">Illustrative scenario</option><option value="research" disabled>Historical stock research</option></select></div>
+          <button id="download" class="secondary-button" disabled aria-describedby="download-note">Download scenario ZIP <span aria-hidden="true">↓</span></button>
+          <button id="research-download" class="secondary-button" type="button" disabled hidden>Download research JSON <span aria-hidden="true">↓</span></button>
         </div>
+        <p id="results-mode-note" class="results-mode-note" role="status">Illustrative scenario: assumed annual returns and harvesting curves. Run After-Tax Research to show your historical portfolio here.</p>
+        <div id="research-pending" class="pending" hidden><strong>Research inputs changed.</strong> Run After-Tax Research again to update these results.</div>
         <span id="download-note" class="sr-only">A ZIP with full inputs, CSV outputs, source hashes, and instructions to reproduce this run.</span>
         <section id="results-section" aria-busy="true" aria-label="Scenario results">
+          <div id="scenario-feedback">
           <div id="error" class="error" role="alert" hidden></div>
           <div id="pending" class="pending" hidden><strong>Inputs changed.</strong> These results are from the last run. Run comparison to update.</div>
           <div id="loading" class="loading panel">Calculating returns, costs, and taxes…</div>
+          </div>
           <div id="result-content" hidden>
             <section id="view-summary" class="tab-view" role="tabpanel" aria-labelledby="tab-summary" tabindex="0">
+              <div id="scenario-summary-panel" class="scenario-result-panel">
               <div class="takeaway"><p class="eyebrow">CURRENT SCENARIO · AFTER FULL LIQUIDATION</p><h2 id="takeaway-title"></h2><p id="scenario-caption"></p></div>
               <div class="metric-heading"><h3>Terminal after-tax wealth</h3><span>USD · Rounded to whole dollars</span></div>
               <div id="strategy-cards" class="strategy-cards"></div>
@@ -128,9 +135,12 @@
                 <section class="panel chart-panel"><p class="eyebrow">OUTSIDE GAINS</p><h3>When does Core break even?</h3><div id="breakeven-number" class="threshold"></div><p id="breakeven-description" class="chart-note"></p><div id="breakeven-chart" class="svg-chart"></div><p class="axis-note">X: Annual outside gains (USD)<br>Y: Core minus Index, terminal after-tax wealth (USD)</p><details class="chart-details"><summary>Search range and limitations</summary><p id="search-note"></p></details></section>
                 <section class="panel chart-panel"><p class="eyebrow">HOLDING PERIOD</p><h3>How does time change the result?</h3><p class="chart-note">Terminal wealth relative to Index. Only the holding period changes; all other inputs stay fixed.</p><div id="horizon-table"></div><div class="callout"><strong>Tax relief today is not the final benefit.</strong><p>Harvesting losses reduces cost basis and can increase taxable gains at exit. These results include the full sale.</p></div></section>
               </div>
-              <div class="summary-footnote"><span>Returns and losses are assumptions, not observed performance.</span><button class="text-button" data-go-view="scope">Review assumptions & scope →</button></div>
+              <div class="summary-footnote"><span>Returns and losses are assumptions, not observed performance.</span><button class="text-button" data-go-view="scope">Review scenario method →</button></div>
+              </div>
+              <div id="research-summary-panel" hidden></div>
             </section>
             <section id="view-ledger" class="tab-view" role="tabpanel" aria-labelledby="tab-ledger" tabindex="0" hidden>
+              <div id="scenario-ledger-panel" class="scenario-result-panel">
               <section class="panel ledger-panel">
                 <div class="section-heading"><div><p class="eyebrow">ANNUAL LEDGER</p><h2>Follow the calculations</h2></div><span class="unit-label">All values in USD</span></div>
                 <div class="ledger-filters"><div><label for="ledger-strategy">Strategy</label><select id="ledger-strategy"><option value="core_130_30">Core 130/30</option><option value="long_only_di">Long-only DI</option><option value="index">Index</option></select></div><div><label for="ledger-view">View</label><select id="ledger-view"><option value="tax">Returns & taxes</option><option value="costs">Fees & financing</option><option value="basis">Basis & embedded gains</option></select></div></div>
@@ -139,6 +149,8 @@
                 <p class="table-hint">Download results includes every annual field for all three strategies.</p>
               </section>
               <section class="panel ledger-panel"><div class="section-heading"><div><p class="eyebrow">CUMULATIVE COMPARISON</p><h2>Costs, tax relief, and exit liability</h2></div></div><div id="tax-table" class="table-scroll" tabindex="0" role="region" aria-label="Cumulative costs and taxes"></div><p class="chart-note">Pre-exit tax relief is already reflected in the cash account; do not add it to wealth again. Incremental exit tax is the change in the final-year tax bill when the full sale is included. Unused loss carryforwards have no terminal cash value.</p></section>
+              </div>
+              <div id="research-ledger-panel" hidden></div>
             </section>
           </div>
         </section>
@@ -157,7 +169,7 @@
             </tbody></table></div>
           </section>
         </section>
-        <footer><span>P107 · Hypothetical scenario · USD</span><span id="run-reference">Full liquidation included</span></footer>
+        <footer><span id="footer-scope">P107 · Hypothetical scenario · USD</span><span id="run-reference">Full liquidation included</span><span id="research-run-reference" hidden>Historical stock research · Full liquidation included</span></footer>
       </div>
     </div>
   </main>

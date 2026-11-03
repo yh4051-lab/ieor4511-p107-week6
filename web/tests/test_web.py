@@ -7,15 +7,17 @@ import io
 import json
 from pathlib import Path
 import sys
+import tempfile
 import threading
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import server
 import launch
 import launch_stock
+from build_info import build_id
 
 
 class AdapterTests(unittest.TestCase):
@@ -33,6 +35,70 @@ class AdapterTests(unittest.TestCase):
                 self.assertAlmostEqual(actual[key], float(prior[key]), places=6)
         self.assertEqual(len(self.result['breakeven']['roots_annual_usd']), 1)
         self.assertLess(abs(self.result['breakeven']['root_residual_usd'][0]), .01)
+
+    def test_build_identity_tracks_source_assets_and_config_not_documentation(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ('p107/research.py', 'web/server.py', 'web/dist/index.html', 'configs/example.json'):
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('original')
+            baseline = build_id(root)
+            self.assertEqual(build_id(root), baseline)
+            (root / 'README.md').write_text('documentation only')
+            self.assertEqual(build_id(root), baseline)
+            for name in ('p107/research.py', 'web/server.py', 'web/dist/index.html', 'configs/example.json'):
+                with self.subTest(file=name):
+                    path = root / name
+                    path.write_text('modified')
+                    self.assertNotEqual(build_id(root), baseline)
+                    path.write_text('original')
+
+    def test_launcher_starts_on_free_default_port_and_opens_actual_url(self):
+        output = io.StringIO()
+        with patch.object(launch_stock, 'health', return_value=False), \
+             patch.object(launch_stock, '_port_available', return_value=True), \
+             patch.object(launch_stock, '_start') as start, \
+             patch.object(launch_stock.webbrowser, 'open') as browser, redirect_stdout(output):
+            actual = launch_stock.main()
+        self.assertEqual(actual, 'http://127.0.0.1:8754')
+        self.assertEqual(start.call_args.args, (actual, build_id()))
+        browser.assert_called_once_with(actual)
+        self.assertEqual(output.getvalue(), 'Ready: ' + actual + '\n')
+
+    def test_launcher_skips_old_build_without_stopping_its_process(self):
+        output = io.StringIO()
+        with patch.object(launch_stock, 'health', side_effect=[RuntimeError('different build'), False]), \
+             patch.object(launch_stock, '_port_available', return_value=True), \
+             patch.object(launch_stock, '_start') as start, \
+             patch.object(launch_stock.webbrowser, 'open') as browser, redirect_stdout(output):
+            actual = launch_stock.main()
+        self.assertEqual(actual, 'http://127.0.0.1:8755')
+        self.assertEqual(start.call_args.args[0], actual)
+        browser.assert_called_once_with(actual)
+        self.assertEqual(output.getvalue(), 'Ready: ' + actual + '\n')
+
+    def test_explicit_occupied_port_is_not_silently_changed(self):
+        with patch.object(launch_stock, 'health', side_effect=RuntimeError('different build')), \
+             patch.object(launch_stock, '_start') as start:
+            with self.assertRaisesRegex(RuntimeError, 'different build'):
+                launch_stock.main(no_browser=True, port=8754)
+        start.assert_not_called()
+
+    def test_child_start_uses_selected_port_and_waits_for_matching_health(self):
+        child = Mock(pid=12345)
+        child.poll.return_value = None
+        with tempfile.TemporaryDirectory() as folder, patch.object(launch_stock, 'ROOT', Path(folder)), \
+             patch.object(launch_stock.subprocess, 'Popen', return_value=child) as spawn, \
+             patch.object(launch_stock, 'health', side_effect=[False, True]) as health, \
+             patch.object(launch_stock.time, 'sleep'):
+            launch_stock._start('http://127.0.0.1:8761', 'expected-build')
+            command = spawn.call_args.args[0]
+            self.assertEqual(command[-2:], ['--port', '8761'])
+            self.assertEqual((Path(folder) / 'stock.pid').read_text(), '12345')
+            self.assertEqual(health.call_count, 2)
+            health.assert_called_with('http://127.0.0.1:8761', 'expected-build')
+        child.terminate.assert_not_called()
 
     def test_no_outside_gains_reverses_core_comparison(self):
         inputs = server.defaults()
@@ -184,6 +250,17 @@ class HttpTests(unittest.TestCase):
                 opener.return_value.open.return_value = prior
                 with self.assertRaisesRegex(RuntimeError, 'older or unrelated'):
                     launcher.health()
+
+    def test_launcher_rejects_integrated_server_with_missing_or_different_build(self):
+        for saved_build in (None, 'previous-build'):
+            payload = dict(app=server.APP_ID, features=['integrated_research_v2'])
+            if saved_build is not None:
+                payload['build_id'] = saved_build
+            prior = io.BytesIO(json.dumps(payload).encode())
+            with self.subTest(build=saved_build), patch.object(launch_stock, 'build_opener') as opener:
+                opener.return_value.open.return_value = prior
+                with self.assertRaisesRegex(RuntimeError, 'different application build'):
+                    launch_stock.health()
 
     def test_original_launcher_uses_integrated_server_and_honors_no_browser(self):
         url = f'http://127.0.0.1:{self.server.server_port}'

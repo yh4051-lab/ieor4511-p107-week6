@@ -1,20 +1,24 @@
 # Custom Stock Research — After-Tax Loss Harvesting
 
 The English research interface is embedded in **Portfolio**, immediately below
-Starting cash. Expand **Custom Stock Research — After-Tax Loss Harvesting**. It is independent
-of the original hypothetical scenario on the right.
+Starting cash. Expand **Custom Stock Research — After-Tax Loss Harvesting** to
+enter the complete historical research configuration. After a successful run,
+the results appear in the main **Summary** and **Annual ledger** on the right.
+The original illustrative scenario remains available through **Results source**.
 
 ## Start on Windows
 
 1. Install Python 3.12 (recommended) with Python Launcher.
 2. Extract the complete ZIP into a **new folder**. Keep your old project.
 3. Double-click `START-STOCK.bat`. The first run installs `requirements-stock.txt`.
-4. The launcher opens your local browser at **http://127.0.0.1:8754**.
+4. The launcher opens the current build in your local browser. Its preferred URL
+   is **http://127.0.0.1:8754**; use the actual URL printed by the launcher.
 5. Enter your initial equity, manual tickers, Long/Short directions, allocation,
    start/end dates and benchmark. Review costs, tax rates and harvesting rules,
-   then click **Run After-Tax Research**.
+   then click **Run After-Tax Research**. The right-side **Summary** automatically
+   switches to this historical run; use **Annual ledger** to inspect its records.
 
-Both terminal commands below open the same integrated interface on port 8754:
+Both terminal commands below open the same integrated interface:
 
 ```text
 py -3.12 web/launch.py
@@ -23,9 +27,11 @@ py -3.12 web/launch_stock.py
 
 Run either command, not both. If you skip `START-STOCK.bat`, install historical-data dependencies first with `py -3.12 -m pip install -r requirements-stock.txt`. The original illustrative model needs no extra packages.
 
-If port 8754 is occupied by an older version, close its server first. The launcher
-will not silently reuse an incompatible server or kill another process. An
-alternative foreground command from the project root is:
+The launcher reuses a server only when its build fingerprint matches the current
+source, interface and configuration. If port 8754 is occupied by an older build
+or another app, it tries ports 8755 through 8764 and prints/opens the chosen URL.
+It does not stop other processes. An alternative foreground command from the
+project root is:
 
 ```text
 py -3.12 web/server.py --port 8755
@@ -54,6 +60,31 @@ changes its market risk, so a positive difference versus the benchmark is not by
 itself a measure of risk-adjusted alpha. The no-harvest control uses exactly the
 same starting positions as the harvesting strategy and helps isolate the effect
 of the harvesting rule.
+
+## Read the right-side results
+
+**Run After-Tax Research** runs the historical engine and automatically selects
+**Historical stock research** in **Results source**. It does not run or overwrite
+the original hypothetical scenario.
+
+| Control or view | Historical research behavior |
+|---|---|
+| **Summary** | Three after-tax wealth cards (harvesting, same portfolio without harvesting and 100% long benchmark), differences, simple gain ratio, three equity curves and harvesting tax/cost bridge. |
+| **Annual ledger** | Select harvesting strategy, no-harvest control or benchmark; inspect annual taxes, trades, accounting/exposure, costs and initial holdings/prices. |
+| **Results source** | Switch between the most recently completed historical run and illustrative scenario without fetching or rerunning either model. Switching preserves Summary or Annual ledger. |
+| **View research results** | Compact sidebar button that returns to the historical Summary. |
+| **Download research JSON** | Main toolbar download for the full historical run. |
+| **Download trades CSV** | Historical Annual ledger export for the currently selected portfolio. |
+| **Scenario method** | Explains only the original illustrative model and selects that result source. |
+
+**Run comparison** selects and calculates the original illustrative scenario.
+Its break-even graph and 1/3/5/10-year sensitivity table remain exclusive to that
+source; they are not relabeled as historical findings. Each model keeps its own
+inputs and results. Only Starting cash is shared. Changing shared equity marks
+both results stale; other model-specific edits mark only their own results stale.
+Stale historical results are visibly marked and cannot be exported until rerun.
+Completed results remain available while the page is open; session storage
+restores input drafts, not the completed research dataset after a page reload.
 
 ## Choose your initial allocation
 
@@ -169,8 +200,12 @@ can make the client worse off despite producing more realized losses.
 
 ## Export and reproduce
 
-The UI exports full JSON (inputs, nominal prices, actions, hashes, equity paths,
-annual tax ledgers, trades, control runs, resolved allocations and assumptions) and trades CSV.
+The **Download research JSON** toolbar button and **Download full research JSON**
+in the historical Annual ledger export inputs, nominal prices, actions, hashes,
+equity paths, annual tax ledgers, trades, control runs, resolved allocations and
+assumptions. **Download trades CSV** exports the currently selected portfolio
+(strategy, no-harvest control or benchmark). The original scenario has its own
+**Download scenario ZIP** button when that result source is selected.
 
 Replay a downloaded JSON without network access:
 

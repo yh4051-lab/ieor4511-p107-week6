@@ -1,0 +1,120 @@
+{
+  "verified_at_utc": "2026-11-03T19:21:33+00:00",
+  "request": "Run After-Tax Research displays its results in the main Summary and Annual ledger.",
+  "build_id": "807646893d606f1124c68b091c4c855f9a4cc4b436d55f066bef8fe4b40c0559",
+  "web_tests_passed": 23,
+  "browser_regression": {
+    "research_data": "Saved Yahoo run; original scenario API uses local backend.",
+    "passed": [
+      "Successful research automatically selects right-side historical Summary",
+      "Three wealth cards, three curves, harvesting attribution bridge",
+      "Annual ledger selects harvesting, no-harvest control or benchmark",
+      "Failed first research run retains original scenario; successful retry works",
+      "Cached result-source switching preserves Summary/Annual ledger without network requests",
+      "Model-specific edits mark only their own results stale; starting equity marks both",
+      "Mode-aware JSON/ZIP and selected-portfolio CSV exports; stale research exports disabled",
+      "Original Run comparison returns to illustrative scenario",
+      "Compact sidebar result link; main results outside input sidebar",
+      "390px mobile layout without page overflow; no JavaScript errors"
+    ]
+  },
+  "live_yahoo_browser": {
+    "inputs": {
+      "level": 3,
+      "initial_cash": 1000000,
+      "allocation_mode": "target_exposure",
+      "long_exposure_pct": 130,
+      "short_exposure_pct": 30,
+      "start_date": "2020-01-02",
+      "end_date": "2021-03-31",
+      "benchmark": "SPY",
+      "positions": [
+        {
+          "ticker": "AAPL",
+          "side": "long",
+          "weight": 1
+        },
+        {
+          "ticker": "MSFT",
+          "side": "short",
+          "weight": 1
+        }
+      ],
+      "financing_pct": 5,
+      "borrow_pct": 1,
+      "rebate_pct": 0,
+      "manager_pct": 0,
+      "transaction_pct": 0.05,
+      "tax_st_pct": 40,
+      "tax_lt_pct": 20,
+      "dividend_tax_pct": 20,
+      "outside_st_gain": 100000,
+      "outside_lt_gain": 0,
+      "harvest_threshold_pct": 5,
+      "cooldown_days": 30
+    },
+    "summary": {
+      "initial_cash": 1000000,
+      "terminal_wealth": 1722184.399039699,
+      "return_pct": 52.2184399039699,
+      "price_pnl": 720154.3797617974,
+      "dividend_cash": 15624.430776492081,
+      "dividend_tax": 3505.9097006879483,
+      "costs": 26057.625845544146,
+      "cost_breakdown": {
+        "financing": 17863.420874935728,
+        "borrow": 2694.8163981868097,
+        "management": 0,
+        "trading": 5499.388572421604,
+        "rebate": 0
+      },
+      "rebate_tax": 0,
+      "capital_tax": 184030.87595235975,
+      "capital_tax_before_exit": 0,
+      "exit_tax": 184030.87595235975,
+      "harvested_loss": 279091.6483307484,
+      "loss_used": 291755.0756475346,
+      "remaining_carry_st": 0,
+      "remaining_carry_lt": 0,
+      "initial_net_exposure": 0.9999999999999998,
+      "initial_gross_exposure": 1.5999999999999999,
+      "unrealized_before_exit": 999246.028092547,
+      "outside_gross_proceeds": 200000,
+      "wealth_identity_error": -1.3969838619232178e-09,
+      "benchmark_wealth": 1312017.8823489344,
+      "incremental_wealth": 410166.5166907646,
+      "incremental_wealth_vs_no_harvest": 58679.64619157347,
+      "tax_relief_before_exit_vs_no_harvest": 80000,
+      "extra_exit_tax_vs_no_harvest": 69143.47257937878,
+      "total_capital_tax_saving_vs_no_harvest": 10856.52742062122,
+      "extra_cost_vs_no_harvest": 938.6969641027135,
+      "price_pnl_difference_vs_no_harvest": 45717.36289689387
+    },
+    "data_sha256": "b74843179c3de515748ff7faf5ca669c6ca15b4b34da4f9f3463dab6b58344e1",
+    "passed": [
+      "Actual research click and API result populate right Summary",
+      "All three historical portfolios available in Annual ledger",
+      "JSON export matches live response and reproduces exactly offline"
+    ]
+  },
+  "launcher_smoke": {
+    "passed": [
+      "Actual stale-build HTTP service skipped without terminating it",
+      "Current build started on next available port and served main research panels",
+      "Second launch reused current build without starting another process"
+    ],
+    "windows_batch_execution": "Not executed on Windows; Python launch paths exercised."
+  },
+  "financial_engine_changed": false,
+  "source_sha256": {
+    "web/dist/index.html": "51bd9c6d1ed3b4cfbb10a49da8ed92092f12bd37d0740dcadf5182b4687ab606",
+    "web/dist/app.js": "d7f6a86d278275f4cc3a3a10fed2857f0581ef9bb43c414ad1e9c2e7ede4926e",
+    "web/dist/portfolio.js": "55012c6d17a831d2fb904fd0577f0dfd20ed6d8ae80a65ad5addbd2d45c9fee8",
+    "web/dist/portfolio.css": "4a43b8b8e0548b8767f6fcf141c565ef64a710f28c736e3a1b74657fca3f22cf",
+    "web/build_info.py": "88017fe6bdf129c446d573705924e2b9fe1793e5b29d159d4bd08f906f3c3811",
+    "web/server.py": "7e22df1abdcf361172e1c29d860f7971797187e004ad98b450a1f4781e33d7ad",
+    "web/launch.py": "133e962c2f31c2874d0106694029098ac6f1c85268d856afaa95e81517d7bd7d",
+    "web/launch_stock.py": "b493cb24d0f30aa22f909e895a7219ec4ea307981d716dac61c14222de256589",
+    "web/tests/test_web.py": "acc63255c1060a180c29fad29319b313a315b28ab95ff81577e436a74280b428"
+  }
+}

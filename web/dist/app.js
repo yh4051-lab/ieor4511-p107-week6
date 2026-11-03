@@ -9,9 +9,56 @@ const number = value => new Intl.NumberFormat('en-US', {maximumFractionDigits:0}
 const signed = value => Math.abs(value)<.5 ? '$0' : (value >= 0 ? '+' : '−') + money(Math.abs(value));
 const direction = value => value >= 0 ? 'positive' : 'negative';
 let defaultInputs, lastResult, busy = false, dirty = false;
+let resultMode = 'scenario', researchAvailable = false, researchBusy = false;
 const draftKey = 'p107-public-inputs-v1';
 
+function applyResultMode(mode) {
+  resultMode = mode === 'research' && researchAvailable ? 'research' : 'scenario';
+  const research = resultMode === 'research';
+  $('result-mode').value = resultMode;
+  $('scenario-summary-panel').hidden = research;
+  $('scenario-ledger-panel').hidden = research;
+  $('research-summary-panel').hidden = !research;
+  $('research-ledger-panel').hidden = !research;
+  $('scenario-feedback').hidden = research;
+  $('download').hidden = research;
+  $('research-download').hidden = !research;
+  $('run-reference').hidden = research;
+  $('research-run-reference').hidden = !research;
+  $('results-mode-note').textContent = research
+    ? 'Historical stock research: your selected stocks, actual historical prices, modeled costs, harvesting and full-liquidation taxes. Compare harvesting, the same portfolio without harvesting and a 100% long benchmark.'
+    : 'Illustrative scenario: assumed annual returns and harvesting curves. These results use the original scenario inputs, independently of your selected stocks.';
+  $('analysis-label').innerHTML = research
+    ? 'Historical stock research<br><span>Manually selected US positions</span>'
+    : 'Hypothetical scenarios<br><span>Independent illustrative inputs</span>';
+  $('model-stage').textContent = research ? 'Historical research' : 'Week 6 · Initial model';
+  $('footer-scope').textContent = research ? 'P107 · Historical research · USD' : 'P107 · Hypothetical scenario · USD';
+  $('results-section').setAttribute('aria-busy', String(research ? researchBusy : busy));
+  document.dispatchEvent(new CustomEvent('p107:result-mode', {detail: {mode: resultMode}}));
+}
+
+function setScenarioStale(value) {
+  for (const id of ['scenario-summary-panel', 'scenario-ledger-panel']) $(id).classList.toggle('is-stale', value);
+}
+
+window.P107Results = {
+  currentMode: () => resultMode,
+  setResearchAvailable(value) {
+    researchAvailable = Boolean(value);
+    $('result-mode').querySelector('option[value="research"]').disabled = !researchAvailable;
+    if (!researchAvailable && resultMode === 'research') applyResultMode('scenario');
+  },
+  show(mode, view = 'summary') {
+    if (mode === 'research' && !researchAvailable) return false;
+    applyResultMode(mode);
+    if (resultMode === 'research' || lastResult) $('result-content').hidden = false;
+    setView(view);
+    return true;
+  }
+};
+
 function setView(view, focus = false) {
+  if (view === 'scope' && resultMode !== 'scenario') applyResultMode('scenario');
   document.querySelectorAll('[role="tab"]').forEach(tab => {
     const selected = tab.dataset.view === view;
     tab.setAttribute('aria-selected', String(selected));
@@ -65,7 +112,7 @@ function markDirty() {
   const values = readInputs();
   dirty = !lastResult || Object.keys(defaultInputs).some(key => values[key] !== lastResult.inputs[key]);
   $('pending').hidden = !dirty || !lastResult;
-  $('results-section').classList.toggle('is-stale', dirty);
+  setScenarioStale(dirty);
   $('download').disabled = dirty || !lastResult;
   $('status').textContent = dirty ? 'Inputs changed. Run comparison to update.' : 'Results match the current inputs.';
   saveDraft();
@@ -73,12 +120,13 @@ function markDirty() {
 function setBusy(value) {
   busy = value;
   $('input-fields').disabled = value;
-  $('run').disabled = value;
-  $('reset').disabled = value;
-  $('example-picker').disabled = value;
+  $('run').disabled = value || researchBusy;
+  $('reset').disabled = value || researchBusy;
+  $('example-picker').disabled = value || researchBusy;
+  $('initial_cash').disabled = researchBusy;
   $('download').disabled = value || !lastResult || dirty;
   $('run').textContent = value ? 'Calculating…' : 'Run comparison →';
-  $('results-section').setAttribute('aria-busy', String(value));
+  $('results-section').setAttribute('aria-busy', String(resultMode === 'research' ? researchBusy : value));
 }
 
 function renderChart(data) {
@@ -174,8 +222,8 @@ function render(data) {
 }
 
 async function run() {
-  if(busy || !inputsValid()) return;
-  setView('summary');
+  if(busy || researchBusy || !inputsValid()) return;
+  window.P107Results.show('scenario', 'summary');
   $('error').hidden=true;
   setBusy(true);
   $('status').textContent='Calculating returns, costs, loss offsets, and exit taxes…';
@@ -186,7 +234,7 @@ async function run() {
     render(data);
     dirty=false;
     $('pending').hidden=true;
-    $('results-section').classList.remove('is-stale');
+    setScenarioStale(false);
     $('status').textContent='Updated · Results reflect the current inputs';
     saveDraft();
   } catch(error) {
@@ -199,6 +247,18 @@ async function run() {
 }
 
 form.addEventListener('submit',event=>{event.preventDefault();run();});
+$('result-mode').addEventListener('change', event => {
+  const currentView = document.querySelector('[role="tab"][aria-selected="true"]')?.dataset.view || 'summary';
+  window.P107Results.show(event.target.value, currentView === 'scope' ? 'summary' : currentView);
+});
+document.addEventListener('p107:research-busy', event => {
+  researchBusy = Boolean(event.detail?.busy);
+  $('run').disabled = busy || researchBusy;
+  $('reset').disabled = busy || researchBusy;
+  $('example-picker').disabled = busy || researchBusy;
+  $('initial_cash').disabled = researchBusy;
+  $('results-section').setAttribute('aria-busy', String(resultMode === 'research' ? researchBusy : busy));
+});
 form.addEventListener('input',event=>{if(event.target.id!=='example-picker' && !event.target.closest('#stock-experiment'))markDirty();});
 form.addEventListener('change',event=>{if(event.target.id!=='example-picker' && !event.target.closest('#stock-experiment'))markDirty();});
 function loadExample(value) {

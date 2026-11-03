@@ -26,7 +26,10 @@ from p107.market_data import get_quote, normalize_ticker
 from p107.portfolio import calculate_portfolio
 from p107.research import run_research
 
+from build_info import build_id
+
 APP_ID = 'p107-public-interface-v1'
+BUILD_ID = build_id()
 BASE = json.loads((MODEL_ROOT / 'configs/example_hypothetical.json').read_text(encoding='utf-8'))
 CORE = next(s for s in BASE['strategies'] if s['name'] == 'core_130_30')
 FIELDS = {
@@ -201,7 +204,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         path = urlsplit(self.path).path
         if path == '/api/health':
-            self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__, 'features': ['stock_portfolio', 'three_level_research', 'integrated_research_v2']}))
+            self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__, 'build_id': BUILD_ID, 'features': ['stock_portfolio', 'three_level_research', 'integrated_research_v2']}))
         elif path == '/api/defaults':
             self.send(200, json_bytes({'inputs': defaults()}))
         elif path in ('/', '/app.js', '/style.css', '/portfolio.js', '/portfolio.css'):

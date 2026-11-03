@@ -1,3 +1,52 @@
 .stock-experiment{margin:18px 0;padding:12px;border:1px solid #cad6e6;border-radius:8px;background:#f7faff}.stock-experiment summary{font-weight:600;cursor:pointer;color:#294d83}.stock-experiment>label{display:block;margin-top:10px}.stock-experiment input,.stock-experiment select{width:100%;box-sizing:border-box}.stock-position{padding:12px 0;border-bottom:1px solid #d6deea}.stock-position label{display:block;margin-top:8px}.stock-costs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stock-costs label{font-size:12px}.stock-experiment .research-group{min-width:0;margin:14px 0;padding:10px;border:1px solid #d4dfed;border-radius:6px}.research-group legend{font-size:12px;font-weight:600;color:#35527a}.research-group[hidden]{display:none}.research-description{margin:10px 0;padding:10px;border-left:3px solid #315792;background:#eaf1fb;font-size:12px;line-height:1.65}.research-description strong{display:block;margin-bottom:5px}#stock-result{font-size:12px;line-height:1.7;overflow-wrap:anywhere}#stock-status{font-size:12px;line-height:1.6}.stock-experiment button{margin:8px 0;padding:8px;border:1px solid #b3c6df;border-radius:5px;background:white;color:#234a85;cursor:pointer}.stock-experiment button:disabled{cursor:wait;opacity:.55}.stock-stale{opacity:.65}#stock-calculate{background:#315792;color:white;width:100%}.research-metric{margin:7px 0;padding:7px 0;border-bottom:1px solid #dbe4ef}.research-metric span{display:block;color:#536783;font-size:11px}.research-metric strong{font-size:17px;color:#213b5b;font-variant-numeric:tabular-nums}.research-result-heading{margin:18px 0 8px;font-size:14px;color:#243f61}.research-scroll{max-width:100%;overflow:auto;max-height:270px;margin:8px 0}.research-scroll table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:11px}.research-scroll th,.research-scroll td{padding:6px;text-align:left;border-bottom:1px solid #dbe4ef}.research-scroll th{position:sticky;top:0;background:#eef4fc}.research-curve{width:100%;height:auto;background:white;border:1px solid #dbe4ef;border-radius:5px}.research-legend{font-size:11px;color:#536783}.research-export-buttons{display:flex;gap:6px;flex-wrap:wrap}.research-table-note{font-size:11px;color:#536783}.research-warning{border-left:3px solid #b77b28;padding:8px;background:#fff7e9}.research-empty{color:#62748f}
 
 .stock-position label[hidden],#research-exposure-fields[hidden]{display:none}.stock-position .field-note{display:block;font-weight:400;line-height:1.6}#research-allocation-summary{font-variant-numeric:tabular-nums}
+
+/* Historical research shares the main Summary and Annual ledger workspace. */
+.results-toolbar{flex-wrap:wrap;align-items:flex-end}
+.result-mode-control{min-width:180px;max-width:300px;flex:1 1 210px;margin-bottom:8px}
+.result-mode-control label{margin:0 0 4px;font-size:11px;color:#536783}
+.result-mode-control select{width:100%;min-width:0;font-size:12px;padding:7px 9px}
+.results-mode-note{margin:0 0 16px;font-size:12px;line-height:1.7;color:#536783}
+.scenario-result-panel.is-stale{opacity:.55}
+.research-main{min-width:0;font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+.research-takeaway .eyebrow{color:#315792}
+.research-wealth-cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));margin-bottom:14px}
+.research-wealth-card{border-top:3px solid #315792;padding:18px;min-width:0}
+.research-wealth-card .card-name{margin:0;font-size:13px;font-weight:600}
+.research-wealth-card .card-desc{margin:5px 0 16px;min-height:32px;font-size:11px}
+.research-wealth-card .wealth-value{margin:0;font-size:clamp(21px,2.1vw,28px);letter-spacing:-.6px;font-variant-numeric:tabular-nums;line-height:1.4}
+.research-card-strategy{border-top-color:#315792;background:#f7faff}
+.research-card-control{border-top-color:#16796c;background:#f4faf8}
+.research-card-benchmark{border-top-color:#6c7788}
+.research-summary-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:14px;margin:15px 0}
+.research-summary-metrics .research-metric{padding:12px;border:1px solid #dbe4ef;border-radius:6px;background:#fff;margin:0}
+.research-summary-metrics .research-metric span{font-size:11px;min-height:36px}
+.research-summary-metrics .research-metric strong{display:block;font-size:20px}
+.research-analysis-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:18px;margin:20px 0}
+.research-chart-panel,.research-bridge-panel{min-width:0;padding:18px}
+.research-main .research-result-heading{font-size:15px;margin:24px 0 10px}
+.research-chart-panel>.research-result-heading,.research-bridge-panel>.research-result-heading{margin-top:0}
+.research-main .research-scroll{max-height:350px;margin:10px 0 20px;border:1px solid #e0e7ef;border-radius:5px;scrollbar-width:thin}
+.research-main .research-scroll table{font-size:12px}
+.research-main .research-scroll th,.research-main .research-scroll td{padding:9px 10px}
+.research-bridge-panel .research-scroll{max-height:none}
+.research-bridge-panel .research-scroll table{white-space:normal}
+.research-bridge-panel .research-scroll td:last-child,.research-bridge-panel .research-scroll th:last-child{white-space:nowrap;text-align:right}
+.research-main .research-table-note,.research-main .research-legend{font-size:12px;line-height:1.8}
+.research-main .research-warning{font-size:12px;margin:14px 0}
+.research-main .research-curve{display:block}
+.research-main .research-legend{margin:8px 0}
+.research-ledger-panel{padding:22px}
+.research-ledger-filter{max-width:340px;margin:16px 0 20px}
+.research-ledger-filter label{font-size:12px;margin:0 0 6px}
+.research-ledger-filter select{font-size:13px}
+.research-main .research-export-buttons{margin:20px 0;gap:10px}
+.research-main .research-export-buttons button{padding:9px 13px;border:1px solid #b3c6df;border-radius:6px;background:#fff;color:#234a85;font-size:12px}
+.research-main .research-export-buttons button:disabled{opacity:.45;cursor:not-allowed}
+.research-provenance{margin-top:20px;border-top:1px solid #dbe4ef;padding-top:14px}
+.research-provenance summary{font-size:12px;color:#315792}
+.research-provenance pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto;background:#f7faff;padding:12px;font-size:11px;line-height:1.6}
+.research-view-ledger{margin:20px 0 12px}
+@media(max-width:1100px){.research-analysis-grid{grid-template-columns:1fr}}
+@media(max-width:800px){.results-toolbar{position:static;gap:10px}.result-mode-control{flex:1 1 100%;max-width:none}.research-ledger-panel{padding:16px}.research-summary-metrics{gap:9px}.research-main .research-scroll th,.research-main .research-scroll td{padding:8px}.research-chart-panel,.research-bridge-panel{padding:15px}.research-wealth-card .wealth-value{font-size:25px}}
