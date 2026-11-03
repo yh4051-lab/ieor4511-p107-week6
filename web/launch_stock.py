@@ -13,9 +13,9 @@ ROOT = Path(__file__).resolve().parent
 URL = 'http://127.0.0.1:8754'
 
 
-def health():
+def health(url=None):
     try:
-        with build_opener(ProxyHandler({})).open(URL + '/api/health', timeout=1) as response:
+        with build_opener(ProxyHandler({})).open((url or URL) + '/api/health', timeout=1) as response:
             data = json.load(response)
     except HTTPError as error:
         raise RuntimeError('Port 8754 is in use. Close its old server or use web/server.py with another port.') from error

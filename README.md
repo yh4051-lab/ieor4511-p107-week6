@@ -10,13 +10,13 @@ This is our initial Python model comparing a $1 million cash investment in an in
 
 ## Run the browser interface
 
-Download this repository using **Code > Download ZIP**, extract it, and open a terminal in its folder. With Python 3.12 installed, run:
+Download this repository using **Code > Download ZIP** and extract it into a new folder. On Windows with Python 3.12, double-click **START-STOCK.bat** to install the historical-data dependency and open the complete interface. To start from a terminal in the project folder, run:
 
 ```text
 python web/launch.py
 ```
 
-On Windows, `py -3.12 web/launch.py` also works. On macOS or Linux, use `python3` if needed. The interface opens locally at `http://127.0.0.1:8751`. Change the assumptions and click **Run comparison**. The engine and browser interface need no extra packages.
+On Windows, use `py -3.12 web/launch.py` or `py -3.12 web/launch_stock.py`; both now open the same integrated interface at **http://127.0.0.1:8754**. On macOS or Linux, use `python3` if needed. The original illustrative scenario uses only the standard library. Historical stock research requires `python -m pip install -r requirements-stock.txt`, which `START-STOCK.bat` runs automatically. Expand **Portfolio → Custom Stock Research — After-Tax Loss Harvesting** to configure historical positions; use **Run comparison** for the separate original illustrative scenario.
 
 Use **Summary** for wealth and break-even comparisons, **Annual ledger** for costs and tax calculations, and **Assumptions & scope** for current coverage. **Download results** saves the effective inputs and outputs. This is a local Python application; GitHub does not host its running interface.
 

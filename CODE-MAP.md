@@ -20,7 +20,7 @@
 | `tests/test_research.py` | New | Independent controls: target 130/30 and higher exposure, per-leg weights, manual-share compatibility, leverage, taxes, dividends, rebate tax, next-close execution, cooldown, carryforwards, insolvency and no-free-tax-alpha. |
 | `web/tests/test_web.py` | Extended | Original tests retained; new APIs validated with deterministic fixtures and foreign-origin rejection. |
 | `requirements-stock.txt` | Added | Optional `yfinance==1.7.0`; original scenario still uses standard library. |
-| `web/launch_stock.py` / `START-STOCK.bat` | Added/updated | Install optional dependencies, start/reuse only compatible research server on port 8754, and open the browser. |
+| `web/launch.py` / `web/launch_stock.py` / `START-STOCK.bat` | Updated | Both Python launchers open the same compatible integrated research server on port 8754; the Windows batch entry also installs historical-data dependencies. |
 
 No database, brokerage account or automatic trade execution is required. No
 GitHub push or external deployment is performed by this bundle.

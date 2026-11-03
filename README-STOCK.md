@@ -9,17 +9,26 @@ of the original hypothetical scenario on the right.
 1. Install Python 3.12 (recommended) with Python Launcher.
 2. Extract the complete ZIP into a **new folder**. Keep your old project.
 3. Double-click `START-STOCK.bat`. The first run installs `requirements-stock.txt`.
-4. The launcher opens your local browser on port 8754.
+4. The launcher opens your local browser at **http://127.0.0.1:8754**.
 5. Enter your initial equity, manual tickers, Long/Short directions, allocation,
    start/end dates and benchmark. Review costs, tax rates and harvesting rules,
    then click **Run After-Tax Research**.
+
+Both terminal commands below open the same integrated interface on port 8754:
+
+```text
+py -3.12 web/launch.py
+py -3.12 web/launch_stock.py
+```
+
+Run either command, not both. If you skip `START-STOCK.bat`, install historical-data dependencies first with `py -3.12 -m pip install -r requirements-stock.txt`. The original illustrative model needs no extra packages.
 
 If port 8754 is occupied by an older version, close its server first. The launcher
 will not silently reuse an incompatible server or kill another process. An
 alternative foreground command from the project root is:
 
 ```text
-py -3 web/server.py --port 8755
+py -3.12 web/server.py --port 8755
 ```
 
 Then open `http://127.0.0.1:8755` on your own computer. Logs for the background

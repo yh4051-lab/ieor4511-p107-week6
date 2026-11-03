@@ -1,0 +1,18 @@
+{
+  "verified_at_utc": "2026-11-03T18:57:55+00:00",
+  "problem": "Original launch.py reused an older app on port8751 based only on its app ID.",
+  "result": "Both launch.py and launch_stock.py open the integrated research interface on port8754 and require integrated_research_v2.",
+  "web_tests_passed": 17,
+  "regression_checks": [
+    "Both health helpers reject a prior research server lacking the integrated feature marker.",
+    "Original entry reuses the current integrated server; browser and --no-browser behavior verified.",
+    "Actual command python web/launch.py --no-browser returned Ready:http://127.0.0.1:8754.",
+    "HTTP health and HTML confirmed integrated research title, adjustableallocation inputs and no research-level selector."
+  ],
+  "windows_batch_execution": "Not executed on Windows; both Python entry points verified with Python3.12.",
+  "source_sha256": {
+    "web/launch.py": "e20d91ef6ede86cb4526cb4396408aa6aa6efb1a24e6d37718180297fc6db9fd",
+    "web/launch_stock.py": "753d328141bd3acfbb2538834168e6377d67df136f8178a3605540d1eb539a71",
+    "web/tests/test_web.py": "9fd534aed6aa2635e4dbb8fc41212c6bdbb2ca593ba0324ef4699cd2f2bc810b"
+  }
+}

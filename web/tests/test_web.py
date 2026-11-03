@@ -1,5 +1,6 @@
 import csv
 from copy import deepcopy
+from contextlib import redirect_stdout
 import hashlib
 import http.client
 import io
@@ -177,11 +178,28 @@ class HttpTests(unittest.TestCase):
             self.assertTrue(launch_stock.health())
 
     def test_stock_launcher_rejects_prior_research_server(self):
-        prior = io.BytesIO(json.dumps({'app': server.APP_ID, 'features': ['three_level_research']}).encode())
-        with patch.object(launch_stock, 'build_opener') as opener:
-            opener.return_value.open.return_value = prior
-            with self.assertRaisesRegex(RuntimeError, 'older or unrelated'):
-                launch_stock.health()
+        for launcher in (launch, launch_stock):
+            prior = io.BytesIO(json.dumps({'app': server.APP_ID, 'features': ['three_level_research']}).encode())
+            with self.subTest(launcher=launcher.__name__), patch.object(launch_stock, 'build_opener') as opener:
+                opener.return_value.open.return_value = prior
+                with self.assertRaisesRegex(RuntimeError, 'older or unrelated'):
+                    launcher.health()
+
+    def test_original_launcher_uses_integrated_server_and_honors_no_browser(self):
+        url = f'http://127.0.0.1:{self.server.server_port}'
+        for no_browser in (False, True):
+            output = io.StringIO()
+            with self.subTest(no_browser=no_browser), patch.object(launch_stock, 'URL', url), \
+                 patch.object(launch_stock.subprocess, 'Popen') as spawn, \
+                 patch.object(launch_stock.webbrowser, 'open') as browser, redirect_stdout(output):
+                launch.main(no_browser=no_browser)
+                spawn.assert_not_called()
+                if no_browser:
+                    browser.assert_not_called()
+                else:
+                    browser.assert_called_once_with(url)
+            self.assertEqual(output.getvalue(), 'Ready: ' + url + '\n')
+        self.assertEqual(launch.URL, 'http://127.0.0.1:8754')
 
     def test_portfolio_bad_requests(self):
         headers = {'Content-Type': 'application/json'}
