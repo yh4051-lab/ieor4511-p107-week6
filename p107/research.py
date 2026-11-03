@@ -1,6 +1,7 @@
-"""Three research levels sharing historical prices and an explicit equity ledger.
+"""Integrated after-tax harvesting research with an explicit equity ledger.
 
 This is a transparent educational tax model, not a complete US tax return.
+Legacy price-only and no-harvest API levels remain available for saved runs.
 """
 from copy import deepcopy
 from datetime import date
@@ -32,6 +33,14 @@ def _config(inputs):
         raise ValueError('Choose an increasing date range of at most ten years.')
     c['initial_cash'] = _number(c.get('initial_cash'), 'Initial equity', 1, 1e10)
     c['benchmark'] = normalize_ticker(c.get('benchmark', 'SPY'))
+    c['allocation_mode'] = c.get('allocation_mode', 'shares')
+    if c['allocation_mode'] not in ('shares', 'target_exposure'):
+        raise ValueError('Allocation mode must be shares or target_exposure.')
+    if c['allocation_mode'] == 'target_exposure':
+        for key, default in (('long_exposure_pct', 130), ('short_exposure_pct', 30)):
+            c[key] = _number(c.get(key, default), key, 0, 1000)
+        if c['long_exposure_pct'] + c['short_exposure_pct'] == 0:
+            raise ValueError('Choose a positive long or short exposure.')
     if not isinstance(c.get('positions'), list) or not 1 <= len(c['positions']) <= 20:
         raise ValueError('Provide 1 to 20 manually selected positions.')
     seen = set()
@@ -44,7 +53,18 @@ def _config(inputs):
         seen.add(p['ticker'])
         if p.get('side') not in ('long', 'short'):
             raise ValueError('Position side must be long or short.')
-        p['shares'] = _number(p.get('shares'), 'Shares', .000001, 1e8)
+        if c['allocation_mode'] == 'shares':
+            p['shares'] = _number(p.get('shares'), 'Shares', .000001, 1e8)
+        else:
+            p['weight'] = _number(p.get('weight'), 'Position weight', .000001, 1e6)
+    if c['allocation_mode'] == 'target_exposure':
+        for side in ('long', 'short'):
+            has_positions = any(p['side'] == side for p in c['positions'])
+            exposure = c[f'{side}_exposure_pct']
+            if exposure > 0 and not has_positions:
+                raise ValueError(f'Add at least one {side} position for its positive exposure.')
+            if exposure == 0 and has_positions:
+                raise ValueError(f'Remove {side} positions or choose a positive {side} exposure.')
     for key, default in dict(financing_pct=5, borrow_pct=1, rebate_pct=0, manager_pct=0, transaction_pct=0,
                              tax_st_pct=40, tax_lt_pct=20, dividend_tax_pct=20).items():
         c[key] = _number(c.get(key, default), key, 0, 99.99) / 100
@@ -77,6 +97,43 @@ def _validate_data(data, tickers, start, end):
             for value in series:
                 _number(value, group, .00000001 if group == 'prices' else 0, 1e12)
     return dates
+
+
+def _resolve_allocation(c, data):
+    """Size once at the first historical close, preserving fractional shares.
+
+    Each leg has its own dollar budget and normalized relative weights. Cash,
+    financing, collateral and opening fees are then handled by the same ledger
+    as manual shares; short proceeds never increase the long budget.
+    """
+    if c['allocation_mode'] == 'target_exposure':
+        for side in ('long', 'short'):
+            leg = [p for p in c['positions'] if p['side'] == side]
+            total_weight = sum(p['weight'] for p in leg)
+            budget = c['initial_cash'] * c[f'{side}_exposure_pct'] / 100
+            for p in leg:
+                value = budget * (p['weight'] / total_weight)
+                p['shares'] = _number(value / data['prices'][p['ticker']][0], 'Resolved shares', 1e-18, 1e20)
+    resolved = []
+    for p in c['positions']:
+        price = data['prices'][p['ticker']][0]
+        resolved.append(dict(ticker=p['ticker'], side=p['side'], shares=p['shares'],
+                             start_price=price, initial_value=p['shares'] * price))
+    long_value = sum(p['initial_value'] for p in resolved if p['side'] == 'long')
+    short_value = sum(p['initial_value'] for p in resolved if p['side'] == 'short')
+    for p in resolved:
+        leg_value = long_value if p['side'] == 'long' else short_value
+        p['weight'] = p['initial_value'] / leg_value
+    allocation = dict(mode=c['allocation_mode'], long_value=long_value, short_value=short_value,
+                      long_exposure_pct=long_value/c['initial_cash']*100,
+                      short_exposure_pct=short_value/c['initial_cash']*100,
+                      gross_exposure_pct=(long_value+short_value)/c['initial_cash']*100,
+                      net_exposure_pct=(long_value-short_value)/c['initial_cash']*100,
+                      resolved_positions=resolved)
+    if c['allocation_mode'] == 'target_exposure':
+        allocation['requested_long_exposure_pct'] = c['long_exposure_pct']
+        allocation['requested_short_exposure_pct'] = c['short_exposure_pct']
+    return allocation
 
 
 def _simulate(c, data, dates, level, benchmark=False):
@@ -251,6 +308,7 @@ def run_research(inputs, history_provider=None):
     tickers = list(dict.fromkeys([p['ticker'] for p in c['positions'] if p['ticker'] != c['benchmark']]+[c['benchmark']]))
     data = history_provider(tickers,c['start_date'],c['end_date'])
     dates = _validate_data(data,tickers,c['start_date'],c['end_date'])
+    allocation = _resolve_allocation(c, data)
     result = _simulate(c,data,dates,c['level'])
     benchmark = _simulate(c,data,dates,min(c['level'],2),benchmark=True)
     result['level'] = c['level']
@@ -267,13 +325,16 @@ def run_research(inputs, history_provider=None):
         actual['extra_cost_vs_no_harvest'] = actual['costs']-base['costs']
         actual['price_pnl_difference_vs_no_harvest'] = actual['price_pnl']-base['price_pnl']
         result['no_harvest_control'] = control
-    result['metadata'] = dict(model='three-level-historical-research-v1',currency='USD',
+    result['metadata'] = dict(model='integrated-historical-harvesting-v2',currency='USD',
                               requested_start=c['start_date'],requested_end=c['end_date'],
                               actual_start=dates[0].isoformat(),actual_end=dates[-1].isoformat(),
                               annualized_return=False,inputs=deepcopy(inputs),data_metadata=data.get('metadata', {}),
                               engine_sha256=hashlib.sha256(__import__('pathlib').Path(__file__).read_bytes()).hexdigest())
+    result['metadata']['allocation'] = allocation
+    result['metadata']['benchmark_allocation'] = dict(long_exposure_pct=100, short_exposure_pct=0,
+        description='100% long benchmark; matched initial equity and outside cash flows, not matched leverage.')
     result['assumptions'] = [
-        'All levels use manually chosen tickers and initial shares at the first available close. No stock-selection alpha or continuous fixed-weight rebalancing is assumed.',
+        'Tickers are manually chosen. Exposure sizing converts each leg budget and normalized relative weights to fractional shares at the first available close, before opening fees. Manual shares remain supported. Initial exposures drift; no continuous fixed-weight rebalancing or stock-selection alpha is assumed.',
         'Level 1 is historical price-only P&L. Levels 2 and 3 add dividends, ACT/365 daily costs, annual tax settlement and full liquidation.',
         'Long gains held more than 365 days use the long-term rate; all short-cover gains/losses use a conservative short-term proxy, not complete US short-sale tax law.',
         'Dividend entitlement and tax are recorded on ex-dates at one user-specified flat rate; short dividends are cash payments with no tax deduction. No dividend reinvestment.',

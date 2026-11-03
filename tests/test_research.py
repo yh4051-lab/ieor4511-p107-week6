@@ -32,6 +32,107 @@ def run(config, data):
 
 
 class ResearchTests(unittest.TestCase):
+    def test_target_130_30_sizes_from_initial_equity_then_runs_after_tax(self):
+        c = configuration(3)
+        c.update(initial_cash=1_000_000, allocation_mode='target_exposure',
+                 long_exposure_pct=130, short_exposure_pct=30,
+                 positions=[dict(ticker='AAPL', side='long', weight=1),
+                            dict(ticker='MSFT', side='short', weight=1)])
+        d = history(['2020-01-02', '2020-01-03'],
+                    {'AAPL': [100, 110], 'MSFT': [200, 240], 'SPY': [100, 105]})
+        r = run(c, d)
+        opened = {t['ticker']: t for t in r['trades'] if t['event'] == 'open'}
+        self.assertAlmostEqual(opened['AAPL']['shares'], 13_000)
+        self.assertAlmostEqual(opened['MSFT']['shares'], 1_500)
+        self.assertAlmostEqual(opened['AAPL']['shares'] * opened['AAPL']['price'], 1_300_000)
+        self.assertAlmostEqual(opened['MSFT']['shares'] * opened['MSFT']['price'], 300_000)
+        self.assertAlmostEqual(r['summary']['initial_net_exposure'], 1)
+        self.assertAlmostEqual(r['summary']['initial_gross_exposure'], 1.6)
+        self.assertAlmostEqual(r['daily'][0]['debt'], 300_000)
+        self.assertAlmostEqual(r['daily'][0]['short_collateral'], 300_000)
+        self.assertAlmostEqual(r['summary']['price_pnl'], 70_000)
+        self.assertAlmostEqual(r['summary']['capital_tax'], 28_000)
+        self.assertAlmostEqual(r['summary']['terminal_wealth'], 1_042_000)
+        self.assertAlmostEqual(r['summary']['benchmark_wealth'], 1_030_000)
+        self.assertAlmostEqual(r['no_harvest_control']['summary']['terminal_wealth'], 1_042_000)
+
+    def test_target_exposure_can_exceed_130_30_without_changing_investor_equity(self):
+        c = configuration(3)
+        c.update(initial_cash=1_000_000, allocation_mode='target_exposure',
+                 long_exposure_pct=200, short_exposure_pct=50,
+                 positions=[dict(ticker='AAPL', side='long', weight=1),
+                            dict(ticker='MSFT', side='short', weight=1)])
+        d = history(['2020-01-02', '2020-01-03'],
+                    {'AAPL': [100, 100], 'MSFT': [200, 200], 'SPY': [100, 100]})
+        r = run(c, d)
+        self.assertAlmostEqual(r['positions'][0]['shares'], 20_000)
+        self.assertAlmostEqual(r['positions'][1]['shares'], 2_500)
+        self.assertAlmostEqual(r['summary']['initial_net_exposure'], 1.5)
+        self.assertAlmostEqual(r['summary']['initial_gross_exposure'], 2.5)
+        self.assertAlmostEqual(r['daily'][0]['equity'], 1_000_000)
+        self.assertAlmostEqual(r['daily'][0]['debt'], 1_000_000)
+        self.assertAlmostEqual(r['summary']['terminal_wealth'], 1_000_000)
+
+    def test_relative_weights_are_normalized_separately_for_each_leg(self):
+        c = configuration(3)
+        c.update(initial_cash=1_000_000, allocation_mode='target_exposure',
+                 long_exposure_pct=130, short_exposure_pct=30,
+                 positions=[dict(ticker='AAPL', side='long', weight=3),
+                            dict(ticker='MSFT', side='long', weight=1),
+                            dict(ticker='NVDA', side='short', weight=2),
+                            dict(ticker='TSLA', side='short', weight=1)])
+        d = history(['2020-01-02', '2020-01-03'],
+                    {'AAPL': [100, 100], 'MSFT': [200, 200], 'NVDA': [50, 50],
+                     'TSLA': [250, 250], 'SPY': [100, 100]})
+        original = deepcopy(c)
+        r = run(c, d)
+        amounts = {p['ticker']: p['shares'] * p['start_price'] for p in r['positions']}
+        self.assertAlmostEqual(amounts['AAPL'], 975_000)
+        self.assertAlmostEqual(amounts['MSFT'], 325_000)
+        self.assertAlmostEqual(amounts['NVDA'], 200_000)
+        self.assertAlmostEqual(amounts['TSLA'], 100_000)
+        self.assertEqual(c, original)
+
+    def test_target_sizing_supports_a_long_only_zero_short_budget(self):
+        c = configuration(3)
+        c.update(allocation_mode='target_exposure', long_exposure_pct=100,
+                 short_exposure_pct=0,
+                 positions=[dict(ticker='AAPL', side='long', weight=1)])
+        r = run(c, history(['2020-01-02', '2020-01-03'],
+                           {'AAPL': [100, 110], 'SPY': [100, 100]}))
+        self.assertAlmostEqual(r['summary']['initial_gross_exposure'], 1)
+        self.assertAlmostEqual(r['summary']['terminal_wealth'], 106)
+
+    def test_invalid_target_allocation_rejected_before_history_download(self):
+        valid = configuration(3)
+        valid.update(allocation_mode='target_exposure', long_exposure_pct=130,
+                     short_exposure_pct=30,
+                     positions=[dict(ticker='AAPL', side='long', weight=1),
+                                dict(ticker='MSFT', side='short', weight=1)])
+        changes = [dict(allocation_mode='unknown'), dict(long_exposure_pct=-1),
+                   dict(short_exposure_pct=float('nan')), dict(long_exposure_pct=1001),
+                   dict(long_exposure_pct=True), dict(long_exposure_pct=0, short_exposure_pct=0),
+                   dict(short_exposure_pct=0),
+                   dict(positions=[dict(ticker='AAPL', side='long', weight=1)]),
+                   dict(positions=[dict(ticker='AAPL', side='long', weight=0),
+                                   dict(ticker='MSFT', side='short', weight=1)]),
+                   dict(positions=[dict(ticker='AAPL', side='long', weight=float('inf')),
+                                   dict(ticker='MSFT', side='short', weight=1)])]
+        for change in changes:
+            c = deepcopy(valid)
+            c.update(change)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                run_research(c, lambda *args: self.fail('Allocation validation must precede download'))
+
+    def test_explicit_manual_shares_mode_preserves_existing_position_quantities(self):
+        c = configuration(3)
+        c.update(allocation_mode='shares', long_exposure_pct=200, short_exposure_pct=50)
+        r = run(c, history(['2020-01-02', '2020-01-03'],
+                           {'AAPL': [100, 110], 'SPY': [100, 100]}))
+        self.assertEqual(r['positions'][0]['shares'], 1)
+        self.assertAlmostEqual(r['summary']['terminal_wealth'], 106)
+        self.assertAlmostEqual(r['summary']['initial_gross_exposure'], 1)
+
     def test_level_one_130_30_seven_percent_and_matched_benchmark(self):
         c = configuration(1)
         c['positions'] = [dict(ticker='AAPL', side='long', shares=130),

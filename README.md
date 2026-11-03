@@ -49,19 +49,25 @@ The public default uses five years, 6% annual price appreciation, no dividends o
 
 We still need to review the assumptions with Dom, clarify the source-based annual ST/LT estimates, confirm costs, and obtain security-level data. Individual tax lots, wash-sale controls, calibrated tracking risk, gradual exits, estate scenarios, 150/50, and 200/100 require further work.
 
-## Manual US Stock Research — Three Levels
+## Custom Stock Research — After-Tax Loss Harvesting
 
-The English **Custom Stock Research — Three Levels** interface is embedded in
-Portfolio below Starting cash. Every level supports manual ticker, Long/Short,
-share-count, historical-period and benchmark selection.
+The English stock-research interface is embedded in Portfolio below Starting
+cash. It combines historical positions, costs, dividends, taxes and loss
+harvesting into one run, with full final liquidation. Manually select US tickers
+and assign long/short budgets, such as 130/30, 150/50 or 200/100. You may choose
+other exposures and split each leg across stocks using relative weights. The
+engine converts initial budgets to fractional shares using historical entry
+prices; optional Manual shares mode preserves direct quantity entry.
 
-1. **Historical Position Validation** — historical price-only P&L.
-2. **After-Tax Lifecycle Comparison** — costs, dividends, annual taxes and full exit.
-3. **Rule-Based Loss Harvesting** — next-close loss-triggered trades, cooldown,
-   loss usage and a final-wealth comparison against the same portfolio without harvesting.
+Results compare modeled after-tax wealth for the harvesting strategy, the same
+initial portfolio without harvesting, and a 100%-long benchmark funded with the
+same initial equity. The no-harvest comparison and exit-tax bridge help assess
+harvesting separately from the effect of initial leverage and stock selection.
+Target exposures apply at entry; the engine does not continuously rebalance.
 
 Run `START-STOCK.bat` on Windows. See [README-STOCK.md](README-STOCK.md) for startup,
-assumptions and offline replay, and [CODE-MAP.md](CODE-MAP.md) for exact changed files.
-These historical research levels are separate from the original public illustrative
-annual model. Their tax rules are simplified research assumptions, not a complete
-tax return, broker execution simulation, or finished client recommendation.
+allocation examples and offline replay, and [CODE-MAP.md](CODE-MAP.md) for changed
+files. The original illustrative annual model remains separate. Tax rules are
+simplified research assumptions; complete assumptions are retained in exported
+JSON after removal of the long visible assumptions panel. Legacy research-level
+API/CLI inputs remain supported for prior-run replay.

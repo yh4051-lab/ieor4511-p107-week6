@@ -14,6 +14,7 @@ import zipfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import server
 import launch
+import launch_stock
 
 
 class AdapterTests(unittest.TestCase):
@@ -152,6 +153,35 @@ class HttpTests(unittest.TestCase):
                 self.assertAlmostEqual(json.loads(raw)['summary']['terminal_wealth'],expected)
         self.assertEqual(self.request('POST','/api/research/run','{}',headers)[0],400)
         self.assertEqual(self.request('POST','/api/research/run','{}',{**headers,'Origin':'https://foreign.example'})[0],403)
+
+    def test_integrated_exposure_allocation_endpoint_and_launcher(self):
+        dataset = dict(dates=['2020-01-02', '2020-01-03'],
+                       prices={'AAPL': [100, 110], 'MSFT': [200, 240], 'SPY': [100, 105]},
+                       dividends={s: [0, 0] for s in ('AAPL', 'MSFT', 'SPY')},
+                       splits={s: [0, 0] for s in ('AAPL', 'MSFT', 'SPY')}, metadata={'source': 'unit test'})
+        payload = dict(level=3, initial_cash=1000000, start_date='2020-01-02', end_date='2020-01-03',
+                       benchmark='SPY', allocation_mode='target_exposure', long_exposure_pct=130, short_exposure_pct=30,
+                       positions=[dict(ticker='AAPL', side='long', weight=1), dict(ticker='MSFT', side='short', weight=1)],
+                       financing_pct=0, borrow_pct=0, transaction_pct=0)
+        headers = {'Content-Type': 'application/json'}
+        with patch('p107.market_data.load_history', return_value=dataset):
+            status, raw, _ = self.request('POST', '/api/research/run', json.dumps(payload), headers)
+        self.assertEqual(status, 200)
+        result = json.loads(raw)
+        self.assertAlmostEqual(result['summary']['terminal_wealth'], 1042000)
+        self.assertAlmostEqual(result['summary']['initial_gross_exposure'], 1.6)
+        self.assertAlmostEqual(result['summary']['incremental_wealth_vs_no_harvest'], 0)
+        self.assertEqual(result['metadata']['allocation']['long_value'], 1300000)
+        self.assertEqual(result['metadata']['allocation']['short_value'], 300000)
+        with patch.object(launch_stock, 'URL', f'http://127.0.0.1:{self.server.server_port}'):
+            self.assertTrue(launch_stock.health())
+
+    def test_stock_launcher_rejects_prior_research_server(self):
+        prior = io.BytesIO(json.dumps({'app': server.APP_ID, 'features': ['three_level_research']}).encode())
+        with patch.object(launch_stock, 'build_opener') as opener:
+            opener.return_value.open.return_value = prior
+            with self.assertRaisesRegex(RuntimeError, 'older or unrelated'):
+                launch_stock.health()
 
     def test_portfolio_bad_requests(self):
         headers = {'Content-Type': 'application/json'}

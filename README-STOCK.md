@@ -1,7 +1,7 @@
-# Manual US Stock Research — Three Levels
+# Custom Stock Research — After-Tax Loss Harvesting
 
 The English research interface is embedded in **Portfolio**, immediately below
-Starting cash. Expand **Custom Stock Research — Three Levels**. It is independent
+Starting cash. Expand **Custom Stock Research — After-Tax Loss Harvesting**. It is independent
 of the original hypothetical scenario on the right.
 
 ## Start on Windows
@@ -9,43 +9,92 @@ of the original hypothetical scenario on the right.
 1. Install Python 3.12 (recommended) with Python Launcher.
 2. Extract the complete ZIP into a **new folder**. Keep your old project.
 3. Double-click `START-STOCK.bat`. The first run installs `requirements-stock.txt`.
-4. The launcher opens your local browser on port 8752.
-5. Enter your initial equity, manual tickers, Long/Short directions, share counts,
-   start/end dates and benchmark. Choose a research level and run.
+4. The launcher opens your local browser on port 8754.
+5. Enter your initial equity, manual tickers, Long/Short directions, allocation,
+   start/end dates and benchmark. Review costs, tax rates and harvesting rules,
+   then click **Run After-Tax Research**.
 
-If port 8752 is occupied by an older version, close its server first. The launcher
+If port 8754 is occupied by an older version, close its server first. The launcher
 will not silently reuse an incompatible server or kill another process. An
 alternative foreground command from the project root is:
 
 ```text
-py -3 web/server.py --port 8753
+py -3 web/server.py --port 8755
 ```
 
-Then open `http://127.0.0.1:8753` on your own computer. Logs for the background
+Then open `http://127.0.0.1:8755` on your own computer. Logs for the background
 launcher are `web/stock.stdout.log` and `web/stock.stderr.log`; its PID is saved
 in `web/stock.pid`. Processes do not survive environment restarts.
 
-## Research levels
+## One integrated after-tax workflow
 
-| Level | Feature | Research value |
-|---|---|---|
-| 1 — Historical Position Validation | Manual tickers, shares and long/short directions; historical price P&L and equity path | Verify position arithmetic and demonstrate the workflow |
-| 2 — After-Tax Lifecycle Comparison | Historical holdings, daily financing/borrow/management costs, dividends, annual tax settlement and full taxable exit | Compare modeled after-tax ending wealth across periods and horizons |
-| 3 — Rule-Based Loss Harvesting | Actual modeled loss-triggered trades, next-close execution, delayed reentry, loss usage/carryforwards and exit-tax bridge | Evaluate harvesting, deferral, costs and final wealth under explicit rules |
+The browser combines historical positions, costs, taxes and rule-based loss
+harvesting in one run. There is no level selector. Every run includes:
 
-All levels allow manual selection. There is no automatic stock-picking model.
-Level 1 excludes dividends, costs, taxes and outside flows. Levels 2 and 3 include
-those modeled components. Results should only be compared within the same level
-and input assumptions.
+- Historical nominal prices, split-adjusted share counts and dividend cash flows.
+- Daily financing, short borrow, rebate and management costs; trading costs.
+- Annual capital-gains tax, loss usage, carryforwards and final taxable liquidation.
+- Loss-triggered trades, delayed reentry and an exit-tax attribution bridge.
+- Matched outside cash flows for three ending-wealth comparisons: the strategy
+  with harvesting, the same initial portfolio without harvesting, and a long-only
+  benchmark funded with the same initial equity.
+
+You manually select every stock. The app does not choose stocks for you. The
+benchmark retains 100% initial long exposure; changing the strategy's leverage
+changes its market risk, so a positive difference versus the benchmark is not by
+itself a measure of risk-adjusted alpha. The no-harvest control uses exactly the
+same starting positions as the harvesting strategy and helps isolate the effect
+of the harvesting rule.
+
+## Choose your initial allocation
+
+The default **Allocate by long / short exposure** mode converts your budgets to fractional shares
+using the first available historical closing price. Long and short exposures are
+separate percentages of initial investor equity; they do not need to sum to 100%.
+
+For $1,000,000 of initial equity:
+
+| Long / short exposure | Initial long budget | Initial short budget | Net exposure | Gross exposure |
+|---|---:|---:|---:|---:|
+| 130% / 30% | $1,300,000 | $300,000 | 100% | 160% |
+| 150% / 50% | $1,500,000 | $500,000 | 100% | 200% |
+| 200% / 100% | $2,000,000 | $1,000,000 | 100% | 300% |
+| 200% / 50% | $2,000,000 | $500,000 | 150% | 250% |
+
+You may enter exposures from 0% to 1,000% per leg. At least one leg must be
+positive. A positive leg requires at least one selected stock; a zero-budget leg
+must have no positions. Higher values increase modeled risk and financing costs;
+they are inputs to the scenario, not evidence that a broker would allow it.
+
+Each stock has a **relative weight within its long or short leg**. The app
+normalizes weights separately within each leg. Two long stocks with weights
+3 and 1 receive 75% and 25% of the long budget. Two short stocks with weights
+1 and 1 each receive half the short budget. A single stock receives its entire
+leg's budget regardless of its positive relative weight.
+
+```text
+Initial shares = initial equity × leg exposure / 100
+                 × stock weight / sum of weights in that leg
+                 ÷ first historical price
+```
+
+The optional **Enter shares manually** mode keeps directly entered share quantities;
+it derives net and gross exposures from those holdings. It does not apply the
+target budget inputs.
+
+These are **initial** allocations. Shares remain fixed except for corporate
+actions and harvesting trades; there is no daily rebalance to maintain 130/30.
+Reentry restores the original split-adjusted share count. Prices, costs, taxes
+and time out of the market can cause later exposures to drift.
 
 ## Historical data and position mechanics
 
 - Use US USD equities or ETFs. AAPL, MSFT, SPY and BRK-B are examples, not recommendations.
 - Select up to 20 distinct tickers. Combine duplicate holdings into one net position.
-- Shares are initial **actual share quantities** at the first available session's
-  close. The loader reconstructs nominal historical prices from Yahoo split-adjusted
-  prices. Subsequent splits adjust quantity and per-share basis once.
-- The engine keeps share quantities fixed, except splits and Level 3 trades. It
+- Target budgets are resolved to fractional shares at the first available session's
+  close; the manual mode uses your entered initial share quantities. The loader
+  reconstructs nominal historical prices from Yahoo split-adjusted prices. Subsequent splits adjust quantity and per-share basis once.
+- The engine keeps share quantities fixed, except splits and harvesting trades. It
   does not assume cost-free daily rebalancing or multiply index returns by 1.3.
 - Net/gross exposure is derived from the selected positions and investor equity.
   Short proceeds are restricted collateral, not extra investor wealth.
@@ -55,7 +104,7 @@ and input assumptions.
 - Maximum requested interval is ten years. Yahoo corrections and present-day
   security selection can affect historical conclusions.
 
-## Level 2 tax and cost assumptions
+## Tax and cost accounting
 
 Daily costs use actual calendar days / 365. Financing accrues on actual debit
 balance; borrow costs on prior short market value; rebates on restricted short
@@ -83,7 +132,7 @@ these flows. The reported simple gain ratio removes gross outside proceeds and
 divides by initial equity; it is **not TWR, IRR or CAGR** and includes outside-gain
 tax burden.
 
-## Level 3 execution and attribution
+## Harvesting execution and attribution
 
 After a position has been held more than 30 calendar days, a close-to-basis loss
 at or beyond the configured threshold generates a signal. The sale/cover executes
@@ -112,12 +161,12 @@ can make the client worse off despite producing more realized losses.
 ## Export and reproduce
 
 The UI exports full JSON (inputs, nominal prices, actions, hashes, equity paths,
-annual tax ledgers, trades, control runs and assumptions) and trades CSV.
+annual tax ledgers, trades, control runs, resolved allocations and assumptions) and trades CSV.
 
 Replay a downloaded JSON without network access:
 
 ```text
-py -3 tools/replay_research.py path/to/p107-level-3-research.json
+py -3 tools/replay_research.py path/to/p107-after-tax-research.json
 ```
 
 The replay checks the saved numeric-data SHA-256 and reproduces summary, daily,
@@ -134,6 +183,10 @@ Choose a new output directory for each run. The full configuration and data are
 stored with results; transient in-memory history caching is not your audit record.
 
 ## Important scope limits
+
+The long “Assumptions and research limits” panel has been removed from the
+browser. The complete modeling assumptions remain in exported JSON and in this
+document; a short note accompanies the results.
 
 The tax system is an educational proxy, not a complete US return. The waiting
 rule checks only this modeled account and does not adjudicate substantially
@@ -152,7 +205,9 @@ empirical calibration requested in the project brief.
 
 Do not delete `tests/test_model.py` or the original tests. The earlier one-stock
 label-only UI is replaced by the embedded research interface. The old snapshot
-API remains for compatibility, but is not used by the three-level UI.
+API remains for compatibility, but is not used by the integrated UI. Historical
+level 1/2/3 API and CLI configurations also remain supported for replay of prior
+research; new browser requests always use the full harvesting engine (level 3).
 
 See `CODE-MAP.md` for the file/function map and implementation details.
 
@@ -161,7 +216,7 @@ py -3 -m unittest discover -s tests -v
 py -3 -m unittest discover -s web/tests -v
 ```
 
-Core tests use synthetic data and do not call Yahoo. Separately, all three levels
-were exercised against live Yahoo AAPL/MSFT/SPY history, including a split, and
-through the browser with exports and session restoration. The Python launcher
+Core tests use synthetic data and do not call Yahoo. They include hand-calculated
+130/30 and higher-exposure allocation examples, taxes, costs and harvesting
+controls. Live Yahoo history and browser checks are separate from those tests. The Python launcher
 was tested in the cloud; the Windows batch wrapper was not executed on Windows.

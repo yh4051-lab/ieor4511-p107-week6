@@ -201,7 +201,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         path = urlsplit(self.path).path
         if path == '/api/health':
-            self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__, 'features': ['stock_portfolio', 'three_level_research']}))
+            self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__, 'features': ['stock_portfolio', 'three_level_research', 'integrated_research_v2']}))
         elif path == '/api/defaults':
             self.send(200, json_bytes({'inputs': defaults()}))
         elif path in ('/', '/app.js', '/style.css', '/portfolio.js', '/portfolio.css'):

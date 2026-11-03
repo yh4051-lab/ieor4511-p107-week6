@@ -1,0 +1,119 @@
+{
+  "verified_at_utc": "2026-11-03T18:41:36+00:00",
+  "automated_tests": {
+    "core_tests_passed": 83,
+    "web_tests_passed": 16,
+    "total_passed": 99
+  },
+  "allocation_checks": [
+    "1000000 equity, 130% long and 30% short => 1300000 long and 300000 short",
+    "200% long and 50% short; independent per-leg weight normalization",
+    "100% long and 0% short; invalid allocation rejected before history fetch",
+    "Manual-share and old exported-run compatibility"
+  ],
+  "live_browser_checks": {
+    "data_source": "Yahoo Finance via yfinance",
+    "inputs": {
+      "level": 3,
+      "initial_cash": 1000000,
+      "allocation_mode": "target_exposure",
+      "long_exposure_pct": 130,
+      "short_exposure_pct": 30,
+      "start_date": "2020-01-02",
+      "end_date": "2021-03-31",
+      "benchmark": "SPY",
+      "positions": [
+        {
+          "ticker": "AAPL",
+          "side": "long",
+          "weight": 1
+        },
+        {
+          "ticker": "MSFT",
+          "side": "short",
+          "weight": 1
+        }
+      ],
+      "financing_pct": 5,
+      "borrow_pct": 1,
+      "rebate_pct": 0,
+      "manager_pct": 0,
+      "transaction_pct": 0.05,
+      "tax_st_pct": 40,
+      "tax_lt_pct": 20,
+      "dividend_tax_pct": 20,
+      "outside_st_gain": 100000,
+      "outside_lt_gain": 0,
+      "harvest_threshold_pct": 5,
+      "cooldown_days": 30
+    },
+    "summary": {
+      "initial_cash": 1000000,
+      "terminal_wealth": 1722184.399039699,
+      "return_pct": 52.2184399039699,
+      "price_pnl": 720154.3797617974,
+      "dividend_cash": 15624.430776492081,
+      "dividend_tax": 3505.9097006879483,
+      "costs": 26057.625845544146,
+      "cost_breakdown": {
+        "financing": 17863.420874935728,
+        "borrow": 2694.8163981868097,
+        "management": 0,
+        "trading": 5499.388572421604,
+        "rebate": 0
+      },
+      "rebate_tax": 0,
+      "capital_tax": 184030.87595235975,
+      "capital_tax_before_exit": 0,
+      "exit_tax": 184030.87595235975,
+      "harvested_loss": 279091.6483307484,
+      "loss_used": 291755.0756475346,
+      "remaining_carry_st": 0,
+      "remaining_carry_lt": 0,
+      "initial_net_exposure": 0.9999999999999998,
+      "initial_gross_exposure": 1.5999999999999999,
+      "unrealized_before_exit": 999246.028092547,
+      "outside_gross_proceeds": 200000,
+      "wealth_identity_error": -1.3969838619232178e-09,
+      "benchmark_wealth": 1312017.8823489344,
+      "incremental_wealth": 410166.5166907646,
+      "incremental_wealth_vs_no_harvest": 58679.64619157347,
+      "tax_relief_before_exit_vs_no_harvest": 80000,
+      "extra_exit_tax_vs_no_harvest": 69143.47257937878,
+      "total_capital_tax_saving_vs_no_harvest": 10856.52742062122,
+      "extra_cost_vs_no_harvest": 938.6969641027135,
+      "price_pnl_difference_vs_no_harvest": 45717.36289689387
+    },
+    "data_sha256": "b74843179c3de515748ff7faf5ca669c6ca15b4b34da4f9f3463dab6b58344e1",
+    "passed": [
+      "130/30 target sizing and full after-tax run",
+      "200/50 adjustable allocation",
+      "Financing, borrow cost, split-adjusted quantities and realized harvesting trades",
+      "Three equity curves: harvesting, same portfolio without harvesting, 100% long benchmark",
+      "Visible level selector and long assumptions list removed",
+      "JSON/CSV exports retain full model notes and exact data",
+      "Session persistence, previous version draft migration, original scenario isolation",
+      "No browser JavaScript errors"
+    ]
+  },
+  "offline_replay": {
+    "integrated_live_export": "Exact summary, daily/annual ledgers, trades and positions",
+    "legacy_live_and_synthetic_exports": "Exact summary, daily/annual ledgers, trades and positions"
+  },
+  "launcher": {
+    "default_port": 8754,
+    "compatibility_feature": "integrated_research_v2",
+    "health_acceptance_and_legacy_rejection": "Passed",
+    "windows_batch_execution": "Not run on Windows"
+  },
+  "source_sha256": {
+    "p107/research.py": "b7ff2d31bf9ab393f0ab8d0f28cc0375f81c5380d9b6b622b324c71a6639395c",
+    "web/dist/index.html": "c5699be7057b2d5cc7e1ba77937fe84795a5a8276266e3036a335e1eef0f96fb",
+    "web/dist/portfolio.js": "228db4d39815396ec3ebb556fb232de45a036d9047780e379dc8103f2fa0c1e3",
+    "web/dist/portfolio.css": "ce571a303e08d8f9dd08da7b6b428f611d78be0e043b71d4101e83b84c56cc1a",
+    "web/server.py": "4fbea401d588a39cbba44acab0e4356c80893780c8ad3007d1b8b5af622aead1",
+    "web/launch_stock.py": "ace0889f93d71ac87249c01c99f5f34c860034364769e133f1020272d2807547",
+    "tests/test_research.py": "020299ae01c15cadf9bf976ac27e27e4cef1395f8386d999f19880792cb3f7dc",
+    "web/tests/test_web.py": "483449c9ac360b18ea62cb4ab12ec80a9299d85e6f9c3111773bd34b6942994a"
+  }
+}
