@@ -1,5 +1,7 @@
 # Current limitations and next steps
 
+Scope: this document describes the original annual scenario model in `p107/model.py`. The newer three-level historical research engine is documented in `../README-STOCK.md` and `../CODE-MAP.md`; its assumptions and limits are separate.
+
 This version checks the portfolio and tax accounting under stated assumptions. It is ready to review as an initial model, but it does not establish whether a real client's account would achieve these results.
 
 - Returns and harvested losses are scenario inputs. There is no historical price dataset or evidence that the assumed losses can be generated along each return path.

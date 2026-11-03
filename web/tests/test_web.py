@@ -120,6 +120,45 @@ class HttpTests(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(content)) as z:
             self.assertIn('scenario.json', z.namelist())
 
+    def test_portfolio_api_and_assets(self):
+        quote = {'ticker': 'AAPL', 'price': 110, 'currency': 'USD', 'as_of': '2026-10-30', 'fetched_at': '2026-10-30T20:00:00Z'}
+        headers = {'Content-Type': 'application/json'}
+        with patch.object(server, 'get_quote', return_value=quote):
+            status, raw, _ = self.request('POST', '/api/portfolio/quotes', json.dumps({'tickers': ['aapl']}), headers)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(raw)['quotes'][0]['price'], 110)
+        payload = dict(initial_cash=1000, holding_days=0, financing_pct=0, borrow_pct=0, rebate_pct=0, manager_pct=0, transaction_pct=0,
+                       positions=[dict(ticker='AAPL', side='long', shares=10, entry_price=100)])
+        with patch('p107.portfolio.get_quote', return_value=quote):
+            status, raw, _ = self.request('POST', '/api/portfolio/run', json.dumps(payload), headers)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(raw)['price_pnl'], 100)
+        for path in ('/portfolio.js', '/portfolio.css'):
+            self.assertEqual(self.request('GET', path)[0], 200)
+
+    def test_three_level_research_endpoint(self):
+        dataset = dict(dates=['2020-01-02','2020-01-03'],
+                       prices={'AAPL':[100,110], 'SPY':[100,100]},
+                       dividends={'AAPL':[0,0], 'SPY':[0,0]},
+                       splits={'AAPL':[0,0], 'SPY':[0,0]}, metadata={'source':'unit test'})
+        payload = dict(level=1,initial_cash=1000,start_date='2020-01-02',end_date='2020-01-03',benchmark='SPY',
+                       positions=[dict(ticker='AAPL',side='long',shares=10)],transaction_pct=0)
+        headers = {'Content-Type':'application/json'}
+        with patch('p107.market_data.load_history', return_value=dataset):
+            for level, expected in [(1,1100),(2,1060),(3,1060)]:
+                payload['level'] = level
+                status, raw, _ = self.request('POST','/api/research/run',json.dumps(payload),headers)
+                self.assertEqual(status,200)
+                self.assertAlmostEqual(json.loads(raw)['summary']['terminal_wealth'],expected)
+        self.assertEqual(self.request('POST','/api/research/run','{}',headers)[0],400)
+        self.assertEqual(self.request('POST','/api/research/run','{}',{**headers,'Origin':'https://foreign.example'})[0],403)
+
+    def test_portfolio_bad_requests(self):
+        headers = {'Content-Type': 'application/json'}
+        for path in ('/api/portfolio/quotes', '/api/portfolio/run'):
+            self.assertEqual(self.request('POST', path, '{}', headers)[0], 400)
+            self.assertEqual(self.request('POST', path, '{}', {**headers, 'Origin': 'https://foreign.example'})[0], 403)
+
     def test_launcher_recognizes_running_public_server(self):
         with patch.object(launch, 'URL', f'http://127.0.0.1:{self.server.server_port}'):
             self.assertTrue(launch.health())

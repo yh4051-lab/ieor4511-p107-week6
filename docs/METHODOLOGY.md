@@ -1,5 +1,7 @@
 # Accounting methodology
 
+Scope: this document describes the original annual scenario model in `p107/model.py`. The newer three-level historical research engine is documented in `../README-STOCK.md` and `../CODE-MAP.md`; its assumptions and limits are separate.
+
 This is a deterministic aggregate scenario model. It is reproducible financial accounting under stated assumptions, not an implementation of a broker's tax-lot ledger. All strategies start with the same cash, follow the same price-return path, and receive the same outside gain cash flows. No randomness, fitted alpha, simulated price records, or implied volatility estimate is used.
 
 ## State and annual order

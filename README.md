@@ -48,3 +48,20 @@ The requirements file pins optional figure dependencies. For CSVs without figure
 The public default uses five years, 6% annual price appreciation, no dividends or alpha, $100,000 of annual outside ST gains, and illustrative 40% ST / 20% LT tax rates. Terminal wealth includes the same outside cash flows for every strategy; it is not the return on the $1 million investment alone. Current tax relief is not counted twice, and embedded gains are included in full-liquidation taxes.
 
 We still need to review the assumptions with Dom, clarify the source-based annual ST/LT estimates, confirm costs, and obtain security-level data. Individual tax lots, wash-sale controls, calibrated tracking risk, gradual exits, estate scenarios, 150/50, and 200/100 require further work.
+
+## Manual US Stock Research — Three Levels
+
+The English **Custom Stock Research — Three Levels** interface is embedded in
+Portfolio below Starting cash. Every level supports manual ticker, Long/Short,
+share-count, historical-period and benchmark selection.
+
+1. **Historical Position Validation** — historical price-only P&L.
+2. **After-Tax Lifecycle Comparison** — costs, dividends, annual taxes and full exit.
+3. **Rule-Based Loss Harvesting** — next-close loss-triggered trades, cooldown,
+   loss usage and a final-wealth comparison against the same portfolio without harvesting.
+
+Run `START-STOCK.bat` on Windows. See [README-STOCK.md](README-STOCK.md) for startup,
+assumptions and offline replay, and [CODE-MAP.md](CODE-MAP.md) for exact changed files.
+These historical research levels are separate from the original public illustrative
+annual model. Their tax rules are simplified research assumptions, not a complete
+tax return, broker execution simulation, or finished client recommendation.

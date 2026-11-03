@@ -32,7 +32,7 @@ function clearInputError() {
 
 function inputsValid() {
   clearInputError();
-  const invalid = Array.from($('input-fields').querySelectorAll('input, select')).find(input => !input.validity.valid);
+  const invalid = Array.from($('input-fields').querySelectorAll('input, select')).find(input => !input.closest('#stock-experiment') && !input.validity.valid);
   if (!invalid) return true;
   const label = invalid.labels?.[0]?.textContent.trim() || 'This field';
   $('input-error').textContent = `${label}: enter ${invalid.id === 'horizon_years' ? 'a whole number' : 'a number'} between ${number(Number(invalid.min))} and ${number(Number(invalid.max))}.`;
@@ -48,7 +48,7 @@ function inputsValid() {
 }
 
 function saveDraft() {
-  if (!Array.from($('input-fields').querySelectorAll('input, select')).every(input => input.validity.valid)) return;
+  if (!Array.from($('input-fields').querySelectorAll('input, select')).every(input => input.closest('#stock-experiment') || input.validity.valid)) return;
   try {sessionStorage.setItem(draftKey, JSON.stringify(readInputs()));} catch (_) {}
 }
 
@@ -199,8 +199,8 @@ async function run() {
 }
 
 form.addEventListener('submit',event=>{event.preventDefault();run();});
-form.addEventListener('input',event=>{if(event.target.id!=='example-picker')markDirty();});
-form.addEventListener('change',event=>{if(event.target.id!=='example-picker')markDirty();});
+form.addEventListener('input',event=>{if(event.target.id!=='example-picker' && !event.target.closest('#stock-experiment'))markDirty();});
+form.addEventListener('change',event=>{if(event.target.id!=='example-picker' && !event.target.closest('#stock-experiment'))markDirty();});
 function loadExample(value) {
   const inputs={...defaultInputs};
   if(value==='no-gains')inputs.outside_gains=0;

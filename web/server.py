@@ -22,6 +22,9 @@ sys.path.insert(0, str(MODEL_ROOT))
 from p107 import __version__
 from p107.model import compare, validate
 from p107.analysis import breakeven
+from p107.market_data import get_quote, normalize_ticker
+from p107.portfolio import calculate_portfolio
+from p107.research import run_research
 
 APP_ID = 'p107-public-interface-v1'
 BASE = json.loads((MODEL_ROOT / 'configs/example_hypothetical.json').read_text(encoding='utf-8'))
@@ -198,11 +201,11 @@ class Handler(BaseHTTPRequestHandler):
             return
         path = urlsplit(self.path).path
         if path == '/api/health':
-            self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__}))
+            self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__, 'features': ['stock_portfolio', 'three_level_research']}))
         elif path == '/api/defaults':
             self.send(200, json_bytes({'inputs': defaults()}))
-        elif path in ('/', '/app.js', '/style.css'):
-            name, mime = {'/': ('index.html', 'text/html; charset=utf-8'), '/app.js': ('app.js', 'text/javascript; charset=utf-8'), '/style.css': ('style.css', 'text/css; charset=utf-8')}[path]
+        elif path in ('/', '/app.js', '/style.css', '/portfolio.js', '/portfolio.css'):
+            name, mime = {'/': ('index.html', 'text/html; charset=utf-8'), '/app.js': ('app.js', 'text/javascript; charset=utf-8'), '/style.css': ('style.css', 'text/css; charset=utf-8'), '/portfolio.js': ('portfolio.js', 'text/javascript; charset=utf-8'), '/portfolio.css': ('portfolio.css', 'text/css; charset=utf-8')}[path]
             self.send(200, (ROOT / 'dist' / name).read_bytes(), mime)
         elif path.startswith('/api/download/'):
             run_id = path.rsplit('/', 1)[-1]
@@ -218,7 +221,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.local_request():
             return
-        if self.path != '/api/run':
+        if self.path not in ('/api/run', '/api/portfolio/quotes', '/api/portfolio/run', '/api/research/run'):
             self.send(404, json_bytes({'error': 'Operation not found.'}))
             return
         try:
@@ -226,6 +229,18 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < length <= 10000 or self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                 raise ValueError('Invalid request format.')
             inputs = json.loads(self.rfile.read(length))
+            if self.path == '/api/research/run':
+                self.send(200, json_bytes(run_research(inputs)))
+                return
+            if self.path == '/api/portfolio/quotes':
+                if not isinstance(inputs, dict) or not isinstance(inputs.get('tickers'), list) or not 1 <= len(inputs['tickers']) <= 20:
+                    raise ValueError('請提供 1 至 20 個美股代號。')
+                tickers = [normalize_ticker(s) for s in inputs['tickers']]
+                self.send(200, json_bytes({'quotes': [get_quote(s) for s in dict.fromkeys(tickers)]}))
+                return
+            if self.path == '/api/portfolio/run':
+                self.send(200, json_bytes(calculate_portfolio(inputs)))
+                return
             result = calculate(inputs)
             with self.server.run_lock:
                 self.server.runs[result['run_id']] = result

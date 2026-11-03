@@ -1,0 +1,31 @@
+{
+  "level": 3,
+  "initial_cash": 100000,
+  "start_date": "2020-01-02",
+  "end_date": "2021-03-31",
+  "benchmark": "SPY",
+  "positions": [
+    {
+      "ticker": "AAPL",
+      "side": "long",
+      "shares": 200
+    },
+    {
+      "ticker": "MSFT",
+      "side": "short",
+      "shares": 20
+    }
+  ],
+  "financing_pct": 5,
+  "borrow_pct": 1,
+  "rebate_pct": 0,
+  "manager_pct": 0.4,
+  "transaction_pct": 0.05,
+  "tax_st_pct": 40,
+  "tax_lt_pct": 20,
+  "dividend_tax_pct": 20,
+  "outside_st_gain": 10000,
+  "outside_lt_gain": 0,
+  "harvest_threshold_pct": 10,
+  "cooldown_days": 30
+}

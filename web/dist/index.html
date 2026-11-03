@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>P107 · Strategy Comparison</title>
   <meta name="description" content="Explore after-tax wealth, fees, loss usage, and full liquidation in the initial P107 scenario model.">
-  <link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script>
+  <link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script><link rel="stylesheet" href="/portfolio.css"><script src="/portfolio.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#tab-summary">Skip to results</a>
@@ -25,6 +25,56 @@
             <div id="input-error" class="input-error" role="alert" hidden></div>
             <fieldset id="input-fields" disabled>
             <p class="input-section-label">Portfolio</p><label for="initial_cash">Starting cash</label><div class="input-wrap"><span>$</span><input id="initial_cash" name="initial_cash" type="number" min="10000" max="100000000" step="any" required><span>USD</span></div>
+<details id="stock-experiment" class="stock-experiment">
+  <summary>Custom Stock Research — Three Levels</summary>
+  <p class="field-note">Build your own US-dollar stock or ETF portfolio. Enter each ticker, Long/Short direction and share count. Starting cash above is your initial investor equity; short-sale proceeds are not free wealth.</p>
+  <label for="research-level">Research level</label>
+  <select id="research-level">
+    <option value="1">Level 1 — Historical Position Validation</option>
+    <option value="2">Level 2 — After-Tax Lifecycle Comparison</option>
+    <option value="3">Level 3 — Rule-Based Loss Harvesting</option>
+  </select>
+  <div id="research-level-description" class="research-level-description" role="note"></div>
+  <label for="research-start">Start date</label><input id="research-start" type="date" value="2020-01-02" required>
+  <label for="research-end">End date / full exit date</label><input id="research-end" type="date" value="2024-12-31" required>
+  <label for="research-benchmark">Benchmark ticker</label><input id="research-benchmark" type="text" maxlength="15" value="SPY" pattern="[A-Za-z][A-Za-z0-9\-]{0,14}" autocomplete="off" required>
+  <p class="field-note">Use a benchmark consistent with your chosen market. Historical prices determine the start and end values; no manager alpha is assumed.</p>
+  <div id="stock-positions" aria-label="Manually selected positions"></div>
+  <button type="button" id="stock-add">+ Add position</button>
+  <fieldset id="research-cost-fields" class="research-group" hidden disabled>
+    <legend>Costs — annual rates unless stated</legend>
+    <div class="stock-costs">
+      <label>Financing %<input id="stock-finance" type="number" min="0" max="100" step="any" value="5"></label>
+      <label>Short borrow %<input id="stock-borrow" type="number" min="0" max="100" step="any" value="1"></label>
+      <label>Short rebate %<input id="stock-rebate" type="number" min="0" max="100" step="any" value="0"></label>
+      <label>Management %<input id="stock-manager" type="number" min="0" max="100" step="any" value="0"></label>
+      <label>Per-trade cost %<input id="stock-trade" type="number" min="0" max="20" step="any" value="0.05"></label>
+    </div>
+    <p class="field-note">Rates and borrow availability are assumptions you supply, not Yahoo quotes. Costs must be assessed against the relevant debt, short position or equity amount.</p>
+  </fieldset>
+  <fieldset id="research-tax-fields" class="research-group" hidden disabled>
+    <legend>Tax and outside gains — scenario assumptions</legend>
+    <div class="stock-costs">
+      <label>Short-term tax %<input id="research-tax-st" type="number" min="0" max="60" step="any" value="40"></label>
+      <label>Long-term tax %<input id="research-tax-lt" type="number" min="0" max="60" step="any" value="20"></label>
+      <label>Dividend tax %<input id="research-tax-dividend" type="number" min="0" max="60" step="any" value="20"></label>
+      <label>Annual outside ST gains $<input id="research-outside-st" type="number" min="0" max="100000000" step="any" value="0"></label>
+      <label>Annual outside LT gains $<input id="research-outside-lt" type="number" min="0" max="100000000" step="any" value="0"></label>
+    </div>
+    <p class="field-note">Outside gains and their cash proceeds are identical for the strategy and benchmark. Ending wealth therefore includes these common cash flows; its change is not a standalone portfolio CAGR.</p>
+  </fieldset>
+  <fieldset id="research-harvest-fields" class="research-group" hidden disabled>
+    <legend>Explicit harvesting rule</legend>
+    <label for="research-threshold">Unrealized loss trigger %</label><input id="research-threshold" type="number" min="0.01" max="1000" step="any" value="5">
+    <label for="research-cooldown">Same-ticker reentry cooldown — calendar days</label><input id="research-cooldown" type="number" min="30" max="365" step="1" value="30">
+    <p class="field-note">Observe a loss trigger after holding more than 30 days, execute at the next session close, and reopen only after more than the cooldown calendar days. Time out of the market affects returns. This rule is not a complete wash-sale or short-sale tax implementation.</p>
+  </fieldset>
+  <button type="button" id="stock-calculate">Run Historical Research</button>
+  <p id="stock-status" role="status" aria-live="polite">Choose a level and enter your positions to start.</p>
+  <div id="stock-result" hidden></div>
+  <p class="field-note">Research results appear here, separately from the original hypothetical scenario on the right. Historical simulation uses your manual choices and simplified assumptions; it does not verify borrow availability, enforce broker margin rules or make an investment recommendation. Yahoo availability and coverage can vary.</p>
+</details>
+
             <label for="horizon_years">Holding period</label><div class="input-wrap"><input id="horizon_years" name="horizon_years" type="number" min="1" max="10" step="1" required><span>years</span></div>
             <label for="price_return_pct">Annual price return</label><div class="input-wrap"><input id="price_return_pct" name="price_return_pct" type="number" min="-20" max="20" step="any" required><span>% / year</span></div><p class="field-note">The same price return applies to all strategies. No dividends or manager alpha.</p>
             <div class="divider"></div><p class="input-section-label">Outside gains</p>

@@ -1,0 +1,2 @@
+# Optional US stock research feature; the original scenario needs no packages.
+yfinance==1.7.0
