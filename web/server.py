@@ -187,7 +187,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send(403, json_bytes({'error': 'Please use the local application page.'}))
             return False
         # Opening the app from a bookmark/chat is a cross-site navigation, not an API call.
-        landing_navigation = self.command == 'GET' and self.path == '/' and self.headers.get('Sec-Fetch-Mode') == 'navigate'
+        landing_navigation = self.command == 'GET' and self.path in ('/', '/stocks') and self.headers.get('Sec-Fetch-Mode') == 'navigate'
         if self.headers.get('Sec-Fetch-Site') == 'cross-site' and not landing_navigation:
             self.send(403, json_bytes({'error': 'Please use the local application page.'}))
             return False
@@ -201,6 +201,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__}))
         elif path == '/api/defaults':
             self.send(200, json_bytes({'inputs': defaults()}))
+        elif path in ('/stocks', '/stocks.js', '/stocks.css'):
+            name, mime = {'/stocks': ('stocks.html', 'text/html; charset=utf-8'), '/stocks.js': ('stocks.js', 'text/javascript; charset=utf-8'), '/stocks.css': ('stocks.css', 'text/css; charset=utf-8')}[path]
+            self.send(200, (ROOT / 'dist' / name).read_bytes(), mime)
         elif path in ('/', '/app.js', '/style.css'):
             name, mime = {'/': ('index.html', 'text/html; charset=utf-8'), '/app.js': ('app.js', 'text/javascript; charset=utf-8'), '/style.css': ('style.css', 'text/css; charset=utf-8')}[path]
             self.send(200, (ROOT / 'dist' / name).read_bytes(), mime)
@@ -218,7 +221,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.local_request():
             return
-        if self.path != '/api/run':
+        if self.path not in ('/api/run', '/api/stocks/run'):
             self.send(404, json_bytes({'error': 'Operation not found.'}))
             return
         try:
@@ -226,6 +229,10 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < length <= 10000 or self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                 raise ValueError('Invalid request format.')
             inputs = json.loads(self.rfile.read(length))
+            if self.path == '/api/stocks/run':
+                from p107.stocks import run
+                self.send(200, json_bytes(run(inputs)))
+                return
             result = calculate(inputs)
             with self.server.run_lock:
                 self.server.runs[result['run_id']] = result
@@ -253,3 +260,4 @@ if __name__ == '__main__':
         pass
     finally:
         server.server_close()
+

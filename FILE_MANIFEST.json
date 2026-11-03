@@ -16,7 +16,7 @@
   "p107/model.py": "e0afce3c87d4e78d9e2c79771fcd1178ffdd826bb04952e48f28b58dd7f1d824",
   "p107/reporting.py": "bd52d4422020ed8836ff8c4eb40f8f4c5892648a9ffd5857b7f0d0ab57719a99",
   "p107/taxes.py": "77e06ce23863be93e7abfda72075bd2c1ebce3e8b639b7733a88b00c3074ebf0",
-  "README.md": "f57fc62789feb49516e2fb0a0011a4ad66442a5a3dafb4d5e88c946709725e9c",
+  "README.md": "b5082cbe0a4b1de98068161b9dcdcc28e22703022825b074cb87a9ece4001f93",
   "requirements.txt": "e332046d3c9250bb16e2f7e9f818584fb3a8245f1c24f573fb375859bedae8f7",
   "results/annual_ledger.csv": "3bdf52524cd13bf44063d33f26594c8682a49b2fe792d6737c23b2c474c00523",
   "results/baseline_comparison.csv": "5faff3516ee92061e77a259cd4b6f2532791f95dce1c2063e293f30d1ea4bbc4",
@@ -40,10 +40,16 @@
   "verification/verification.json": "51ec9502a76f7170591cc766c845d2b337dfd7a9bdec4d849a4cac442ea3faf8",
   "verification/web_tests.txt": "cbaf468a8bec56e86837a6dd0e55fe52da2ca6fd3825c435f783be115eef0fab",
   "web/dist/app.js": "e0d64a83f2143940e1e5a57dfc1cdd7f5fd2ff327950653aea5f7dc5e959e71e",
-  "web/dist/index.html": "c52c8fafd05d3275c2cad838c68cf342687f040fd914fc02ec6756150d866d20",
+  "web/dist/index.html": "ce52d92c46149448e79b559c2b78b78cccfe30233d2404595afc68e120516e37",
   "web/dist/style.css": "1c92d07c834db4042633bb841f88faf49a3fd41cd1fe6642b87a74b76b5092be",
   "web/launch.py": "741ea7c6478dfffcd812db73414aa472d491b8de238c12da5c057aa7aecd5ab7",
   "web/README.md": "bc2fdfbf5f8a5171c7f4e0e4cf005061c99af8e3824ce562f9ba63d8b262a639",
-  "web/server.py": "17c32377b98c2aa0fb9e0b4e4696331734557f12e6a262d9bf23d2f4b32fbca5",
-  "web/tests/test_web.py": "5eaf41b0e26b3b390434334dd7b566aaaef69743f8dbbce1766b6f5547bc0ef6"
+  "web/server.py": "5a3fccf18fe778e98d837ab08af65142e699ff4ff9c6e5b0be7acd8c2677c6ee",
+  "web/tests/test_web.py": "6ca82c7a7c644da48e1d2c01a9c161af68de7922cfb8f380512b8c045c3e19ad",
+  "p107/stocks.py": "f6c82fdd4c1bcdf5a473dcf030fbefece6924e1f014eb4936b70ea9b5823f5dc",
+  "requirements-stocks.txt": "46ff20811ccb8353295413b730f4a7fe9feed44000a887458913c1e3e12a7182",
+  "web/dist/stocks.html": "2938eafebfb703f1e7d60be65c0be944d01925ddc282a8638afb22ef0a6d77c6",
+  "web/dist/stocks.js": "2ee41abc2cd1d6986f90ed4ad08cc2637b22ca778a592915ce656137bb0d1e85",
+  "web/dist/stocks.css": "73947ab6823d2286a7a787376ebf03699f1f889d6782ab637cb4b2b350baa41e",
+  "tests/test_stocks.py": "5c0399e09ed0de6564d201991100e7e95be73ed56b3a45a43261da1c996fec44"
 }

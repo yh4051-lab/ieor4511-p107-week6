@@ -48,3 +48,40 @@ The requirements file pins optional figure dependencies. For CSVs without figure
 The public default uses five years, 6% annual price appreciation, no dividends or alpha, $100,000 of annual outside ST gains, and illustrative 40% ST / 20% LT tax rates. Terminal wealth includes the same outside cash flows for every strategy; it is not the return on the $1 million investment alone. Current tax relief is not counted twice, and embedded gains are included in full-liquidation taxes.
 
 We still need to review the assumptions with Dom, clarify the source-based annual ST/LT estimates, confirm costs, and obtain security-level data. Individual tax lots, wash-sale controls, calibrated tracking risk, gradual exits, estate scenarios, 150/50, and 200/100 require further work.
+
+
+## Manual Yahoo stock experiment
+
+Install the optional dependency with `py -3.12 -m pip install -r requirements-stocks.txt`
+(on other systems use `python -m pip`). Start the server from the repository root:
+
+```text
+py -3.12 web/server.py
+```
+
+Open http://127.0.0.1:8751/stocks, or follow the stock link from the main page.
+If the old launcher is already running a background server, close that server first;
+on Windows its PID is in `web/server.pid` (PowerShell: `Stop-Process -Id (Get-Content web/server.pid)`).
+Keep the new foreground terminal running; Ctrl+C stops it.
+
+Enter comma-separated long and short Yahoo symbols, past dates, starting USD cash,
+130/30, 150/50 or 200/100 initial exposure, and explicit annual cost assumptions.
+Each side starts equally allocated. Fixed adjusted-price units are held without
+rebalancing, so gross/net exposures drift. Results show pre-tax equity, drawdown,
+position contributions and accrued costs; download JSON contains inputs, adjusted
+prices, daily ledger, retrieval time and assumptions.
+
+Only confirmed USD series are accepted. Empty downloads, unverified currencies,
+missing sessions, incompatible coverage and nonpositive equity fail explicitly.
+No synthetic data is substituted. Yahoo access requires internet and may be rate-limited.
+
+This is a historical total-return proxy using Yahoo dividend/split-adjusted Close,
+not executable stock prices, tax basis, tax-loss harvesting or an index replication.
+Financing is an assumed charge on initial extension; borrowing uses prior-session
+short value; fees use prior-session equity, ACT/365. Short adjusted returns approximate
+dividend compensation. No short rebate, margin/availability model, taxes, transaction
+fees or slippage is included. Do not use adjusted prices as tax-lot cost basis or feed
+these results into the existing illustrative loss schedule as measured tax alpha.
+Tests use deterministic fixtures; a live Yahoo download must also be checked locally.
+
+Dependency reference: https://ranaroussi.github.io/yfinance/reference/yfinance.price_history.html

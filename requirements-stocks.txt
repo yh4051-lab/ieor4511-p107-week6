@@ -1,0 +1,2 @@
+# Optional dependency for the Yahoo historical stock page.
+yfinance>=0.2.54,<2

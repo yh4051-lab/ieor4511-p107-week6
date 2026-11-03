@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P107 · 股票多空測試</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/stocks.css"><script src="/stocks.js" defer></script></head>
+<body><header class="topbar"><a href="/">← 回到稅後情境模型</a><strong>P107 · Yahoo 股票多空測試</strong></header>
+<main class="stocks-main"><h1>自己選擇做多與放空股票</h1><p>輸入 Yahoo Finance 代號，以歷史調整價格測試固定部位的稅前損益。此頁與稅損收割情境模型分開計算。</p>
+<form id="stock-form" class="panel stock-form">
+<label>做多代號（逗號分隔，各股等額配置）<input name="long_tickers" value="AAPL, MSFT" required maxlength="300"></label>
+<label>放空代號（逗號分隔，各股等額配置）<input name="short_tickers" value="TSLA" required maxlength="300"></label>
+<label>開始日期<input name="start" type="date" value="2020-01-01" required></label>
+<label>結束日期（包含當日）<input name="end" type="date" value="2024-12-31" required></label>
+<label>起始淨資產（USD）<input name="initial_cash" type="number" min="100" max="100000000" value="1000000" required></label>
+<label>初始多空配置<select name="short_pct"><option value="30">130/30</option><option value="50">150/50</option><option value="100">200/100</option></select></label>
+<label>融資年費率 %<input name="financing_pct" type="number" min="0" max="100" step="any" value="0" required></label>
+<label>借券年費率 %<input name="borrow_pct" type="number" min="0" max="100" step="any" value="0" required></label>
+<label>管理年費率 %<input name="fee_pct" type="number" min="0" max="20" step="any" value="0" required></label>
+<p class="stock-wide">成本預設為 0，請填入你的情境假設；Yahoo 價格不提供實際借券報價。只支援可確認為 USD 的資料，每側最多 10 檔。</p>
+<button type="submit" id="stock-run">下載價格並計算</button></form>
+<p id="stock-status" role="status" aria-live="polite"></p><p id="stock-error" role="alert" hidden></p>
+<section id="stock-results" hidden><h2>歷史結果 · 稅前、扣除輸入成本</h2><p id="stock-period"></p><div id="stock-summary" class="stock-metrics"></div>
+<h2>淨資產變化</h2><svg id="stock-chart" viewBox="0 0 900 260" role="img" aria-label="歷史淨資產曲線"></svg><p>縱軸：USD；橫軸：日期。每日完整數值可下載。</p>
+<h2>個股貢獻（成本前）</h2><div class="stock-table"><table><thead><tr><th>代號</th><th>方向</th><th>初始部位 USD</th><th>標的調整報酬</th><th>損益 USD</th></tr></thead><tbody id="stock-positions"></tbody></table></div>
+<h2>計算假設</h2><ul id="stock-assumptions"></ul><button type="button" id="stock-download">下載輸入、價格與逐日結果 JSON</button></section>
+</main></body></html>

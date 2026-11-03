@@ -120,6 +120,20 @@ class HttpTests(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(content)) as z:
             self.assertIn('scenario.json', z.namelist())
 
+    def test_stock_page_api_and_errors(self):
+        for path in ('/stocks', '/stocks.js', '/stocks.css'):
+            self.assertEqual(self.request('GET', path)[0], 200)
+        with patch('p107.stocks.run', return_value={'summary': {'ending_equity': 1234}}) as run:
+            status, data, _ = self.request('POST', '/api/stocks/run', '{}', {'Content-Type':'application/json'})
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(data)['summary']['ending_equity'], 1234)
+            run.assert_called_once_with({})
+        with patch('p107.stocks.run', side_effect=ValueError('No prices')):
+            status, data, _ = self.request('POST', '/api/stocks/run', '{}', {'Content-Type':'application/json'})
+            self.assertEqual(status, 400)
+            self.assertEqual(json.loads(data)['error'], 'No prices')
+        self.assertEqual(self.request('POST', '/api/stocks/run', '{}', {'Content-Type':'application/json', 'Origin':'https://outside.example'})[0], 403)
+
     def test_launcher_recognizes_running_public_server(self):
         with patch.object(launch, 'URL', f'http://127.0.0.1:{self.server.server_port}'):
             self.assertTrue(launch.health())
@@ -144,3 +158,4 @@ class HttpTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
