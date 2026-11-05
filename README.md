@@ -16,9 +16,18 @@ Download this repository using **Code > Download ZIP** and extract it into a new
 python web/launch.py
 ```
 
-On Windows, use `py -3.12 web/launch.py` or `py -3.12 web/launch_stock.py`; both open the same integrated interface, preferring **http://127.0.0.1:8754**. If an older build or another app occupies that port, the launcher chooses another port through 8764; follow the actual URL it prints and opens. It reuses only a server whose build fingerprint matches this source and interface. On macOS or Linux, use `python3` if needed. The original illustrative scenario uses only the standard library. Historical stock research requires `python -m pip install -r requirements-stock.txt`, which `START-STOCK.bat` runs automatically. Expand **Portfolio → Custom Stock Research — After-Tax Loss Harvesting** to configure historical positions. **Run After-Tax Research** displays that run in the right-side **Summary** and **Annual ledger**. Use **Run comparison** for the original illustrative scenario, or **Results source** to switch between completed results.
+On Windows, use `py -3.12 web/launch.py` or `py -3.12 web/launch_stock.py`; both open the same integrated interface, preferring **http://127.0.0.1:8754**. If an older build or another app occupies that port, the launcher chooses another port through 8764; follow the actual URL it prints and opens. It reuses only a server whose build fingerprint matches this source and interface. On macOS or Linux, use `python3` if needed. The original illustrative scenario uses only the standard library. Historical stock research requires `python -m pip install -r requirements-stock.txt`, which `START-STOCK.bat` runs automatically. The historical stock form is open by default under **Portfolio → Custom Stock Research — After-Tax Loss Harvesting**. Complete it and press the single **Run comparison** button. **Analysis mode** defaults to **Historical stock research**; select **Illustrative scenario** to use the original model with the same button.
 
-The right-side **Summary** and **Annual ledger** follow the selected **Results source**. Historical research shows three wealth comparisons, equity curves, a harvesting bridge and portfolio-specific ledgers. The original scenario retains its break-even and holding-period comparisons; **Scenario method** describes that model. Downloads follow the source: **Download research JSON** for historical runs and **Download scenario ZIP** for illustrative scenarios. This is a local Python application; GitHub does not host its running interface.
+The three right-side tabs—**Summary**, **Annual ledger** and **Assumptions &
+scope**—follow the selected **Analysis mode** and completed run. Historical
+Summary shows after-tax wealth comparisons, an independent SPY pass/fail/tie
+target, signed initial-exposure bars, equity curves and the harvesting bridge.
+Annual ledger tracks the selected portfolio's taxes, trades and costs; the scope
+tab records the exact settings and model notes. The original mode retains its
+own break-even and holding-period comparisons. Downloads follow the mode:
+**Download research JSON** for historical runs and **Download scenario ZIP** for
+illustrative scenarios. This is a local Python application; GitHub does not host
+its running interface.
 
 ## Reproduce the public results
 
@@ -47,7 +56,7 @@ The requirements file pins optional figure dependencies. For CSVs without figure
 
 The public default uses five years, 6% annual price appreciation, no dividends or alpha, $100,000 of annual outside ST gains, and illustrative 40% ST / 20% LT tax rates. Terminal wealth includes the same outside cash flows for every strategy; it is not the return on the $1 million investment alone. Current tax relief is not counted twice, and embedded gains are included in full-liquidation taxes.
 
-We still need to review the assumptions with Dom, clarify the source-based annual ST/LT estimates, confirm costs, and obtain security-level data. Individual tax lots, wash-sale controls, calibrated tracking risk, gradual exits, estate scenarios, 150/50, and 200/100 require further work.
+The original illustrative model still requires review of its source-based ST/LT estimates and cost assumptions. The historical module below supports configurable exposures, including 150/50 and 200/100. Full wash-sale rules, calibrated tracking risk, gradual exits and estate scenarios remain further research work.
 
 ## Custom Stock Research — After-Tax Loss Harvesting
 
@@ -59,16 +68,19 @@ other exposures and split each leg across stocks using relative weights. The
 engine converts initial budgets to fractional shares using historical entry
 prices; optional Manual shares mode preserves direct quantity entry.
 
-The main **Summary** compares modeled after-tax wealth for the harvesting
+Using the single **Run comparison** button, the main **Summary** compares modeled after-tax wealth for the harvesting
 strategy, the same initial portfolio without harvesting, and a 100%-long benchmark
 funded with the same initial equity. The main **Annual ledger** lets you inspect
 any of these three portfolios, including its taxes, trades, costs and holdings. The no-harvest comparison and exit-tax bridge help assess
 harvesting separately from the effect of initial leverage and stock selection.
 Target exposures apply at entry; the engine does not continuously rebalance.
+The signed exposure chart uses initial equity rather than a misleading 100% pie.
+A separate SPY target reports failure, success or a tie for the selected historical
+period; it is not a forecast or client-suitability decision.
 
 Run `START-STOCK.bat` on Windows. See [README-STOCK.md](README-STOCK.md) for startup,
 allocation examples and offline replay, and [CODE-MAP.md](CODE-MAP.md) for changed
 files. The original illustrative annual model remains separate. Tax rules are
 simplified research assumptions; complete assumptions are retained in exported
-JSON after removal of the long visible assumptions panel. Legacy research-level
+JSON and the run-specific **Assumptions & scope** tab. Legacy research-level
 API/CLI inputs remain supported for prior-run replay.

@@ -16,17 +16,20 @@
     <section class="intro"><div><p class="eyebrow">LONG-SHORT DIRECT INDEXING</p><h1>After-tax strategy comparison</h1><p class="subtitle">Same starting cash. Modeled costs. Full liquidation taxes.</p></div><p id="analysis-label" class="scenario-label">Hypothetical scenarios<br><span>Independent illustrative inputs</span></p></section>
     <div class="workspace">
       <aside class="controls panel" aria-label="Scenario inputs">
-        <div class="controls-head"><div class="section-title"><h2>Scenario inputs</h2><button id="reset" class="text-button" type="button" disabled>Reset defaults</button></div><p>Adjust the assumptions, then run the comparison.</p></div>
+        <div class="controls-head"><div class="section-title"><h2>Portfolio inputs</h2><button id="reset" class="text-button" type="button" disabled>Reset defaults</button></div><p>Complete your portfolio, then press Run comparison.</p></div>
         <form id="scenario-form" novalidate>
           <div class="controls-scroll">
+            <div id="scenario-examples" hidden>
             <label for="example-picker" class="example-label">Start with an example</label>
             <select id="example-picker" disabled><option value="default">Default · $100k outside ST gains</option><option value="no-gains">No outside gains</option><option value="high-financing">Higher financing · 6.5%</option><option value="custom" disabled>Custom inputs</option></select>
-            <p class="field-note">Examples reset all inputs and run automatically.</p>
+            <p class="field-note">Examples reset the illustrative scenario inputs and run automatically.</p>
+            </div>
             <div id="input-error" class="input-error" role="alert" hidden></div>
             <fieldset id="input-fields" disabled>
-            <p class="input-section-label">Portfolio</p><label for="initial_cash">Starting cash</label><div class="input-wrap"><span>$</span><input id="initial_cash" name="initial_cash" type="number" min="10000" max="100000000" step="any" required><span>USD</span></div>
-<details id="stock-experiment" class="stock-experiment">
+            <p class="input-section-label">Portfolio</p><label for="initial_cash">Starting cash</label><div class="input-wrap"><span>$</span><input id="initial_cash" name="initial_cash" type="number" min="10000" max="100000000" step="any" value="1000000" required><span>USD</span></div>
+<details id="stock-experiment" class="stock-experiment" open>
   <summary>Custom Stock Research — After-Tax Loss Harvesting</summary>
+  <fieldset id="research-fields">
   <p class="field-note">Choose any supported US stock or ETF, set your long and short allocations, and compare historical after-tax wealth. Starting cash above is your initial investor equity.</p>
   <div class="research-description" role="note"><strong>One complete research run</strong><span>Historical prices, position accounting, costs, dividends, loss harvesting, annual taxes and the final sale are calculated together. Compare your harvesting strategy with the same portfolio without harvesting and your benchmark.</span></div>
   <label for="research-allocation-mode">Position sizing</label>
@@ -76,12 +79,13 @@
     <label for="research-cooldown">Same-ticker reentry cooldown — calendar days</label><input id="research-cooldown" type="number" min="30" max="365" step="1" value="30">
     <p class="field-note">Observe a loss trigger after holding more than 30 days, execute at the next session close, and reopen only after more than the cooldown calendar days. Time out of the market affects returns. This rule is not a complete wash-sale or short-sale tax implementation.</p>
   </fieldset>
-  <button type="button" id="stock-calculate">Run After-Tax Research</button>
-  <p id="stock-status" role="status" aria-live="polite">Set your allocations and select your long and short tickers to start.</p>
+  <p id="stock-status" role="status" aria-live="polite">Set your allocations and stocks, then press Run comparison below.</p>
   <div id="stock-result" hidden></div>
-  <p class="field-note">Run this research to display its results in Summary and Annual ledger on the right. Use Results source to switch back to the original illustrative scenario. This historical model uses simplified tax rules and does not enforce broker margin requirements. Full model notes are included in the research JSON export.</p>
+  <p class="field-note">Run comparison displays this research in Summary, Annual ledger and Assumptions &amp; scope. Analysis mode also offers the original illustrative scenario. This historical model uses simplified tax rules and does not enforce broker margin requirements. Full model notes are included in the research JSON export.</p>
+</fieldset>
 </details>
 
+            <fieldset id="scenario-inputs" hidden disabled>
             <label for="horizon_years">Holding period</label><div class="input-wrap"><input id="horizon_years" name="horizon_years" type="number" min="1" max="10" step="1" required><span>years</span></div>
             <label for="price_return_pct">Annual price return</label><div class="input-wrap"><input id="price_return_pct" name="price_return_pct" type="number" min="-20" max="20" step="any" required><span>% / year</span></div><p class="field-note">The same price return applies to all strategies. No dividends or manager alpha.</p>
             <div class="divider"></div><p class="input-section-label">Outside gains</p>
@@ -99,6 +103,7 @@
               <p class="field-note">Financing, rebate, and borrow rates each apply to a 30% notional. The ordinary income tax rate follows the ST rate.</p>
               <label for="loss_scale_pct">Core loss curve applied %</label><input id="loss_scale_pct" name="loss_scale_pct" type="number" min="0" max="100" step="any" required><p class="field-note">100 = the illustrative curve; 50 = half that assumption; 0 = no Core loss harvesting.</p>
             </div></details>
+            </fieldset>
           </fieldset>
           </div>
           <div class="run-bar"><button id="run" class="primary-button" type="submit" disabled>Run comparison <span aria-hidden="true">→</span></button><p id="status" class="status" role="status" aria-live="polite">Connecting to the local model…</p></div>
@@ -109,24 +114,26 @@
           <div class="tabs" role="tablist" aria-label="Model views">
             <button id="tab-summary" role="tab" aria-selected="true" aria-controls="view-summary" data-view="summary" tabindex="0">Summary</button>
             <button id="tab-ledger" role="tab" aria-selected="false" aria-controls="view-ledger" data-view="ledger" tabindex="-1">Annual ledger</button>
-            <button id="tab-scope" role="tab" aria-selected="false" aria-controls="view-scope" data-view="scope" tabindex="-1">Scenario method</button>
+            <button id="tab-scope" role="tab" aria-selected="false" aria-controls="view-scope" data-view="scope" tabindex="-1">Assumptions &amp; scope</button>
           </div>
-          <div class="result-mode-control"><label for="result-mode">Results source</label><select id="result-mode"><option value="scenario">Illustrative scenario</option><option value="research" disabled>Historical stock research</option></select></div>
-          <button id="download" class="secondary-button" disabled aria-describedby="download-note">Download scenario ZIP <span aria-hidden="true">↓</span></button>
-          <button id="research-download" class="secondary-button" type="button" disabled hidden>Download research JSON <span aria-hidden="true">↓</span></button>
+          <div class="result-mode-control"><label for="result-mode">Analysis mode</label><select id="result-mode"><option value="research" selected>Historical stock research</option><option value="scenario">Illustrative scenario</option></select></div>
+          <button id="download" class="secondary-button" disabled hidden aria-describedby="download-note">Download scenario ZIP <span aria-hidden="true">↓</span></button>
+          <button id="research-download" class="secondary-button" type="button" disabled>Download research JSON <span aria-hidden="true">↓</span></button>
         </div>
-        <p id="results-mode-note" class="results-mode-note" role="status">Illustrative scenario: assumed annual returns and harvesting curves. Run After-Tax Research to show your historical portfolio here.</p>
-        <div id="research-pending" class="pending" hidden><strong>Research inputs changed.</strong> Run After-Tax Research again to update these results.</div>
+        <p id="results-mode-note" class="results-mode-note" role="status">Historical stock research: enter your portfolio on the left, then press Run comparison. All three tabs will use the same completed run.</p>
+        <div id="research-pending" class="pending" hidden><strong>Research inputs changed.</strong> Run comparison again to update these results.</div>
         <span id="download-note" class="sr-only">A ZIP with full inputs, CSV outputs, source hashes, and instructions to reproduce this run.</span>
-        <section id="results-section" aria-busy="true" aria-label="Scenario results">
-          <div id="scenario-feedback">
+        <section id="results-section" aria-busy="false" aria-label="Comparison results">
+          <div id="scenario-feedback" hidden>
           <div id="error" class="error" role="alert" hidden></div>
           <div id="pending" class="pending" hidden><strong>Inputs changed.</strong> These results are from the last run. Run comparison to update.</div>
-          <div id="loading" class="loading panel">Calculating returns, costs, and taxes…</div>
+          <div id="loading" class="loading panel" hidden>Calculating returns, costs, and taxes…</div>
           </div>
-          <div id="result-content" hidden>
+          <div id="result-content">
             <section id="view-summary" class="tab-view" role="tabpanel" aria-labelledby="tab-summary" tabindex="0">
-              <div id="scenario-summary-panel" class="scenario-result-panel">
+              <div id="scenario-summary-panel" class="scenario-result-panel" hidden>
+              <div id="scenario-summary-empty" class="panel research-empty-state"><h2>Illustrative scenario</h2><p>Review the scenario inputs, then press Run comparison.</p></div>
+              <div id="scenario-summary-content" hidden>
               <div class="takeaway"><p class="eyebrow">CURRENT SCENARIO · AFTER FULL LIQUIDATION</p><h2 id="takeaway-title"></h2><p id="scenario-caption"></p></div>
               <div class="metric-heading"><h3>Terminal after-tax wealth</h3><span>USD · Rounded to whole dollars</span></div>
               <div id="strategy-cards" class="strategy-cards"></div>
@@ -135,12 +142,15 @@
                 <section class="panel chart-panel"><p class="eyebrow">OUTSIDE GAINS</p><h3>When does Core break even?</h3><div id="breakeven-number" class="threshold"></div><p id="breakeven-description" class="chart-note"></p><div id="breakeven-chart" class="svg-chart"></div><p class="axis-note">X: Annual outside gains (USD)<br>Y: Core minus Index, terminal after-tax wealth (USD)</p><details class="chart-details"><summary>Search range and limitations</summary><p id="search-note"></p></details></section>
                 <section class="panel chart-panel"><p class="eyebrow">HOLDING PERIOD</p><h3>How does time change the result?</h3><p class="chart-note">Terminal wealth relative to Index. Only the holding period changes; all other inputs stay fixed.</p><div id="horizon-table"></div><div class="callout"><strong>Tax relief today is not the final benefit.</strong><p>Harvesting losses reduces cost basis and can increase taxable gains at exit. These results include the full sale.</p></div></section>
               </div>
-              <div class="summary-footnote"><span>Returns and losses are assumptions, not observed performance.</span><button class="text-button" data-go-view="scope">Review scenario method →</button></div>
+              <div class="summary-footnote"><span>Returns and losses are assumptions, not observed performance.</span><button class="text-button" data-go-view="scope">Review assumptions &amp; scope →</button></div>
               </div>
-              <div id="research-summary-panel" hidden></div>
+              </div>
+              <div id="research-summary-panel"><div class="panel research-empty-state"><h2>Compare your after-tax portfolio</h2><p>Choose your stocks, long / short allocation, dates, costs and taxes on the left. Press Run comparison to see after-tax wealth, the SPY target and harvesting results.</p></div></div>
             </section>
             <section id="view-ledger" class="tab-view" role="tabpanel" aria-labelledby="tab-ledger" tabindex="0" hidden>
-              <div id="scenario-ledger-panel" class="scenario-result-panel">
+              <div id="scenario-ledger-panel" class="scenario-result-panel" hidden>
+              <div id="scenario-ledger-empty" class="panel research-empty-state"><p>Run comparison to populate this scenario ledger.</p></div>
+              <div id="scenario-ledger-content" hidden>
               <section class="panel ledger-panel">
                 <div class="section-heading"><div><p class="eyebrow">ANNUAL LEDGER</p><h2>Follow the calculations</h2></div><span class="unit-label">All values in USD</span></div>
                 <div class="ledger-filters"><div><label for="ledger-strategy">Strategy</label><select id="ledger-strategy"><option value="core_130_30">Core 130/30</option><option value="long_only_di">Long-only DI</option><option value="index">Index</option></select></div><div><label for="ledger-view">View</label><select id="ledger-view"><option value="tax">Returns & taxes</option><option value="costs">Fees & financing</option><option value="basis">Basis & embedded gains</option></select></div></div>
@@ -150,11 +160,14 @@
               </section>
               <section class="panel ledger-panel"><div class="section-heading"><div><p class="eyebrow">CUMULATIVE COMPARISON</p><h2>Costs, tax relief, and exit liability</h2></div></div><div id="tax-table" class="table-scroll" tabindex="0" role="region" aria-label="Cumulative costs and taxes"></div><p class="chart-note">Pre-exit tax relief is already reflected in the cash account; do not add it to wealth again. Incremental exit tax is the change in the final-year tax bill when the full sale is included. Unused loss carryforwards have no terminal cash value.</p></section>
               </div>
-              <div id="research-ledger-panel" hidden></div>
+              </div>
+              <div id="research-ledger-panel"><div class="panel research-empty-state"><p>Run comparison to populate the historical tax, trade and cost ledgers.</p></div></div>
             </section>
           </div>
         </section>
         <section id="view-scope" class="tab-view" role="tabpanel" aria-labelledby="tab-scope" tabindex="0" hidden>
+          <div id="research-scope-panel"><div class="panel research-empty-state"><h2>Historical research assumptions</h2><p>Run comparison to see the exact settings, dates, SPY evaluation and model scope used by the results.</p></div></div>
+          <div id="scenario-scope-panel" hidden>
           <section id="guide" class="panel guide"><p class="eyebrow">METHOD</p><h2>Three strategies, one comparison</h2><div class="explain-grid"><article><span class="strategy-dot index"></span><h3>Index <small>The benchmark</small></h3><p>A low-cost index strategy used as the benchmark. No intentional tax-loss harvesting.</p></article><article><span class="strategy-dot di"></span><h3>Long-only DI <small>Direct indexing</small></h3><p>Holds individual stocks and realizes losses that may offset capital gains. Its loss curve here is an illustrative assumption.</p></article><article><span class="strategy-dot core"></span><h3>Core 130/30 <small>Long-short investing</small></h3><p>For each $100 of net capital, holds $130 long and $30 short. The model includes financing, rebates, borrowing costs, and loss offsets.</p></article></div><details id="assumptions"><summary>Sources, assumptions, and what is still missing</summary><div class="assumption-content"><p><strong>Core loss curve: </strong>15%, 10%, 7%, 4%, then 2% annually for Years 5-10, applied to beginning-of-year NAV. These are independent illustrative assumptions, not provider estimates or observed account losses.</p><p><strong>Restricted course run: </strong>The original source-based configuration and workbook are available separately through the course data link. Use the reproduction instructions in <code>docs/RESTRICTED_DATA.md</code>; this browser example uses the public inputs.</p><p><strong>Long-only DI: </strong>The illustrative loss curve is 5%, 3%, 2%, 1%, 0.5%, then 0.3% annually. It has not been calibrated to historical data. Index has no intentional harvesting.</p><p><strong>Fixed assumptions: </strong>Index / DI management fees are 0.03% / 0.25%. Annual trading cost rates for Index / DI / Core are 0 / 0.03% / 0.05%; exit trading rates are 0.01% / 0.01% / 0.02% of gross exposure. Side cash earns 0%; there are no dividends or alpha. Interest deductions are capped at modeled rebate income; fees are not given a blanket tax deduction.</p><p><strong>Tax simplifications: </strong>Losses offset gains of the same character first, then the other character; unused losses carry forward. All realizations at exactly one year are ST. Later, assumed ST shares for Index / DI / Core are 0% / 5% / 10%. Individual brackets, state tax details, and capital-loss deductions against ordinary income are omitted.</p><p><strong>Not yet included: </strong>Observed market prices, individual tax lots, wash-sale checks, actual trades, margin calls, and calibrated risk estimates. Return paths and loss curves are independent assumptions; the model does not establish that these losses can be realized in practice.</p><p>This first-stage scenario model supports accounting checks and discussion of assumptions. It does not establish suitability for a real client. Full inputs and source notes are in <code>scenario.json</code> in the download and in the original Python project documentation.</p></div></details></section>
           <section class="panel scope-panel"><p class="eyebrow">SPONSOR REQUIREMENTS · PAGES 2–4</p><h2>What this version covers</h2><p class="chart-note">This is the first-stage model for Week 6. Coverage below refers to implemented scenario calculations, not validated investment outcomes.</p>
             <div class="table-scroll" tabindex="0" role="region" aria-label="Sponsor requirement coverage"><table class="scope-table"><thead><tr><th>Requirement</th><th>Status</th><th>Current scope / next work</th></tr></thead><tbody>
@@ -168,8 +181,9 @@
               <tr><td>Client decision matrix and research paper<br><small>Specification p. 4</small></td><td><span class="scope-status open">Not completed</span></td><td>Require broader scenarios, data validation, and review with Dom. No client recommendation is established here.</td></tr>
             </tbody></table></div>
           </section>
+          </div>
         </section>
-        <footer><span id="footer-scope">P107 · Hypothetical scenario · USD</span><span id="run-reference">Full liquidation included</span><span id="research-run-reference" hidden>Historical stock research · Full liquidation included</span></footer>
+        <footer><span id="footer-scope">P107 · Historical research · USD</span><span id="run-reference" hidden>Full liquidation included</span><span id="research-run-reference">Historical stock research · No completed run</span></footer>
       </div>
     </div>
   </main>

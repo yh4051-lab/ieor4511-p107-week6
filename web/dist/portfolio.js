@@ -12,7 +12,8 @@
   const ledgerPanel = document.getElementById('research-ledger-panel');
   const researchDownload = document.getElementById('research-download');
   const pending = document.getElementById('research-pending');
-  const button = document.getElementById('stock-calculate');
+  const scopePanel = document.getElementById('research-scope-panel');
+  const sharedStatus = document.getElementById('status');
   const addButton = document.getElementById('stock-add');
   const initialCash = document.getElementById('initial_cash');
   const storageKey = 'p107-integrated-research-v2';
@@ -29,6 +30,7 @@
   let lastRun = null;
   let resultRevision = -1;
   let ledgerStrategy = 'strategy';
+  let lastStatus = 'Select your stocks and press Run comparison.';
   const rows = () => Array.from(list.querySelectorAll('.stock-position'));
   const field = (row, name) => row.querySelector('[data-field="' + name + '"]');
   const finite = value => typeof value === 'number' && Number.isFinite(value);
@@ -38,7 +40,7 @@
 
   function readInputs() {
     const inputs = {
-      level: 3, initial_cash: Number(initialCash.value),
+      level: 3, evaluate_spy: true, initial_cash: Number(initialCash.value),
       allocation_mode: allocationMode.value,
       long_exposure_pct: Number(longExposure.value),
       short_exposure_pct: Number(shortExposure.value),
@@ -64,10 +66,16 @@
     } catch (_) {}
   }
 
+  function setStatus(message) {
+    lastStatus = message;
+    status.textContent = message;
+    if (window.P107Results?.currentMode() === 'research' && sharedStatus) sharedStatus.textContent = message;
+  }
+
   function changed() {
     revision++;
     updateAllocation();
-    if (lastRun) status.textContent = 'Inputs changed. Run After-Tax Research to update the right-side results.';
+    if (lastRun) setStatus('Inputs changed. Run comparison to update the right-side results.');
     syncResultState();
     save();
   }
@@ -77,11 +85,12 @@
     result.classList.toggle('stock-stale', stale || busy);
     summaryPanel?.classList.toggle('stock-stale', stale || busy);
     ledgerPanel?.classList.toggle('stock-stale', stale || busy);
+    scopePanel?.classList.toggle('stock-stale', stale || busy);
     if (researchDownload) researchDownload.disabled = !lastRun || stale || busy;
     for (const control of document.querySelectorAll('[data-research-export]')) control.disabled = !lastRun || stale || busy;
     if (pending) {
       pending.hidden = window.P107Results?.currentMode() !== 'research' || !lastRun || !(stale || busy);
-      pending.textContent = busy ? 'Historical research is running. The displayed results are from the previous completed run.' : 'Research inputs changed. These results are from the previous run; run After-Tax Research to update.';
+      pending.textContent = busy ? 'Historical research is running. The displayed results are from the previous completed run.' : 'Research inputs changed. These results are from the previous run; press Run comparison to update.';
     }
   }
 
@@ -123,7 +132,7 @@
 
   function add(position = {}) {
     if (rows().length >= 20) {
-      status.textContent = 'A research run supports at most 20 distinct tickers.';
+      setStatus('A research run supports at most 20 distinct tickers.');
       return;
     }
     const row = document.createElement('div'); row.className = 'stock-position';
@@ -243,6 +252,103 @@
     parent.appendChild(article);
   }
 
+  function renderVerdict(parent, data) {
+    const summary = data.summary || {};
+    const spyWealth = summary.spy_benchmark_wealth;
+    const difference = finite(summary.spy_display_difference) ? summary.spy_display_difference : summary.incremental_wealth_vs_spy;
+    const statusCode = ['pass', 'fail', 'tie'].includes(summary.spy_status) ? summary.spy_status : null;
+    const panel = document.createElement('section'); panel.id = 'research-verdict';
+    panel.className = 'research-verdict research-verdict-' + (statusCode || 'unavailable');
+    panel.setAttribute('role', 'status');
+    const title = document.createElement('h2');
+    title.textContent = statusCode === 'fail' ? 'Strategy failed — below SPY' : statusCode === 'pass' ? 'Strategy passed — above SPY' : statusCode === 'tie' ? 'Strategy matched SPY' : 'SPY comparison unavailable';
+    panel.appendChild(title);
+    if (statusCode) paragraph(panel, 'After-tax wealth: strategy ' + money(summary.terminal_wealth) + ' · SPY ' + money(spyWealth) + ' · Difference ' + money(difference) + '.');
+    paragraph(panel, 'This target compares full-liquidation after-tax wealth for this historical period, with the same initial equity and outside cash flows. It is separate from the effect of harvesting versus your own no-harvest control.', 'research-table-note');
+    parent.appendChild(panel);
+  }
+
+  function renderInitialExposure(parent, data) {
+    const summary = data.summary || {};
+    const equity = summary.initial_cash;
+    if (!finite(equity) || equity <= 0) return;
+    const positions = Array.isArray(data.positions) ? data.positions : [];
+    const total = side => positions.filter(position => position.side === side).reduce((sum, position) => sum + position.shares * position.start_price, 0);
+    const longValue = total('long'), shortValue = total('short');
+    const longPct = longValue / equity * 100, shortPct = shortValue / equity * 100;
+    const section = document.createElement('section'); section.className = 'panel research-initial-exposure';
+    heading(section, 'Initial capital and long / short exposure');
+    paragraph(section, 'Initial equity ' + money(equity) + ' · Gross exposure ' + percent(longPct + shortPct) + ' · Net exposure ' + percent(longPct - shortPct) + '.', 'research-table-note');
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    const width = 660, height = 230, left = 128, right = 542, top = 38, bottom = 190;
+    const limit = Math.max(100, longPct, shortPct) * 1.08;
+    const x = value => left + (value + limit) / (2 * limit) * (right - left);
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height); svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Initial exposure relative to starting equity: long ' + percent(longPct) + ', short minus ' + percent(shortPct) + ', equity reference 100%.');
+    const title = document.createElementNS(ns, 'title'); title.textContent = 'Signed initial exposure before opening fees. Short exposure extends below zero; positions do not form slices of a 100% capital pie.'; svg.appendChild(title);
+    function text(value, px, py, anchor = 'start') {
+      const label = document.createElementNS(ns, 'text');
+      label.setAttribute('x', String(px)); label.setAttribute('y', String(py)); label.setAttribute('text-anchor', anchor); label.setAttribute('font-size', '13'); label.setAttribute('fill', '#405670'); label.textContent = value; svg.appendChild(label);
+    }
+    const line = document.createElementNS(ns, 'line');
+    for (const [key, value] of Object.entries({x1: x(0), x2: x(0), y1: top, y2: bottom, stroke: '#708099', 'stroke-width': 1.5})) line.setAttribute(key, String(value));
+    svg.appendChild(line);
+    for (const [label, value, y, color] of [['Long', longPct, 62, '#315792'], ['Short', -shortPct, 112, '#b3603d'], ['Equity reference', 100, 162, '#93a3b7']]) {
+      const rect = document.createElementNS(ns, 'rect');
+      const start = Math.min(x(0), x(value));
+      for (const [key, v] of Object.entries({x: start, y: y - 18, width: Math.max(0, Math.abs(x(value) - x(0))), height: 28, rx: 3, fill: color})) rect.setAttribute(key, String(v));
+      svg.appendChild(rect); text(label, 8, y + 1); text((value > 0 ? '+' : '') + percent(value), width - 8, y + 1, 'end');
+    }
+    text('−' + Math.round(limit) + '%', left, 218); text('0%', x(0), 218, 'middle'); text('+' + Math.round(limit) + '%', right, 218, 'end');
+    section.appendChild(svg);
+    const amounts = document.createElement('div'); amounts.className = 'research-exposure-amounts';
+    for (const [label, value, allocation] of [['Long positions', longValue, longPct], ['Short positions', shortValue, shortPct]]) {
+      const item = document.createElement('div'); paragraph(item, label); const amount = document.createElement('strong'); amount.textContent = money(value); item.appendChild(amount);
+      paragraph(item, percent(allocation) + ' of initial equity', 'research-table-note'); amounts.appendChild(item);
+    }
+    section.appendChild(amounts);
+    paragraph(section, 'Bars use initial investor equity as the denominator, before opening fees. Long and short positions may exceed 100%; they are not a 100% pie. Final holdings are fully liquidated, so the initial allocation is the useful exposure view. Short proceeds remain restricted collateral.', 'research-table-note');
+    parent.appendChild(section);
+  }
+
+  function renderResearchScope(data, inputs) {
+    if (!scopePanel) return;
+    scopePanel.replaceChildren(); scopePanel.classList.add('research-main', 'panel', 'research-scope-panel');
+    const title = document.createElement('h2'); title.textContent = 'Assumptions & scope — this historical run'; scopePanel.appendChild(title);
+    paragraph(scopePanel, 'These settings belong to the same completed run shown in Summary and Annual ledger. Input changes require Run comparison to update all three views.', 'research-table-note');
+    heading(scopePanel, 'Run configuration');
+    const configuration = [
+      ['Initial equity', money(inputs.initial_cash)],
+      ['Requested period', inputs.start_date + ' to ' + inputs.end_date],
+      ['Actual trading period', (data.metadata?.actual_start || inputs.start_date) + ' to ' + (data.metadata?.actual_end || inputs.end_date)],
+      ['Position sizing', inputs.allocation_mode === 'target_exposure' ? 'Initial long / short budgets with weights normalized within each direction' : 'Manually entered initial share quantities'],
+      ['Selected benchmark', inputs.benchmark + ' · 100% long initial exposure'],
+      ['Pass / fail target', '100% long SPY after-tax final wealth, matched initial equity and outside cash flows'],
+      ['Financing / borrow / rebate', percent(inputs.financing_pct) + ' / ' + percent(inputs.borrow_pct) + ' / ' + percent(inputs.rebate_pct) + ' per year'],
+      ['Management / trading', percent(inputs.manager_pct) + ' per year / ' + percent(inputs.transaction_pct) + ' per trade'],
+      ['ST / LT / dividend tax', percent(inputs.tax_st_pct) + ' / ' + percent(inputs.tax_lt_pct) + ' / ' + percent(inputs.dividend_tax_pct)],
+      ['Annual outside ST / LT gains', money(inputs.outside_st_gain) + ' / ' + money(inputs.outside_lt_gain)],
+      ['Harvest signal', percent(inputs.harvest_threshold_pct) + ' closing-price loss, after holding more than 30 calendar days; execution at the next available close'],
+      ['Same-ticker reentry', 'Only after more than ' + inputs.cooldown_days + ' calendar days following a close'],
+      ['Final exit', 'All remaining positions fully liquidated at the final available session']
+    ];
+    table(scopePanel, [['Setting', 'label'], ['Value', 'value']], configuration.map(([label, value]) => ({label, value})));
+    heading(scopePanel, 'Interpret the comparisons');
+    paragraph(scopePanel, 'SPY pass / fail is the chosen historical target, not a conclusion about every client or future period. The selected benchmark may differ from SPY. The no-harvest control starts with exactly the same stocks and quantities; its wealth difference also reflects time out of the market, dividends and trading costs. Initial exposures drift rather than being continuously rebalanced.');
+    heading(scopePanel, 'Model scope');
+    const notes = Array.isArray(data.assumptions) ? data.assumptions.filter(note => !/^Level [123]|^All levels/.test(note)) : [];
+    if (notes.length) {
+      const list = document.createElement('ul');
+      for (const note of notes) { const item = document.createElement('li'); item.textContent = note; list.appendChild(item); }
+      scopePanel.appendChild(list);
+    } else paragraph(scopePanel, 'The model uses historical closing prices, simplified flat tax rates, annual netting, carryforwards and full final liquidation. It does not enforce broker margin requirements or complete household wash-sale rules.');
+    paragraph(scopePanel, 'Historical data and all model notes are included in the research JSON export. Borrow availability and modeled cost/tax rates are user-supplied assumptions, not quotes from Yahoo.', 'research-table-note');
+    const metadata = document.createElement('details'); metadata.className = 'research-provenance';
+    const label = document.createElement('summary'); label.textContent = 'Data and reproducibility metadata';
+    const pre = document.createElement('pre'); pre.textContent = JSON.stringify({metadata: data.metadata, data: data.data}, null, 2); metadata.append(label, pre); scopePanel.appendChild(metadata);
+  }
+
   function researchEntries(simulation) {
     const summary = simulation.summary || {};
     const positions = (Array.isArray(simulation.positions) ? simulation.positions : []).map(position => ({...position, initial_value: position.shares * position.start_price, initial_allocation_pct: position.shares * position.start_price / summary.initial_cash * 100}));
@@ -305,7 +411,7 @@
     lastRun = {inputs, result: data};
     resultRevision = stamp;
     result.replaceChildren();
-    paragraph(result, 'Research results are displayed in Summary and Annual ledger on the right.', 'research-table-note');
+    paragraph(result, 'Results are displayed in Summary, Annual ledger and Assumptions & scope on the right.', 'research-table-note');
     const viewButton = document.createElement('button'); viewButton.type = 'button'; viewButton.textContent = 'View research results';
     viewButton.addEventListener('click', () => showResearch()); result.appendChild(viewButton); result.hidden = false;
 
@@ -320,6 +426,7 @@
     const title = document.createElement('h2'); title.textContent = 'After-tax loss-harvesting results'; introduction.appendChild(title);
     paragraph(introduction, actualStart + ' to ' + actualEnd + ' · Initial equity ' + money(summary.initial_cash) + ' · Benchmark ' + inputs.benchmark);
     summaryPanel.appendChild(introduction);
+    renderVerdict(summaryPanel, data);
     const cards = document.createElement('div'); cards.className = 'strategy-cards research-wealth-cards';
     card(cards, 'With harvesting', summary.terminal_wealth, 'Your selected stocks and harvesting rule', 'strategy');
     card(cards, 'Same portfolio, no harvesting', data.no_harvest_control?.summary?.terminal_wealth, 'Same initial positions, costs and tax settings', 'control');
@@ -336,6 +443,7 @@
       const amount = document.createElement('strong'); amount.textContent = format(value); metric.append(name, amount); metrics.appendChild(metric);
     }
     summaryPanel.appendChild(metrics);
+    renderInitialExposure(summaryPanel, data);
     paragraph(summaryPanel, 'Historical prices, dividends, financing, trading, annual taxes and full liquidation are included. The benchmark starts 100% long; its leverage differs from your selected portfolio. The no-harvest control uses your exact initial holdings. Initial exposure targets are not continuously rebalanced.', 'research-table-note');
     if (inputs.outside_st_gain || inputs.outside_lt_gain) paragraph(summaryPanel, 'Every curve includes the same outside gain proceeds. The simple gain ratio removes gross outside proceeds from wealth change and divides by initial equity; it is not TWR, IRR or CAGR.', 'research-warning');
     const analysis = document.createElement('div'); analysis.className = 'research-analysis-grid';
@@ -362,7 +470,9 @@
     const ledgerTitle = document.createElement('h2'); ledgerTitle.textContent = 'Historical research ledgers'; ledgerPanel.appendChild(ledgerTitle);
     const selectorLabel = document.createElement('label'); selectorLabel.htmlFor = 'research-ledger-strategy'; selectorLabel.textContent = 'Portfolio';
     const selector = document.createElement('select'); selector.id = 'research-ledger-strategy';
-    const choices = [['strategy', 'Harvesting strategy'], ['no_harvest_control', 'Same portfolio, no harvesting'], ['benchmark', '100% long benchmark']];
+    const choices = [['strategy', 'Harvesting strategy'], ['no_harvest_control', 'Same portfolio, no harvesting'], ['benchmark', inputs.benchmark + ' · Selected benchmark']];
+    if (data.spy_benchmark && inputs.benchmark !== 'SPY') choices.push(['spy_benchmark', 'SPY · Pass / fail target']);
+    if (!choices.some(([value]) => value === ledgerStrategy)) ledgerStrategy = 'strategy';
     for (const [value, label] of choices) {
       const option = document.createElement('option'); option.value = value; option.textContent = label; selector.appendChild(option);
     }
@@ -384,34 +494,35 @@
     const provenance = document.createElement('details'); provenance.className = 'research-provenance';
     const label = document.createElement('summary'); label.textContent = 'Data and reproducibility metadata';
     const pre = document.createElement('pre'); pre.textContent = JSON.stringify({metadata: data.metadata, data: data.data}, null, 2); provenance.append(label, pre); ledgerPanel.appendChild(provenance);
+    renderResearchScope(data, inputs);
     window.P107Results?.setResearchAvailable(true);
     showResearch();
     syncResultState();
   }
 
   async function run() {
-    if (busy) return;
+    if (busy) return false;
     for (const row of rows()) field(row, 'ticker').value = field(row, 'ticker').value.trim().toUpperCase();
     const benchmark = document.getElementById('research-benchmark'); benchmark.value = benchmark.value.trim().toUpperCase();
-    if (!rows().length) { status.textContent = 'Add at least one manual position.'; return; }
-    for (const control of [...section.querySelectorAll('input,select'), initialCash]) if (!control.disabled && !control.reportValidity()) return;
+    if (!rows().length) { setStatus('Add at least one manual position.'); return false; }
+    for (const control of [...section.querySelectorAll('input,select'), initialCash]) if (!control.disabled && !control.reportValidity()) { setStatus('Check the highlighted research input before running.'); return false; }
     const inputs = readInputs();
-    if (inputs.end_date < inputs.start_date) { status.textContent = 'End date must be on or after start date.'; return; }
+    if (inputs.end_date <= inputs.start_date) { setStatus('End date must be after start date.'); return false; }
     const tickers = inputs.positions.map(position => position.ticker);
-    if (new Set(tickers).size !== tickers.length) { status.textContent = 'Use each ticker once. Combine duplicate holdings into a single net position.'; return; }
+    if (new Set(tickers).size !== tickers.length) { setStatus('Use each ticker once. Combine duplicate holdings into a single net position.'); return false; }
     if (inputs.allocation_mode === 'target_exposure') {
-      if (inputs.long_exposure_pct + inputs.short_exposure_pct <= 0) { status.textContent = 'Set at least one positive long or short allocation.'; return; }
+      if (inputs.long_exposure_pct + inputs.short_exposure_pct <= 0) { setStatus('Set at least one positive long or short allocation.'); return false; }
       for (const side of ['long', 'short']) {
         const exposure = inputs[side + '_exposure_pct'];
         const count = inputs.positions.filter(position => position.side === side).length;
-        if (exposure > 0 && !count) { status.textContent = 'Add at least one ' + side + ' ticker for your ' + exposure + '% ' + side + ' allocation.'; return; }
-        if (exposure === 0 && count) { status.textContent = 'Remove ' + side + ' positions or set a positive ' + side + ' allocation.'; return; }
+        if (exposure > 0 && !count) { setStatus('Add at least one ' + side + ' ticker for your ' + exposure + '% ' + side + ' allocation.'); return false; }
+        if (exposure === 0 && count) { setStatus('Remove ' + side + ' positions or set a positive ' + side + ' allocation.'); return false; }
       }
     }
     const stamp = revision;
     const previous = Array.from(section.querySelectorAll('input,select,button')).map(control => [control, control.disabled]);
     previous.forEach(([control]) => { control.disabled = true; });
-    busy = true; syncResultState(); document.dispatchEvent(new CustomEvent('p107:research-busy', {detail: {busy: true}})); status.textContent = 'Loading historical prices and comparing after-tax wealth with harvesting, without harvesting and against your benchmark. This may take a moment…';
+    busy = true; syncResultState(); document.dispatchEvent(new CustomEvent('p107:research-busy', {detail: {busy: true}})); setStatus('Loading historical prices and comparing after-tax wealth with harvesting, without harvesting, SPY and your selected benchmark. This may take a moment…');
     try {
       const response = await fetch('/api/research/run', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(inputs)});
       let data;
@@ -420,27 +531,41 @@
       if (!data.summary) throw new Error('The server response is missing the research summary.');
       render(data, inputs, stamp);
       syncResultState(); save();
-      status.textContent = revision === stamp ? 'After-tax research complete. Summary and Annual ledger on the right show this historical run.' : 'Initial equity changed during this run. The displayed result uses the earlier input; run again to update.';
+      setStatus(revision === stamp ? 'Comparison complete. Summary, Annual ledger and Assumptions & scope show this historical run.' : 'Inputs changed during this run. The displayed result uses the earlier input; run again to update.');
+      return true;
     } catch (error) {
-      status.textContent = error.message === 'Failed to fetch' ? 'The Python server is unavailable. Restart START-STOCK.bat or web/launch_stock.py and try again.' : error.message;
+      setStatus(error.message === 'Failed to fetch' ? 'The Python server is unavailable. Restart START-STOCK.bat or web/launch_stock.py and try again.' : error.message);
+      return false;
     } finally {
       previous.forEach(([control, disabled]) => { control.disabled = disabled; });
       busy = false; updateAllocation(); syncResultState(); document.dispatchEvent(new CustomEvent('p107:research-busy', {detail: {busy: false}}));
     }
   }
 
+  function reset() {
+    if (busy) return;
+    allocationMode.value = 'target_exposure'; longExposure.value = '130'; shortExposure.value = '30';
+    document.getElementById('research-start').value = '2020-01-02';
+    document.getElementById('research-end').value = '2024-12-31';
+    document.getElementById('research-benchmark').value = 'SPY';
+    const defaults = {financing_pct: 5, borrow_pct: 1, rebate_pct: 0, manager_pct: 0, transaction_pct: 0.05, tax_st_pct: 40, tax_lt_pct: 20, dividend_tax_pct: 20, outside_st_gain: 0, outside_lt_gain: 0, harvest_threshold_pct: 5, cooldown_days: 30};
+    for (const [key, id] of Object.entries(numberFields)) document.getElementById(id).value = String(defaults[key]);
+    list.replaceChildren(); add({side: 'long'}); add({side: 'short'});
+    changed(); setStatus('Research defaults restored. Select your stocks and press Run comparison.');
+  }
+
+  window.P107Research = {run, reset, isBusy: () => busy};
+
   researchDownload?.addEventListener('click', downloadJson);
-  document.addEventListener('p107:result-mode', syncResultState);
+  document.addEventListener('p107:result-mode', () => {
+    syncResultState();
+    if (window.P107Results?.currentMode() === 'research') setStatus(lastStatus);
+  });
   addButton.addEventListener('click', () => { add({side: rows().length === 1 && field(rows()[0], 'side').value === 'long' ? 'short' : 'long'}); changed(); });
-  button.addEventListener('click', run);
   section.addEventListener('input', changed); section.addEventListener('change', changed);
   section.addEventListener('toggle', updateAllocation);
   initialCash.addEventListener('input', changed); initialCash.addEventListener('change', changed);
-  document.getElementById('reset')?.addEventListener('click', changed);
   document.getElementById('example-picker')?.addEventListener('change', changed);
-  section.addEventListener('keydown', event => {
-    if (event.key === 'Enter' && event.target.matches('input')) { event.preventDefault(); run(); }
-  });
   try {
     const saved = JSON.parse(sessionStorage.getItem(storageKey) || sessionStorage.getItem(legacyStorageKey));
     if (saved && Array.isArray(saved.positions)) {

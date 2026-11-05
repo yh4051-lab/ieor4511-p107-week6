@@ -9,31 +9,52 @@ const number = value => new Intl.NumberFormat('en-US', {maximumFractionDigits:0}
 const signed = value => Math.abs(value)<.5 ? '$0' : (value >= 0 ? '+' : '−') + money(Math.abs(value));
 const direction = value => value >= 0 ? 'positive' : 'negative';
 let defaultInputs, lastResult, busy = false, dirty = false;
-let resultMode = 'scenario', researchAvailable = false, researchBusy = false;
+let resultMode = 'research', researchAvailable = false, researchBusy = false, initialized = false;
 const draftKey = 'p107-public-inputs-v1';
 
+function syncControls() {
+  const locked = !initialized || busy || researchBusy;
+  const research = resultMode === 'research';
+  $('input-fields').disabled = locked;
+  $('research-fields').disabled = locked || !research;
+  $('scenario-inputs').disabled = locked || research;
+  $('run').disabled = locked;
+  $('reset').disabled = locked;
+  $('result-mode').disabled = locked;
+  $('example-picker').disabled = locked || research;
+  $('initial_cash').disabled = locked;
+  $('run').textContent = busy || researchBusy ? 'Calculating…' : 'Run comparison →';
+  $('results-section').setAttribute('aria-busy', String(research ? researchBusy : busy));
+}
+
 function applyResultMode(mode) {
-  resultMode = mode === 'research' && researchAvailable ? 'research' : 'scenario';
+  resultMode = mode === 'scenario' ? 'scenario' : 'research';
   const research = resultMode === 'research';
   $('result-mode').value = resultMode;
   $('scenario-summary-panel').hidden = research;
   $('scenario-ledger-panel').hidden = research;
+  $('scenario-scope-panel').hidden = research;
   $('research-summary-panel').hidden = !research;
   $('research-ledger-panel').hidden = !research;
+  $('research-scope-panel').hidden = !research;
+  $('stock-experiment').hidden = !research;
+  $('scenario-inputs').hidden = research;
+  $('scenario-examples').hidden = research;
   $('scenario-feedback').hidden = research;
   $('download').hidden = research;
   $('research-download').hidden = !research;
   $('run-reference').hidden = research;
   $('research-run-reference').hidden = !research;
   $('results-mode-note').textContent = research
-    ? 'Historical stock research: your selected stocks, actual historical prices, modeled costs, harvesting and full-liquidation taxes. Compare harvesting, the same portfolio without harvesting and a 100% long benchmark.'
-    : 'Illustrative scenario: assumed annual returns and harvesting curves. These results use the original scenario inputs, independently of your selected stocks.';
+    ? 'Historical stock research: complete the portfolio inputs and press Run comparison. Summary, Annual ledger and Assumptions & scope use the same historical run. The SPY target compares final after-tax wealth.'
+    : 'Illustrative scenario: Run comparison uses the assumed annual return and harvesting curves below. These settings and results are separate from the historical stock research.';
   $('analysis-label').innerHTML = research
     ? 'Historical stock research<br><span>Manually selected US positions</span>'
     : 'Hypothetical scenarios<br><span>Independent illustrative inputs</span>';
   $('model-stage').textContent = research ? 'Historical research' : 'Week 6 · Initial model';
   $('footer-scope').textContent = research ? 'P107 · Historical research · USD' : 'P107 · Hypothetical scenario · USD';
-  $('results-section').setAttribute('aria-busy', String(research ? researchBusy : busy));
+  if (!research) $('status').textContent = !lastResult ? 'Review the scenario inputs, then press Run comparison.' : dirty ? 'Scenario inputs changed. Run comparison to update.' : 'Scenario results match the current inputs.';
+  syncControls();
   document.dispatchEvent(new CustomEvent('p107:result-mode', {detail: {mode: resultMode}}));
 }
 
@@ -45,20 +66,17 @@ window.P107Results = {
   currentMode: () => resultMode,
   setResearchAvailable(value) {
     researchAvailable = Boolean(value);
-    $('result-mode').querySelector('option[value="research"]').disabled = !researchAvailable;
-    if (!researchAvailable && resultMode === 'research') applyResultMode('scenario');
+    // Research mode remains selectable before its first completed run.
   },
   show(mode, view = 'summary') {
-    if (mode === 'research' && !researchAvailable) return false;
     applyResultMode(mode);
-    if (resultMode === 'research' || lastResult) $('result-content').hidden = false;
+    $('result-content').hidden = false;
     setView(view);
     return true;
   }
 };
 
 function setView(view, focus = false) {
-  if (view === 'scope' && resultMode !== 'scenario') applyResultMode('scenario');
   document.querySelectorAll('[role="tab"]').forEach(tab => {
     const selected = tab.dataset.view === view;
     tab.setAttribute('aria-selected', String(selected));
@@ -114,19 +132,13 @@ function markDirty() {
   $('pending').hidden = !dirty || !lastResult;
   setScenarioStale(dirty);
   $('download').disabled = dirty || !lastResult;
-  $('status').textContent = dirty ? 'Inputs changed. Run comparison to update.' : 'Results match the current inputs.';
+  if (resultMode === 'scenario') $('status').textContent = dirty ? 'Inputs changed. Run comparison to update.' : 'Results match the current inputs.';
   saveDraft();
 }
 function setBusy(value) {
   busy = value;
-  $('input-fields').disabled = value;
-  $('run').disabled = value || researchBusy;
-  $('reset').disabled = value || researchBusy;
-  $('example-picker').disabled = value || researchBusy;
-  $('initial_cash').disabled = researchBusy;
+  syncControls();
   $('download').disabled = value || !lastResult || dirty;
-  $('run').textContent = value ? 'Calculating…' : 'Run comparison →';
-  $('results-section').setAttribute('aria-busy', String(resultMode === 'research' ? researchBusy : value));
 }
 
 function renderChart(data) {
@@ -185,6 +197,10 @@ function renderLedger() {
 
 function render(data) {
   lastResult=data;
+  $('scenario-summary-empty').hidden = true;
+  $('scenario-summary-content').hidden = false;
+  $('scenario-ledger-empty').hidden = true;
+  $('scenario-ledger-content').hidden = false;
   const core=data.summaries.find(r=>r.strategy==='core_130_30');
   const delta=core.incremental_wealth_vs_index;
   $('takeaway-title').innerHTML=`After ${data.config.horizon_years} ${data.config.horizon_years===1?'year':'years'}, Core ${Math.abs(delta)<.5 ? 'roughly matches Index' : 'finishes <strong class="'+direction(delta)+'">'+money(Math.abs(delta))+'</strong> '+(delta>=0?'ahead of':'behind')+' Index'}`;
@@ -221,7 +237,7 @@ function render(data) {
   $('run-reference').textContent=`Model ${data.metadata.model_version} · Run ${data.run_id.slice(0,8)}`;
 }
 
-async function run() {
+async function runScenario() {
   if(busy || researchBusy || !inputsValid()) return;
   window.P107Results.show('scenario', 'summary');
   $('error').hidden=true;
@@ -246,18 +262,22 @@ async function run() {
   } finally {setBusy(false);}
 }
 
-form.addEventListener('submit',event=>{event.preventDefault();run();});
+async function runComparison() {
+  if (!initialized || busy || researchBusy) return;
+  if (resultMode === 'research') {
+    if (window.P107Research) await window.P107Research.run();
+    else $('status').textContent = 'The research interface is still loading. Try again in a moment.';
+  } else await runScenario();
+}
+
+form.addEventListener('submit',event=>{event.preventDefault();runComparison();});
 $('result-mode').addEventListener('change', event => {
   const currentView = document.querySelector('[role="tab"][aria-selected="true"]')?.dataset.view || 'summary';
-  window.P107Results.show(event.target.value, currentView === 'scope' ? 'summary' : currentView);
+  window.P107Results.show(event.target.value, currentView);
 });
 document.addEventListener('p107:research-busy', event => {
   researchBusy = Boolean(event.detail?.busy);
-  $('run').disabled = busy || researchBusy;
-  $('reset').disabled = busy || researchBusy;
-  $('example-picker').disabled = busy || researchBusy;
-  $('initial_cash').disabled = researchBusy;
-  $('results-section').setAttribute('aria-busy', String(resultMode === 'research' ? researchBusy : busy));
+  syncControls();
 });
 form.addEventListener('input',event=>{if(event.target.id!=='example-picker' && !event.target.closest('#stock-experiment'))markDirty();});
 form.addEventListener('change',event=>{if(event.target.id!=='example-picker' && !event.target.closest('#stock-experiment'))markDirty();});
@@ -265,9 +285,15 @@ function loadExample(value) {
   const inputs={...defaultInputs};
   if(value==='no-gains')inputs.outside_gains=0;
   if(value==='high-financing')inputs.financing_pct=6.5;
-  setInputs(inputs);markDirty();$('example-picker').value=value;run();
+  setInputs(inputs);markDirty();$('example-picker').value=value;runScenario();
 }
-$('reset').addEventListener('click',()=>loadExample('default'));
+$('reset').addEventListener('click',()=>{
+  if (resultMode === 'research') {
+    $('initial_cash').value = defaultInputs.initial_cash;
+    $('initial_cash').dispatchEvent(new Event('input', {bubbles: true}));
+    window.P107Research?.reset();
+  } else loadExample('default');
+});
 $('example-picker').addEventListener('change',event=>loadExample(event.target.value));
 $('ledger-strategy').addEventListener('change',renderLedger);
 $('ledger-view').addEventListener('change',renderLedger);
@@ -314,8 +340,10 @@ $('download').addEventListener('click',async()=>{
     } catch (_) {}
     setInputs(initial);
     $('example-picker').value=restored?'custom':'default';
+    initialized = true;
     setBusy(false);
-    await run();
+    applyResultMode('research');
+    $('loading').hidden = true;
   } catch(error) {
     $('loading').hidden=true;
     $('error').textContent='Could not connect to the local model. Run python web/launch.py from the repository folder, then refresh this page.';

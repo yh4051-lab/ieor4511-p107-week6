@@ -243,6 +243,32 @@ class HttpTests(unittest.TestCase):
         with patch.object(launch_stock, 'URL', f'http://127.0.0.1:{self.server.server_port}'):
             self.assertTrue(launch_stock.health())
 
+    def test_spy_target_is_independent_of_selected_benchmark(self):
+        tickers = ('AAPL', 'QQQ', 'SPY')
+        dataset = dict(dates=['2020-01-02', '2020-01-03'],
+                       prices={'AAPL': [100, 110], 'QQQ': [100, 105], 'SPY': [100, 120]},
+                       dividends={symbol: [0, 0] for symbol in tickers},
+                       splits={symbol: [0, 0] for symbol in tickers}, metadata={'source': 'unit test'})
+        payload = dict(level=3, initial_cash=1000, start_date='2020-01-02', end_date='2020-01-03',
+                       benchmark='QQQ', evaluate_spy=True, financing_pct=0, transaction_pct=0,
+                       positions=[dict(ticker='AAPL', side='long', shares=10)])
+        headers = {'Content-Type': 'application/json'}
+        with patch('p107.market_data.load_history', return_value=dataset) as history:
+            status, raw, _ = self.request('POST', '/api/research/run', json.dumps(payload), headers)
+        self.assertEqual(status, 200)
+        result = json.loads(raw)
+        self.assertEqual(result['summary']['spy_status'], 'fail')
+        self.assertAlmostEqual(result['summary']['terminal_wealth'], 1060)
+        self.assertAlmostEqual(result['summary']['benchmark_wealth'], 1030)
+        self.assertAlmostEqual(result['summary']['spy_benchmark_wealth'], 1120)
+        self.assertAlmostEqual(result['summary']['spy_display_difference'], -60)
+        self.assertEqual(result['spy_benchmark']['positions'][0]['ticker'], 'SPY')
+        self.assertEqual(history.call_args.args[0], ['AAPL', 'SPY', 'QQQ'])
+        payload['evaluate_spy'] = 'true'
+        with patch('p107.market_data.load_history') as history:
+            self.assertEqual(self.request('POST', '/api/research/run', json.dumps(payload), headers)[0], 400)
+            history.assert_not_called()
+
     def test_stock_launcher_rejects_prior_research_server(self):
         for launcher in (launch, launch_stock):
             prior = io.BytesIO(json.dumps({'app': server.APP_ID, 'features': ['three_level_research']}).encode())

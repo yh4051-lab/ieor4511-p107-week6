@@ -32,6 +32,128 @@ def run(config, data):
 
 
 class ResearchTests(unittest.TestCase):
+    def test_opt_in_spy_target_pass_fail_and_tie_after_tax(self):
+        c = configuration(3)
+        c['evaluate_spy'] = True
+        for price, expected in [(120, 'pass'), (100, 'fail'), (110, 'tie')]:
+            with self.subTest(end_price=price):
+                r = run(c, history(['2020-01-02', '2020-01-03'],
+                                   {'AAPL': [100, price], 'SPY': [100, 110]}))
+                self.assertEqual(r['summary']['spy_status'], expected)
+                self.assertAlmostEqual(r['summary']['spy_benchmark_wealth'], 106)
+                self.assertAlmostEqual(r['summary']['incremental_wealth_vs_spy'],
+                                       r['summary']['terminal_wealth'] - 106)
+                self.assertIs(r['spy_benchmark'], r['benchmark'])
+
+    def test_spy_target_is_independent_of_selected_benchmark_and_keeps_calendar_order(self):
+        c = configuration(3)
+        c.update(evaluate_spy=True, benchmark='QQQ')
+        d = history(['2020-01-02', '2020-01-03'],
+                    {'AAPL': [100, 110], 'SPY': [100, 120], 'QQQ': [100, 105]})
+        calls = []
+        def provider(tickers, start, end):
+            calls.append((tickers, start, end))
+            return deepcopy(d)
+        r = run_research(c, provider)
+        self.assertEqual(calls, [(['AAPL', 'SPY', 'QQQ'], '2020-01-02', '2020-01-03')])
+        self.assertAlmostEqual(r['summary']['benchmark_wealth'], 103)
+        self.assertAlmostEqual(r['summary']['incremental_wealth'], 3)
+        self.assertAlmostEqual(r['summary']['spy_benchmark_wealth'], 112)
+        self.assertAlmostEqual(r['summary']['incremental_wealth_vs_spy'], -6)
+        self.assertEqual(r['summary']['spy_status'], 'fail')
+        self.assertEqual(r['spy_benchmark']['positions'][0]['ticker'], 'SPY')
+        self.assertEqual(r['benchmark']['positions'][0]['ticker'], 'QQQ')
+
+    def test_spy_in_selected_positions_is_fetched_once(self):
+        c = configuration(3)
+        c.update(evaluate_spy=True, benchmark='QQQ',
+                 positions=[dict(ticker='SPY', side='long', shares=1)])
+        d = history(['2020-01-02', '2020-01-03'],
+                    {'SPY': [100, 110], 'QQQ': [100, 100]})
+        calls = []
+        def provider(tickers, *args):
+            calls.append(tickers)
+            return deepcopy(d)
+        r = run_research(c, provider)
+        self.assertEqual(calls, [['SPY', 'QQQ']])
+        self.assertEqual(r['summary']['spy_status'], 'tie')
+
+    def test_twenty_positions_and_two_benchmarks_require_twenty_two_symbols(self):
+        c = configuration(3)
+        symbols = ['STOCK' + chr(ord('A') + i) for i in range(20)]
+        c.update(evaluate_spy=True, benchmark='QQQ',
+                 positions=[dict(ticker=s, side='long', shares=1) for s in symbols])
+        d = history(['2020-01-02', '2020-01-03'], {s: [1, 1] for s in symbols + ['SPY', 'QQQ']})
+        calls = []
+        def provider(tickers, *args):
+            calls.append(tickers)
+            return deepcopy(d)
+        r = run_research(c, provider)
+        self.assertEqual(calls, [symbols + ['SPY', 'QQQ']])
+        self.assertEqual(r['summary']['spy_status'], 'tie')
+
+    def test_spy_status_compares_separately_rounded_ending_wealth(self):
+        c = configuration(3)
+        c.update(evaluate_spy=True, tax_st_pct=0, tax_lt_pct=0)
+        for actual, target, expected, display_difference in [
+            (100.003, 100.004, 'tie', 0),
+            (100.004, 100.003, 'tie', 0),
+            (100.005, 100.004, 'pass', .01),
+            (100.004, 100.005, 'fail', -.01),
+        ]:
+            with self.subTest(actual=actual, target=target):
+                r = run(c, history(['2020-01-02', '2020-01-03'],
+                                   {'AAPL': [100, actual], 'SPY': [100, target]}))
+                self.assertEqual(r['summary']['spy_status'], expected)
+                self.assertAlmostEqual(r['summary']['spy_display_difference'], display_difference)
+                self.assertAlmostEqual(r['summary']['incremental_wealth_vs_spy'], actual-target)
+
+    def test_harvesting_can_add_value_but_still_fail_spy_target(self):
+        c = configuration(3, end='2021-03-10')
+        c.update(evaluate_spy=True, outside_st_gain=100)
+        d = history(['2020-01-02', '2020-02-05', '2020-02-06', '2020-03-09', '2020-12-31', '2021-03-10'],
+                    {'AAPL': [100, 80, 80, 80, 80, 100], 'SPY': [100, 100, 100, 100, 100, 200]})
+        r = run(c, d)
+        self.assertAlmostEqual(r['summary']['terminal_wealth'], 224)
+        self.assertAlmostEqual(r['summary']['incremental_wealth_vs_no_harvest'], 4)
+        self.assertAlmostEqual(r['summary']['spy_benchmark_wealth'], 300)
+        self.assertEqual(r['summary']['spy_status'], 'fail')
+
+    def test_spy_control_matches_flows_and_trading_costs_but_not_custom_management(self):
+        c = configuration(3)
+        c.update(evaluate_spy=True, benchmark='QQQ', outside_st_gain=100,
+                 outside_lt_gain=50, transaction_pct=.5, manager_pct=10)
+        d = history(['2020-01-02', '2020-01-03'],
+                    {'AAPL': [100, 100], 'SPY': [100, 100], 'QQQ': [100, 100]})
+        r = run(c, d)
+        spy = r['spy_benchmark']['summary']
+        self.assertEqual(spy['outside_gross_proceeds'], 150)
+        self.assertAlmostEqual(spy['capital_tax'], 50)
+        self.assertAlmostEqual(spy['cost_breakdown']['trading'], 1)
+        self.assertEqual(spy['cost_breakdown']['management'], 0)
+        self.assertGreater(r['summary']['cost_breakdown']['management'], 0)
+        self.assertAlmostEqual(spy['terminal_wealth'], 199)
+
+    def test_spy_evaluation_rejects_non_boolean_before_history_fetch(self):
+        for value in (0, 1, None, 'true', [], {}):
+            c = configuration(3)
+            c['evaluate_spy'] = value
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'evaluate_spy'):
+                run_research(c, lambda *args: self.fail('Validation must precede history download'))
+
+    def test_spy_evaluation_is_opt_in_for_prior_export_compatibility(self):
+        c = configuration(3)
+        c['benchmark'] = 'QQQ'
+        d = history(['2020-01-02', '2020-01-03'], {'AAPL': [100, 110], 'QQQ': [100, 100]})
+        previous = run(c, d)
+        self.assertNotIn('spy_benchmark', previous)
+        self.assertNotIn('spy_status', previous['summary'])
+        self.assertNotIn('spy_evaluation', previous['metadata'])
+        c['evaluate_spy'] = False
+        disabled = run(c, d)
+        for field in ('summary', 'daily', 'annual', 'trades', 'positions', 'benchmark', 'no_harvest_control', 'data'):
+            self.assertEqual(previous[field], disabled[field])
+
     def test_target_130_30_sizes_from_initial_equity_then_runs_after_tax(self):
         c = configuration(3)
         c.update(initial_cash=1_000_000, allocation_mode='target_exposure',

@@ -123,15 +123,19 @@ def history_data_sha(data):
     return _sha(canonical)
 
 
-def reconstruct_nominal_rows(rows):
+def reconstruct_nominal_rows(rows, end_date=None):
     """Pure conversion of chronological Yahoo split-adjusted rows.
 
     Each row is {date, close, dividend, split}; split=0 means no event. A split
     effective on a date has already been reflected in that date's prices, so
-    only STRICTLY LATER events belong in that date's adjustment factor.
+    only STRICTLY LATER events belong in that date's adjustment factor. When
+    end_date is supplied, later rows contribute split actions only. Their prices
+    and dividends are outside the research window and are neither used nor
+    returned; invalid in-window observations are still rejected.
     """
     if not isinstance(rows, list) or not rows:
         raise ValueError('Historical data is empty.')
+    end = _parse_date(end_date, 'Reconstruction end date') if end_date is not None else None
     converted, factor = [], 1.0
     previous = None
     for row in rows:
@@ -139,18 +143,20 @@ def reconstruct_nominal_rows(rows):
         if previous is not None and current <= previous:
             raise ValueError('Historical dates must be unique and strictly increasing.')
         previous = current
-        for key in ('close', 'dividend', 'split'):
+        in_window = end is None or current <= end
+        for key in (('close', 'dividend', 'split') if in_window else ('split',)):
             value = row[key]
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
                 raise ValueError(f'Invalid historical {key} observation on {row["date"]}.')
-        if row['close'] <= 0 or row['dividend'] < 0 or row['split'] < 0:
+        if row['split'] < 0 or (in_window and (row['close'] <= 0 or row['dividend'] < 0)):
             raise ValueError(f'Invalid historical price or corporate action on {row["date"]}.')
     for row in reversed(rows):
-        price, dividend = row['close'] * factor, row['dividend'] * factor
-        if not math.isfinite(price) or price <= 0 or not math.isfinite(dividend):
-            raise ValueError('Split reconstruction produced an invalid observation.')
-        converted.append(dict(date=row['date'], close=price, dividend=dividend,
-                              split=row['split'], split_adjustment_factor=factor))
+        if end is None or date.fromisoformat(row['date']) <= end:
+            price, dividend = row['close'] * factor, row['dividend'] * factor
+            if not math.isfinite(price) or price <= 0 or not math.isfinite(dividend):
+                raise ValueError('Split reconstruction produced an invalid observation.')
+            converted.append(dict(date=row['date'], close=price, dividend=dividend,
+                                  split=row['split'], split_adjustment_factor=factor))
         if row['split']:
             factor *= row['split']
         if not math.isfinite(factor) or factor <= 0:
@@ -202,8 +208,8 @@ def load_history(tickers, start_date, end_date):
     through the current day, even when the requested exit is earlier, because
     Yahoo can adjust older observations for splits AFTER the requested exit.
     """
-    if not isinstance(tickers, (list, tuple)) or not 1 <= len(tickers) <= 21:
-        raise ValueError('Provide 1 to 21 US ticker symbols, including the benchmark.')
+    if not isinstance(tickers, (list, tuple)) or not 1 <= len(tickers) <= 22:
+        raise ValueError('Provide 1 to 22 US ticker symbols, including the selected benchmark and SPY.')
     normalized = [normalize_ticker(s) for s in tickers]
     reference = normalized[-1]
     symbols = [s for s in dict.fromkeys(normalized) if s != reference] + [reference]
@@ -227,19 +233,37 @@ def load_history(tickers, start_date, end_date):
             info = _market_metadata(symbol, stock)
             raw = []
             for timestamp, row in frame.iterrows():
-                # Do not drop NaN prices or silently substitute zero returns.
-                raw.append(dict(date=timestamp.date().isoformat(), close=float(row['Close']),
-                                dividend=float(row.get('Dividends', 0.0)),
+                # Retain missing observations; validation below rejects them
+                # inside the window. Later prices are not used by the ledger.
+                raw.append(dict(date=timestamp.date().isoformat(), close=float(row['Close']) if row['Close'] is not None else None,
+                                dividend=float(row.get('Dividends', 0.0)) if row.get('Dividends', 0.0) is not None else None,
                                 split=float(row.get('Stock Splits', 0.0))))
-            nominal = reconstruct_nominal_rows(raw)
+            nominal = reconstruct_nominal_rows(raw, end_date=end.isoformat())
+            # JSON has no NaN/Infinity literals. The raw audit hash represents
+            # these explicitly as null; no substituted value enters prices.
+            audit_raw = [{key: (None if isinstance(value, float) and not math.isfinite(value) else value)
+                          for key, value in observation.items()} for observation in raw]
+            ignored = []
+            for observation in raw:
+                if date.fromisoformat(observation['date']) <= end:
+                    continue
+                invalid_fields = [key for key in ('close', 'dividend')
+                                  if not isinstance(observation[key], (int, float))
+                                  or not math.isfinite(observation[key])
+                                  or observation[key] < 0 or (key == 'close' and observation[key] == 0)]
+                if invalid_fields:
+                    ignored.append(dict(date=observation['date'], fields=invalid_fields))
             records[symbol] = nominal
             metadata[symbol] = dict(currency='USD', exchange=info['exchangeName'],
                                     instrument_type=info['instrumentType'],
                                     timezone=info.get('exchangeTimezoneName'),
-                                    raw_history_sha256=_sha(raw),
+                                    raw_history_sha256=_sha(audit_raw),
                                     raw_first_date=raw[0]['date'], raw_last_date=raw[-1]['date'],
                                     post_window_split_events=[dict(date=r['date'], ratio=r['split'])
-                                                              for r in nominal if r['split'] and date.fromisoformat(r['date']) > end])
+                                                              for r in raw if r['split'] and date.fromisoformat(r['date']) > end])
+            if ignored:
+                metadata[symbol]['ignored_post_window_price_observations'] = ignored
+                metadata[symbol]['raw_history_hash_note'] = 'Nonfinite raw values are encoded as JSON null for hashing; post-window prices/dividends are not used. All split actions remain validated and applied.'
         except ValueError as error:
             raise ValueError(f'{symbol}: {error}') from error
         except Exception as error:

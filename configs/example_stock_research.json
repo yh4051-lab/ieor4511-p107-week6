@@ -30,5 +30,6 @@
   "cooldown_days": 30,
   "allocation_mode": "target_exposure",
   "long_exposure_pct": 130,
-  "short_exposure_pct": 30
+  "short_exposure_pct": 30,
+  "evaluate_spy": true
 }

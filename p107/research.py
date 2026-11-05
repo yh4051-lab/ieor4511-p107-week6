@@ -5,6 +5,7 @@ Legacy price-only and no-harvest API levels remain available for saved runs.
 """
 from copy import deepcopy
 from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
 import hashlib
 import json
 import math
@@ -33,6 +34,8 @@ def _config(inputs):
         raise ValueError('Choose an increasing date range of at most ten years.')
     c['initial_cash'] = _number(c.get('initial_cash'), 'Initial equity', 1, 1e10)
     c['benchmark'] = normalize_ticker(c.get('benchmark', 'SPY'))
+    if 'evaluate_spy' in c and type(c['evaluate_spy']) is not bool:
+        raise ValueError('evaluate_spy must be true or false.')
     c['allocation_mode'] = c.get('allocation_mode', 'shares')
     if c['allocation_mode'] not in ('shares', 'target_exposure'):
         raise ValueError('Allocation mode must be shares or target_exposure.')
@@ -305,7 +308,11 @@ def run_research(inputs, history_provider=None):
     if history_provider is None:
         from .market_data import load_history
         history_provider = load_history
-    tickers = list(dict.fromkeys([p['ticker'] for p in c['positions'] if p['ticker'] != c['benchmark']]+[c['benchmark']]))
+    required = [p['ticker'] for p in c['positions'] if p['ticker'] != c['benchmark']]
+    if c.get('evaluate_spy') and c['benchmark'] != 'SPY':
+        required.append('SPY')
+    # The selected benchmark stays last: the history loader uses its calendar.
+    tickers = list(dict.fromkeys(required + [c['benchmark']]))
     data = history_provider(tickers,c['start_date'],c['end_date'])
     dates = _validate_data(data,tickers,c['start_date'],c['end_date'])
     allocation = _resolve_allocation(c, data)
@@ -315,6 +322,24 @@ def run_research(inputs, history_provider=None):
     result['summary']['benchmark_wealth'] = benchmark['summary']['terminal_wealth']
     result['summary']['incremental_wealth'] = result['summary']['terminal_wealth']-benchmark['summary']['terminal_wealth']
     result['benchmark'] = benchmark
+    if c.get('evaluate_spy'):
+        if c['benchmark'] == 'SPY':
+            spy = benchmark
+        else:
+            spy_config = {**c, 'benchmark': 'SPY'}
+            spy = _simulate(spy_config, data, dates, min(c['level'], 2), benchmark=True)
+        actual_wealth = result['summary']['terminal_wealth']
+        spy_wealth = spy['summary']['terminal_wealth']
+        cents = Decimal('0.01')
+        actual_display = Decimal(str(actual_wealth)).quantize(cents, rounding=ROUND_HALF_UP)
+        spy_display = Decimal(str(spy_wealth)).quantize(cents, rounding=ROUND_HALF_UP)
+        result['spy_benchmark'] = spy
+        result['summary'].update(
+            spy_benchmark_wealth=spy_wealth,
+            incremental_wealth_vs_spy=actual_wealth-spy_wealth,
+            spy_display_difference=float(actual_display-spy_display),
+            spy_status='pass' if actual_display > spy_display else 'fail' if actual_display < spy_display else 'tie',
+        )
     if c['level'] == 3:
         control = _simulate(c,data,dates,2)
         actual, base = result['summary'], control['summary']
@@ -333,6 +358,13 @@ def run_research(inputs, history_provider=None):
     result['metadata']['allocation'] = allocation
     result['metadata']['benchmark_allocation'] = dict(long_exposure_pct=100, short_exposure_pct=0,
         description='100% long benchmark; matched initial equity and outside cash flows, not matched leverage.')
+    if c.get('evaluate_spy'):
+        result['metadata']['spy_evaluation'] = dict(
+            ticker='SPY', long_exposure_pct=100, short_exposure_pct=0,
+            criterion='Full-liquidation after-tax terminal wealth, matched initial equity and outside cash flows.',
+            rounding='Each ending wealth is rounded to USD cents using ROUND_HALF_UP before pass/fail/tie; the raw wealth difference is retained separately.',
+            scope='Historical target for this run, not risk-adjusted alpha or a client suitability classification.',
+        )
     result['assumptions'] = [
         'Tickers are manually chosen. Exposure sizing converts each leg budget and normalized relative weights to fractional shares at the first available close, before opening fees. Manual shares remain supported. Initial exposures drift; no continuous fixed-weight rebalancing or stock-selection alpha is assumed.',
         'Level 1 is historical price-only P&L. Levels 2 and 3 add dividends, ACT/365 daily costs, annual tax settlement and full liquidation.',

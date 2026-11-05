@@ -1,0 +1,257 @@
+{
+  "verified_at_utc": "2026-11-05T01:23:16+00:00",
+  "request": "One Run comparison button, complete historical input form, three matching result views, explicit SPY target and initial exposure visualization.",
+  "build_id": "1d998c9b0e5aed795f9e6e2f12482f44f57950f75367d32fd82890d0c26fc0ec",
+  "automated_tests": {
+    "core": 96,
+    "web": 24,
+    "total_passed": 120
+  },
+  "browser_checks": [
+    "Historical research default; no automatic model POST or automatic stock picks",
+    "Only Run comparison submits; Enter triggers exactly one research request",
+    "SPY pass/fail/tie labels, independent of selected benchmark and harvesting benefit",
+    "Signed initial long/short/equity bars preserve 130/30 and gross160%/net100%",
+    "Summary, Annual ledger and Assumptions & scope show the same completed research",
+    "Inactive original inputs do not block historical validation",
+    "Scope and exports become stale together; mode-aware JSON/CSV",
+    "Optional original scenario uses the same button and its own inputs and views",
+    "Reset restores blank manually selected ticker rows",
+    "390px mobile layout; no page overflow or JavaScript errors"
+  ],
+  "live_yahoo_runs": [
+    {
+      "inputs": {
+        "level": 3,
+        "evaluate_spy": true,
+        "initial_cash": 1000000,
+        "allocation_mode": "target_exposure",
+        "long_exposure_pct": 130,
+        "short_exposure_pct": 30,
+        "start_date": "2020-01-02",
+        "end_date": "2021-03-31",
+        "benchmark": "SPY",
+        "positions": [
+          {
+            "ticker": "AAPL",
+            "side": "long",
+            "weight": 1
+          },
+          {
+            "ticker": "MSFT",
+            "side": "short",
+            "weight": 1
+          }
+        ],
+        "financing_pct": 5,
+        "borrow_pct": 1,
+        "rebate_pct": 0,
+        "manager_pct": 0,
+        "transaction_pct": 0.05,
+        "tax_st_pct": 40,
+        "tax_lt_pct": 20,
+        "dividend_tax_pct": 20,
+        "outside_st_gain": 100000,
+        "outside_lt_gain": 0,
+        "harvest_threshold_pct": 5,
+        "cooldown_days": 30
+      },
+      "summary": {
+        "initial_cash": 1000000,
+        "terminal_wealth": 1722184.399039699,
+        "return_pct": 52.2184399039699,
+        "price_pnl": 720154.3797617974,
+        "dividend_cash": 15624.430776492081,
+        "dividend_tax": 3505.9097006879483,
+        "costs": 26057.625845544146,
+        "cost_breakdown": {
+          "financing": 17863.420874935728,
+          "borrow": 2694.8163981868097,
+          "management": 0,
+          "trading": 5499.388572421604,
+          "rebate": 0
+        },
+        "rebate_tax": 0,
+        "capital_tax": 184030.87595235975,
+        "capital_tax_before_exit": 0,
+        "exit_tax": 184030.87595235975,
+        "harvested_loss": 279091.6483307484,
+        "loss_used": 291755.0756475346,
+        "remaining_carry_st": 0,
+        "remaining_carry_lt": 0,
+        "initial_net_exposure": 0.9999999999999998,
+        "initial_gross_exposure": 1.5999999999999999,
+        "unrealized_before_exit": 999246.028092547,
+        "outside_gross_proceeds": 200000,
+        "wealth_identity_error": -1.3969838619232178e-09,
+        "benchmark_wealth": 1312017.8823489344,
+        "incremental_wealth": 410166.5166907646,
+        "spy_benchmark_wealth": 1312017.8823489344,
+        "incremental_wealth_vs_spy": 410166.5166907646,
+        "spy_display_difference": 410166.52,
+        "spy_status": "pass",
+        "incremental_wealth_vs_no_harvest": 58679.64619157347,
+        "tax_relief_before_exit_vs_no_harvest": 80000,
+        "extra_exit_tax_vs_no_harvest": 69143.47257937878,
+        "total_capital_tax_saving_vs_no_harvest": 10856.52742062122,
+        "extra_cost_vs_no_harvest": 938.6969641027135,
+        "price_pnl_difference_vs_no_harvest": 45717.36289689387
+      },
+      "data_sha256": "b74843179c3de515748ff7faf5ca669c6ca15b4b34da4f9f3463dab6b58344e1",
+      "ignored_post_window_observations": {
+        "AAPL": [
+          {
+            "date": "2026-11-04",
+            "fields": [
+              "close"
+            ]
+          }
+        ],
+        "MSFT": [
+          {
+            "date": "2026-11-04",
+            "fields": [
+              "close"
+            ]
+          }
+        ],
+        "SPY": [
+          {
+            "date": "2026-11-04",
+            "fields": [
+              "close"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "inputs": {
+        "level": 3,
+        "evaluate_spy": true,
+        "initial_cash": 1000000,
+        "allocation_mode": "shares",
+        "long_exposure_pct": 130,
+        "short_exposure_pct": 30,
+        "start_date": "2020-01-02",
+        "end_date": "2021-03-31",
+        "benchmark": "QQQ",
+        "positions": [
+          {
+            "ticker": "AAPL",
+            "side": "long",
+            "shares": 200
+          },
+          {
+            "ticker": "MSFT",
+            "side": "short",
+            "shares": 20
+          }
+        ],
+        "financing_pct": 5,
+        "borrow_pct": 1,
+        "rebate_pct": 0,
+        "manager_pct": 0,
+        "transaction_pct": 0.05,
+        "tax_st_pct": 40,
+        "tax_lt_pct": 20,
+        "dividend_tax_pct": 20,
+        "outside_st_gain": 100000,
+        "outside_lt_gain": 0,
+        "harvest_threshold_pct": 5,
+        "cooldown_days": 30
+      },
+      "summary": {
+        "initial_cash": 1000000,
+        "terminal_wealth": 1153482.3459233341,
+        "return_pct": -4.651765407666588,
+        "price_pnl": 39486.797790527344,
+        "dividend_cash": 789.6,
+        "dividend_tax": 162.00000000000003,
+        "costs": 188.933092778872,
+        "cost_breakdown": {
+          "financing": 0,
+          "borrow": 28.856093114565507,
+          "management": 0,
+          "trading": 160.07699966430664,
+          "rebate": 0
+        },
+        "rebate_tax": 0,
+        "capital_tax": 86443.11877441406,
+        "capital_tax_before_exit": 77145.75842285156,
+        "exit_tax": 9297.3603515625,
+        "harvested_loss": 7135.603942871094,
+        "loss_used": 7271.203918457031,
+        "remaining_carry_st": 0,
+        "remaining_carry_lt": 0,
+        "initial_net_exposure": 0.056857601318359374,
+        "initial_gross_exposure": 0.06328240112304688,
+        "unrealized_before_exit": 46622.40173339844,
+        "outside_gross_proceeds": 200000,
+        "wealth_identity_error": 4.656612873077393e-10,
+        "benchmark_wealth": 1506295.0999487003,
+        "incremental_wealth": -352812.75402536616,
+        "spy_benchmark_wealth": 1312017.8823489344,
+        "incremental_wealth_vs_spy": -158535.5364256003,
+        "spy_display_difference": -158535.53,
+        "spy_status": "fail",
+        "incremental_wealth_vs_no_harvest": 3801.8728357548825,
+        "tax_relief_before_exit_vs_no_harvest": 2854.2415771484375,
+        "extra_exit_tax_vs_no_harvest": 2368.5604248046875,
+        "total_capital_tax_saving_vs_no_harvest": 485.68115234375,
+        "extra_cost_vs_no_harvest": 56.206290220495646,
+        "price_pnl_difference_vs_no_harvest": 3339.7979736328125
+      },
+      "data_sha256": "1368dc5ca9d9f223da93ef6cf3b69392e3b5b5974b98508ed679c98449be0f78",
+      "ignored_post_window_observations": {
+        "AAPL": [
+          {
+            "date": "2026-11-04",
+            "fields": [
+              "close"
+            ]
+          }
+        ],
+        "MSFT": [
+          {
+            "date": "2026-11-04",
+            "fields": [
+              "close"
+            ]
+          }
+        ],
+        "SPY": [
+          {
+            "date": "2026-11-04",
+            "fields": [
+              "close"
+            ]
+          }
+        ],
+        "QQQ": [
+          {
+            "date": "2026-11-04",
+            "fields": [
+              "close"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "offline_replay": "Both new live exports reproduce summary, daily/annual ledgers, trades and positions exactly without network.",
+  "legacy_replay": "Opt-in SPY evaluation leaves prior saved financial outputs compatible.",
+  "data_validation": "In-window closes/dividends and all split actions remain validated; unused later missing prices are audited, not filled or inserted into calculation data.",
+  "windows_batch_execution": "Not executed on Windows; Python launch and browser behavior tested in cloud.",
+  "source_sha256": {
+    "p107/research.py": "bc77f9715641a5907355d65012068884c8c07960692cb9296cb699f94de22484",
+    "p107/market_data.py": "b609e5a4d0bdaa957f0555b51d9aa80996e1fc2836a531790cfb9f87086878d1",
+    "tests/test_research.py": "83b0b7185804bfe68d2f7852ecea350857450448ae75483491d87de51308c62b",
+    "tests/test_market_history.py": "b9c79c57191a9af563eebf7cc98f875d91609f518ec29ad39e8726e73c85ecf1",
+    "web/tests/test_web.py": "efd333cc78ffc75d8be88d16f069b0410c7dc00240e84227d6e164abc72b79cd",
+    "web/dist/app.js": "4b552a54bbb87a9b4a172f7697b5d0da2f42d8dbd0a77e69361801dcdfea465c",
+    "web/dist/index.html": "c89dc6548ee78cb365d3966287ae9a03214f71e19e3cf17d607b39dd17459bf3",
+    "web/dist/portfolio.js": "d43ee943073f033faf11dcecff80805da3461ac6e6f38807dc4a5af14c07e52c",
+    "web/dist/portfolio.css": "3bd8d11119104df31a405367e3e98f66d8fa7f362c9b24c2884df152f4226774"
+  }
+}

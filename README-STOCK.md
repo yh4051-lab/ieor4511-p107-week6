@@ -1,10 +1,11 @@
 # Custom Stock Research — After-Tax Loss Harvesting
 
-The English research interface is embedded in **Portfolio**, immediately below
-Starting cash. Expand **Custom Stock Research — After-Tax Loss Harvesting** to
-enter the complete historical research configuration. After a successful run,
-the results appear in the main **Summary** and **Annual ledger** on the right.
-The original illustrative scenario remains available through **Results source**.
+The English research form is open by default in **Portfolio**, below Starting
+cash. Complete **Custom Stock Research — After-Tax Loss Harvesting**, then use
+the single **Run comparison** button at the bottom of the input panel. The same
+completed historical run appears in **Summary**, **Annual ledger** and
+**Assumptions & scope** on the right. **Analysis mode** defaults to **Historical
+stock research**; the original **Illustrative scenario** remains optional.
 
 ## Start on Windows
 
@@ -15,8 +16,8 @@ The original illustrative scenario remains available through **Results source**.
    is **http://127.0.0.1:8754**; use the actual URL printed by the launcher.
 5. Enter your initial equity, manual tickers, Long/Short directions, allocation,
    start/end dates and benchmark. Review costs, tax rates and harvesting rules,
-   then click **Run After-Tax Research**. The right-side **Summary** automatically
-   switches to this historical run; use **Annual ledger** to inspect its records.
+   then click **Run comparison**. The right-side **Summary** displays this run;
+   inspect its records in **Annual ledger** and its settings in **Assumptions & scope**.
 
 Both terminal commands below open the same integrated interface:
 
@@ -61,30 +62,63 @@ itself a measure of risk-adjusted alpha. The no-harvest control uses exactly the
 same starting positions as the harvesting strategy and helps isolate the effect
 of the harvesting rule.
 
-## Read the right-side results
+## One button and three matching result views
 
-**Run After-Tax Research** runs the historical engine and automatically selects
-**Historical stock research** in **Results source**. It does not run or overwrite
-the original hypothetical scenario.
+**Run comparison** executes only the engine selected in **Analysis mode**. In
+the default **Historical stock research** mode, the complete stock form supplies
+prices, positions, costs, taxes and harvesting settings. There is no separate
+Run After-Tax Research button. Pressing Enter in a research input uses the same
+submit path. The initial page does not automatically run the illustrative model
+or choose stocks for you.
 
 | Control or view | Historical research behavior |
 |---|---|
-| **Summary** | Three after-tax wealth cards (harvesting, same portfolio without harvesting and 100% long benchmark), differences, simple gain ratio, three equity curves and harvesting tax/cost bridge. |
-| **Annual ledger** | Select harvesting strategy, no-harvest control or benchmark; inspect annual taxes, trades, accounting/exposure, costs and initial holdings/prices. |
-| **Results source** | Switch between the most recently completed historical run and illustrative scenario without fetching or rerunning either model. Switching preserves Summary or Annual ledger. |
-| **View research results** | Compact sidebar button that returns to the historical Summary. |
+| **Summary** | SPY pass/fail/tie status, three after-tax wealth cards, differences, simple gain ratio, signed initial-exposure bars, three equity curves and harvesting tax/cost bridge. |
+| **Annual ledger** | Select harvesting strategy, no-harvest control or selected benchmark; inspect annual taxes, trades, accounting/exposure, costs and initial holdings/prices. When the selected benchmark differs from SPY, the SPY target is also available as a ledger choice. |
+| **Assumptions & scope** | Exact settings, requested/actual dates, tax and cost rates, harvesting rules, SPY evaluation, model limits and provenance for the same completed run. |
+| **Analysis mode** | Select historical research or the original illustrative model. Each retains its completed results while the page is open; switching mode does not run either engine. |
+| **View research results** | Compact sidebar link that returns to the historical Summary. |
 | **Download research JSON** | Main toolbar download for the full historical run. |
 | **Download trades CSV** | Historical Annual ledger export for the currently selected portfolio. |
-| **Scenario method** | Explains only the original illustrative model and selects that result source. |
 
-**Run comparison** selects and calculates the original illustrative scenario.
-Its break-even graph and 1/3/5/10-year sensitivity table remain exclusive to that
-source; they are not relabeled as historical findings. Each model keeps its own
-inputs and results. Only Starting cash is shared. Changing shared equity marks
-both results stale; other model-specific edits mark only their own results stale.
-Stale historical results are visibly marked and cannot be exported until rerun.
-Completed results remain available while the page is open; session storage
-restores input drafts, not the completed research dataset after a page reload.
+The original model uses its own visible inputs in **Illustrative scenario** mode
+and the same **Run comparison** button. Its break-even graph and 1/3/5/10-year
+sensitivity table remain exclusive to that mode. The historical form is disabled
+when inactive, and inactive illustrative fields do not block research validation.
+Only Starting cash is shared. Changing shared equity marks both results stale;
+other model-specific edits mark only their own results stale. Stale historical
+results are visibly marked across all three views and cannot be exported until
+rerun. Session storage restores input drafts, not completed research datasets
+after a page reload.
+
+**Reset defaults** in research mode restores 130/30, the historical settings and
+two blank Long/Short rows. You still select the tickers yourself. In illustrative
+mode, reset restores that model's baseline.
+
+## SPY target and initial-exposure chart
+
+Each new browser run requests an independent, 100%-long SPY comparison with the
+same initial equity and outside cash flows. The configured benchmark remains
+available; choosing QQQ, for example, does not relabel QQQ as SPY.
+
+The Summary status compares strategy and SPY ending wealth **after modeled costs,
+taxes and full liquidation**:
+
+- **Strategy failed — below SPY**: strategy ending wealth is lower.
+- **Strategy passed — above SPY**: strategy ending wealth is higher.
+- **Strategy matched SPY**: the displayed ending wealths are equal.
+
+The verdict compares each wealth rounded to USD cents; its displayed difference
+uses those rounded wealths. This is a target for the selected historical period,
+not a risk-adjusted alpha estimate, forecast or client-suitability classification.
+Harvesting can improve the selected portfolio relative to its no-harvest control
+while the strategy still fails the SPY target.
+
+Signed initial-exposure bars show Long, Short and a 100% equity reference using
+initial investor equity **before opening fees** as the denominator. They preserve
+130% long / 30% short, gross 160% and net 100% rather than forcing exposures into
+a 100% pie chart. A final-holdings pie is omitted because the model fully
+liquidates all holdings at the end.
 
 ## Choose your initial allocation
 
@@ -130,7 +164,7 @@ and time out of the market can cause later exposures to drift.
 ## Historical data and position mechanics
 
 - Use US USD equities or ETFs. AAPL, MSFT, SPY and BRK-B are examples, not recommendations.
-- Select up to 20 distinct tickers. Combine duplicate holdings into one net position.
+- Select up to 20 distinct position tickers. Combine duplicate holdings into one net position. The data request can additionally include the selected benchmark and SPY.
 - Target budgets are resolved to fractional shares at the first available session's
   close; the manual mode uses your entered initial share quantities. The loader
   reconstructs nominal historical prices from Yahoo split-adjusted prices. Subsequent splits adjust quantity and per-share basis once.
@@ -138,8 +172,11 @@ and time out of the market can cause later exposures to drift.
   does not assume cost-free daily rebalancing or multiply index returns by 1.3.
 - Net/gross exposure is derived from the selected positions and investor equity.
   Short proceeds are restricted collateral, not extra investor wealth.
-- History must exactly match the benchmark calendar. Missing bars, IPO gaps and
+- History within the research window must exactly match the benchmark calendar. Missing bars, IPO gaps and
   unavailable securities fail visibly; no forward-filled or fabricated prices.
+- Later observations are used only to recover split factors. Missing prices after
+  the selected end date are excluded from calculations and recorded in audit
+  metadata; invalid in-window prices and invalid split actions still fail.
 - End date must be before today in New York; incomplete current-day bars are excluded.
 - Maximum requested interval is ten years. Yahoo corrections and present-day
   security selection can affect historical conclusions.
@@ -204,8 +241,8 @@ The **Download research JSON** toolbar button and **Download full research JSON*
 in the historical Annual ledger export inputs, nominal prices, actions, hashes,
 equity paths, annual tax ledgers, trades, control runs, resolved allocations and
 assumptions. **Download trades CSV** exports the currently selected portfolio
-(strategy, no-harvest control or benchmark). The original scenario has its own
-**Download scenario ZIP** button when that result source is selected.
+(strategy, no-harvest control, selected benchmark or separate SPY target when available). The original scenario has its own
+**Download scenario ZIP** button in illustrative mode.
 
 Replay a downloaded JSON without network access:
 
@@ -228,9 +265,9 @@ stored with results; transient in-memory history caching is not your audit recor
 
 ## Important scope limits
 
-The long “Assumptions and research limits” panel has been removed from the
-browser. The complete modeling assumptions remain in exported JSON and in this
-document; a short note accompanies the results.
+Summary keeps the model note short. The dedicated **Assumptions & scope** tab
+shows the settings and modeling notes for the same completed historical run;
+complete notes also remain in exported JSON and this document.
 
 The tax system is an educational proxy, not a complete US return. The waiting
 rule checks only this modeled account and does not adjudicate substantially
@@ -252,6 +289,9 @@ label-only UI is replaced by the embedded research interface. The old snapshot
 API remains for compatibility, but is not used by the integrated UI. Historical
 level 1/2/3 API and CLI configurations also remain supported for replay of prior
 research; new browser requests always use the full harvesting engine (level 3).
+They also send `evaluate_spy: true`. This opt-in adds `spy_benchmark`, SPY wealth,
+raw and display-rounded differences, and `spy_status` to the result. Saved legacy
+API/CLI configurations without that flag retain their previous output contract.
 
 See `CODE-MAP.md` for the file/function map and implementation details.
 

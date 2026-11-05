@@ -2,30 +2,49 @@
 
 From the repository root, run `python web/launch.py` with Python 3.12. On Windows, `py -3.12 web/launch.py` and `py -3.12 web/launch_stock.py` open the same integrated interface, preferring **http://127.0.0.1:8754**. The launcher reuses only a matching source/interface/configuration build; if the port holds an older build or another app it tries ports through 8764. Use the actual URL printed/opened by the launcher. The recommended Windows entry is **START-STOCK.bat**, which also installs `requirements-stock.txt` for Yahoo historical data. When starting manually, install those dependencies with `py -3.12 -m pip install -r requirements-stock.txt`. The original illustrative model uses only the standard library and starts from the independent public example in `configs/example_hypothetical.json`. For the restricted source-based run, use the command-line instructions in `docs/RESTRICTED_DATA.md`.
 
-Expand **Portfolio → Custom Stock Research — After-Tax Loss Harvesting** for manually selected US stocks, adjustable long/short allocations and integrated after-tax harvesting research. Click **Run After-Tax Research** to populate the main **Summary** and **Annual ledger** on the right. **Results source** switches between completed historical research and the original illustrative scenario without rerunning either. See [README-STOCK.md](../README-STOCK.md) for inputs, results and exports.
+The complete **Portfolio → Custom Stock Research — After-Tax Loss Harvesting**
+form is open by default. Enter your manually selected US stocks, allocation,
+dates, costs, taxes and harvesting rules, then press the single **Run comparison**
+button. There is no separate research run button. **Analysis mode** defaults to
+**Historical stock research**; choose **Illustrative scenario** for the original
+model. The initial page does not run either model automatically or pick stocks.
+See [README-STOCK.md](../README-STOCK.md) for the full workflow.
 
-The main result views follow **Results source**:
+All three result tabs follow the active mode and its completed run:
 
 | View | Historical stock research | Illustrative scenario |
 |---|---|---|
-| **Summary** | Harvesting/no-harvest/benchmark wealth cards, three equity paths and harvesting tax/cost bridge. | Index/DI/Core wealth cards, outside-gain break-even search and holding-period comparisons. |
-| **Annual ledger** | Select strategy, no-harvest control or benchmark; inspect annual taxes, trades, accounting/exposure, costs and initial holdings. | Select Index, DI or Core and returns/taxes, fees/financing or basis/embedded gains. |
-| Toolbar download | **Download research JSON**, containing the full research inputs, prices, results and assumptions. | **Download scenario ZIP**, containing scenario/UI inputs, CSV outputs, code hashes and reproduction instructions. |
+| **Summary** | Independent SPY pass/fail/tie target, harvesting/no-harvest/selected-benchmark wealth cards, signed initial-exposure bars, three equity paths and harvesting tax/cost bridge. | Index/DI/Core wealth cards, outside-gain break-even search and holding-period comparisons. |
+| **Annual ledger** | Select strategy, no-harvest control, selected benchmark or additional SPY target when needed; inspect annual taxes, trades, accounting/exposure, costs and holdings. | Select Index, DI or Core and returns/taxes, fees/financing or basis/embedded gains. |
+| **Assumptions & scope** | Exact run settings, actual dates, rates, trade rules, SPY evaluation and model notes. | Original illustrative methodology, fixed assumptions and coverage. |
+| Toolbar download | **Download research JSON** with inputs, prices, results, comparisons and assumptions. | **Download scenario ZIP** with scenario/UI inputs, CSV outputs, hashes and reproduction instructions. |
 
-The historical Annual ledger also offers **Download trades CSV** for its selected
-portfolio. The compact **View research results** sidebar button returns to its
-Summary. **Scenario method** describes only the original illustrative model and
-selects that source. Break-even and holding-period charts are not historical
-research outputs.
+**Strategy failed — below SPY** means ending wealth after costs, taxes and full
+liquidation is below the independently simulated 100%-long SPY target, with
+matched initial equity and outside cash flows. The selected benchmark may be
+QQQ or another supported ticker; it is never mislabeled as SPY. Pass/fail/tie
+uses each ending wealth rounded to USD cents. It describes this historical
+period, not risk-adjusted alpha, future performance or client suitability.
+Positive harvesting value versus the no-harvest control can coexist with a SPY
+failure.
 
-**Run comparison** selects and recalculates the illustrative scenario. Its
-example menu resets the original inputs before running; **Reset defaults**
-restores that baseline without clearing custom stock selections. Starting cash
-is shared and changes mark both models stale; other inputs affect only their
-own model. Stale results are marked and their downloads are disabled. Input
-drafts survive a same-tab refresh through session storage; completed historical
-results must be rerun after refresh. The original scenario retains slate Index,
-blue DI and teal Core colors; signed text identifies comparison direction.
+The initial-exposure chart uses signed bars and initial equity before opening
+fees, so 130% long / 30% short remains gross 160% and net 100%. A pie would hide
+that denominator; final holdings are fully liquidated in this model.
+
+The historical Annual ledger offers **Download trades CSV** for its selected
+portfolio. The compact **View research results** link returns to Summary.
+Switching **Analysis mode** preserves completed results without rerunning either
+engine; the single button runs only the active engine. Starting cash is shared.
+Changing it marks both models stale; other inputs affect only their own model.
+All historical views mark stale results and disable exports until rerun.
+
+**Reset defaults** in research mode restores the historical defaults and blank
+Long/Short ticker rows. In illustrative mode, the example menu and reset restore
+that model's inputs. Inactive model fields are hidden and disabled so their
+validation cannot block the active form. Enter in a research input follows the
+same single-submit path. Input drafts survive a same-tab refresh through session
+storage; completed results must be rerun after refresh.
 
 ## Original illustrative model scope
 
