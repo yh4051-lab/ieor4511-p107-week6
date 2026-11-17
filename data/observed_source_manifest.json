@@ -1,0 +1,15 @@
+{
+  "local_path": "data/raw/observed_2019_2025.json",
+  "included_in_repository": false,
+  "classification": "Observed prices, dividends and splits; not actual portfolio trades",
+  "source": "Yahoo Finance via yfinance 1.7.0",
+  "retrieved_date": "2026-11-17",
+  "period_start": "2019-01-02",
+  "period_end": "2025-12-31",
+  "sessions": 1760,
+  "securities": 41,
+  "file_sha256": "c9e3e376f2e544fe21fb2915c715c6a708da04964e80f514cc5747a9da852991",
+  "numeric_data_sha256": "5e3130f66409e2216312c9c23273897fa268210a70ba0f843474819df2efa90d",
+  "download_command": "python tools/fetch_market_study.py",
+  "notes": "The frozen local snapshot supports exact replay. A new vendor download may revise prices or metadata and therefore change the hash. Each complete private study export contains the observations actually used. Fixed current universe; not point-in-time index membership."
+}

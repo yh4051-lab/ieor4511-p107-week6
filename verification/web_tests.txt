@@ -30,6 +30,6 @@ test_stock_launcher_rejects_prior_research_server (test_web.HttpTests.test_stock
 test_three_level_research_endpoint (test_web.HttpTests.test_three_level_research_endpoint) ... ok
 
 ----------------------------------------------------------------------
-Ran 30 tests in 1.631s
+Ran 30 tests in 1.629s
 
 OK

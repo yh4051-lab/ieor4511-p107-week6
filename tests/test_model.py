@@ -227,12 +227,19 @@ class SourceAndReproTests(unittest.TestCase):
             'data/illustrative_loss_schedule.csv':'independent illustrative assumptions',
             'configs/example_dom_historical.json':'synthetic software fixture; not market history',
             'examples/dom_synthetic_history.json':'synthetic software fixture; not market history',
-            'examples/dom_synthetic_memberships.csv':'synthetic software fixture; not market history'}
+            'examples/dom_synthetic_memberships.csv':'synthetic software fixture; not market history',
+            'configs/observed_study.json':'research assumptions and fixed stock universe; not observations'}
         self.assertEqual({r['file'] for r in rows},set(expected))
         self.assertEqual(len(rows),len(expected))
         for r in rows:
             self.assertEqual(r['classification'],expected[r['file']])
             self.assertEqual(hashlib.sha256((ROOT/r['file']).read_bytes()).hexdigest(),r['sha256'])
+        external=json.loads((ROOT/'data/observed_source_manifest.json').read_text(encoding='utf-8'))
+        self.assertFalse(external['included_in_repository'])
+        self.assertEqual(external['local_path'],'data/raw/observed_2019_2025.json')
+        report=json.loads((ROOT/'results_observed/cohort_verification.json').read_text(encoding='utf-8'))
+        self.assertEqual(external['numeric_data_sha256'],report['observed_data_sha256'])
+        self.assertEqual(external['sessions'],report['sessions'])
 
     def test_breakeven_bracket_and_residual(self):
         c=config();r,_=breakeven(c)

@@ -1,5 +1,5 @@
 {
-  "verification_time_utc": "2026-11-17T07:23:52+00:00",
+  "verification_time_utc": "2026-11-17T07:32:07+00:00",
   "python": "3.12.14",
   "commands": [
     {
@@ -166,7 +166,7 @@
     "p107/taxes.py": "1c34c0f5a8a378f4eed166a1a50d28fbe5318eeaf4d5f5c785c321751416a1c6",
     "tests/test_dom_feedback.py": "195856007dca9a832328ccf67a7178fabfc4b457e7e409512a655d842bb14c54",
     "tests/test_market_history.py": "deaafc5d9c3dab7c7e7273307db3d8dc6d0e74acb2ef548ab9eb88886fa8ae98",
-    "tests/test_model.py": "b09a7db3744a2ba61e7979f06b030b1eadccc7adc54d6b3b79445d31f1a08cb3",
+    "tests/test_model.py": "0b6fee35913c87bced0b7d2cc9fe1227d6090dece720b1d38ee7b0aa8026c63c",
     "tests/test_observed.py": "d7a8f8903edc80f5a657d9169001aa821d951782c7e43be71af5e1d2c9a0f760",
     "tests/test_portfolio.py": "cb42b8f76fbfe958cc34b87c98006cbc70356a8f34706321c9b732e7fdaaf1c7",
     "tests/test_research.py": "d4d3a63d17499afc6f5f8eabb60c77a2bab742965d082b47dd7198e95eaeb366",
