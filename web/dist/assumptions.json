@@ -545,7 +545,7 @@
       "title": "How does the main historical page form a portfolio?",
       "answer": "The user selects the stocks. The model allocates each long/short budget across those stocks using relative weights, or accepts manually entered shares.",
       "method": "Each leg budget = starting equity × requested leg exposure. Each position receives its normalized share of that budget; fractional shares = allocated dollars / first historical close. Targets are sized before opening fees. Positions then drift; they are not periodically reset to 130/30.",
-      "limit": "The interface does not optimize stock selection, hedge factors or estimate manager alpha. User-selected names and dates can introduce selection bias. The page permits 1–20 unique positions.",
+      "limit": "The interface does not optimize stock selection, hedge factors or estimate manager alpha. User-selected names and dates can introduce selection bias. The page permits 1–20 ticker/direction entries, including separate Long and Short legs in one ticker. Offsetting-position tax deferrals, holding-period adjustments and constructive-sale rules are not modeled.",
       "sources": [
         "p107/research.py",
         "web/dist/portfolio.js"

@@ -10,7 +10,7 @@
   <a class="skip-link" href="#tab-summary">Skip to results</a>
   <header class="topbar">
     <a class="brand" href="#top"><span class="brand-symbol">P107</span><span>Wedmont <span class="brand-divider">/</span> Columbia<small>IEOR E4511 · PROJECT STUDY</small></span></a>
-    <div class="top-right"><a href="/studies" class="stage-badge">Portfolio research →</a><a href="/assumptions" class="stage-badge">Assumptions &amp; methodology</a><span class="local-badge"><i></i> Local calculation</span><span id="model-stage" class="stage-badge">Week 6 · Initial model</span></div>
+    <div class="top-right"><a href="/tax-lab" class="stage-badge">四策略稅後研究 · 分支預覽</a><a href="/studies" class="stage-badge">Portfolio research →</a><a href="/assumptions" class="stage-badge">Assumptions &amp; methodology</a><span class="local-badge"><i></i> Local calculation</span><span id="model-stage" class="stage-badge">Week 6 · Initial model</span></div>
   </header>
   <main id="top">
     <section class="intro"><div><p class="eyebrow">LONG-SHORT DIRECT INDEXING</p><h1>After-tax strategy comparison</h1><p class="subtitle">Same starting cash. Modeled costs. Full liquidation taxes.</p></div><p id="analysis-label" class="scenario-label">Hypothetical scenarios<br><span>Independent illustrative inputs</span></p></section>
@@ -49,6 +49,7 @@
   <label for="research-end">End date / full exit date</label><input id="research-end" type="date" value="2024-12-31" required>
   <label for="research-benchmark">Benchmark ticker</label><input id="research-benchmark" type="text" maxlength="15" value="SPY" pattern="[A-Za-z][A-Za-z0-9\-]{0,14}" autocomplete="off" required>
   <p class="field-note">Use a benchmark consistent with your chosen market. Historical prices determine the start and end values; no manager alpha is assumed.</p>
+  <p class="field-note">A ticker can have one Long entry and one Short entry. Each direction keeps its own shares, costs and trades; combine entries that repeat the same ticker and direction.</p>
   <div id="stock-positions" aria-label="Manually selected positions"></div>
   <button type="button" id="stock-add">+ Add position</button>
   <fieldset id="research-cost-fields" class="research-group">

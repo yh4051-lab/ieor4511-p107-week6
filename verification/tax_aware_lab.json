@@ -1,0 +1,129 @@
+{
+  "branch": "codex/tax-aware-lab",
+  "base_main_commit": "0d890eaeaa9e570dd4415a798db614606ee27cd2",
+  "validated_date": "2026-11-17",
+  "model_tests": {
+    "command": ".venv/bin/python -m unittest discover -s tests -v",
+    "passed": 184
+  },
+  "web_tests": {
+    "command": ".venv/bin/python -m unittest discover -s web/tests -v",
+    "passed": 34
+  },
+  "javascript_syntax": "node --check web/dist/tax-lab.js: passed",
+  "real_chromium_flow": {
+    "four_strategies": true,
+    "four_charts": true,
+    "qp_decisions": 48,
+    "sensitivity_cells_completed": 9,
+    "monte_carlo_paths_completed": 2,
+    "zip_download": true,
+    "pdf_print": true,
+    "stale_exports_disabled": true,
+    "viewport_390_no_overflow": true,
+    "javascript_errors": []
+  },
+  "self_contained_example": {
+    "scripts": 0,
+    "external_stylesheets": 0,
+    "four_svg_charts": true,
+    "pdf_text_verified": true
+  },
+  "fresh_process_replay": {
+    "checked": true,
+    "maximum_wealth_tolerance_dollars": 1e-05
+  },
+  "data_kind": "synthetic",
+  "data_label": "SYNTHETIC observations · hypothetical strategies",
+  "synthetic_example_comparison": [
+    {
+      "strategy": "A",
+      "label": "A · Index ETF",
+      "terminal_wealth": 1159503.4820911053,
+      "delta_vs_A": 0,
+      "delta_vs_C": 262989.7431722423,
+      "total_taxes": 40699.18511017314,
+      "total_costs": 4388.27110283527,
+      "harvested_losses": 0,
+      "carry_st": 0,
+      "carry_lt": 0,
+      "tracking_error": 0,
+      "max_drawdown": 0.05799798670677081,
+      "volatility": 0.012214023257395679,
+      "concentration": 1.0002014339695546,
+      "margin_liquidations": 0
+    },
+    {
+      "strategy": "B",
+      "label": "B · Long-only basket + rule-based TLH",
+      "terminal_wealth": 1183624.2794714074,
+      "delta_vs_A": 24120.7973803021,
+      "delta_vs_C": 287110.5405525444,
+      "total_taxes": 58552.72638746231,
+      "total_costs": 13988.5343185173,
+      "harvested_losses": 0,
+      "carry_st": 0,
+      "carry_lt": 0,
+      "tracking_error": 0.03161843427483286,
+      "max_drawdown": 0.11425888151822927,
+      "volatility": 0.029811780966703894,
+      "concentration": 0.18534472890705642,
+      "margin_liquidations": 0
+    },
+    {
+      "strategy": "C",
+      "label": "C · Fixed-weight 130/30, no harvesting",
+      "terminal_wealth": 896513.738918863,
+      "delta_vs_A": -262989.7431722423,
+      "delta_vs_C": 0,
+      "total_taxes": 3549.548146194406,
+      "total_costs": 70329.09024911543,
+      "harvested_losses": 0,
+      "carry_st": 46062.412942867624,
+      "carry_lt": 0,
+      "tracking_error": 0.06517159829875645,
+      "max_drawdown": 0.2586620525215979,
+      "volatility": 0.062369815610796124,
+      "concentration": 0.4761509890669918,
+      "margin_liquidations": 0
+    },
+    {
+      "strategy": "D",
+      "label": "D · Tax-aware QP weights/lots + rule-based TLH",
+      "terminal_wealth": 970613.525473089,
+      "delta_vs_A": -188889.95661801635,
+      "delta_vs_C": 74099.78655422595,
+      "total_taxes": 13169.586657578704,
+      "total_costs": 84559.81375241243,
+      "harvested_losses": 58358.34899908217,
+      "carry_st": 0,
+      "carry_lt": 0,
+      "tracking_error": 0.05867703668439398,
+      "max_drawdown": 0.2364390886317428,
+      "volatility": 0.05630581994651681,
+      "concentration": 0.6252329886941059,
+      "margin_liquidations": 0
+    }
+  ],
+  "runtime_versions": {
+    "python": "3.12.14",
+    "numpy": "2.5.5",
+    "cvxpy": "1.7.5",
+    "clarabel": "0.11.1"
+  },
+  "engine_hashes": {
+    "tax_lab.py": "aeef82b72fabc58a8caf6665b07167010a65c4a8b1ce0df1842155dd577893cf",
+    "tax_optimizer.py": "d4e894a4fd8fb39cc060103a78052ca2d89ab5966d681a03276a1b6d7a7a0055",
+    "observed_engine.py": "dc486268afcd502583eea6b6afa17f11cc10b0d506ccb691677842cdce193c49",
+    "lot_accounting.py": "4ea2eb2436355754278800c4ec5b4070b4fcfd9eb7ed10d3d3dd94208537a0cf",
+    "taxes.py": "77e06ce23863be93e7abfda72075bd2c1ebce3e8b639b7733a88b00c3074ebf0",
+    "market_data.py": "b609e5a4d0bdaa957f0555b51d9aa80996e1fc2836a531790cfb9f87086878d1"
+  },
+  "original_workspace_audit": {
+    "head_unchanged": true,
+    "branch_unchanged": true,
+    "status_unchanged": true,
+    "file_mismatches": []
+  },
+  "interpretation": "Software validation and synthetic model checks, not investment performance validation. D-C includes changed allocations and trades. The QP is a local risk/cost/positive-gain-tax surrogate, not a global lifetime after-tax-wealth optimum."
+}

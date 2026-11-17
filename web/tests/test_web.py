@@ -295,6 +295,38 @@ class HttpTests(unittest.TestCase):
         with patch.object(launch_stock, 'URL', f'http://127.0.0.1:{self.server.server_port}'):
             self.assertTrue(launch_stock.health())
 
+    def test_same_ticker_opposing_positions_endpoint_keeps_both_legs(self):
+        dataset = dict(dates=['2020-01-02', '2020-01-03'],
+                       prices={'AAPL': [100, 110], 'SPY': [100, 105]},
+                       dividends={s: [0, 0] for s in ('AAPL', 'SPY')},
+                       splits={s: [0, 0] for s in ('AAPL', 'SPY')}, metadata={'source': 'unit test'})
+        payload = dict(level=3, initial_cash=1000000, start_date='2020-01-02', end_date='2020-01-03',
+                       benchmark='SPY', allocation_mode='target_exposure', long_exposure_pct=130, short_exposure_pct=30,
+                       positions=[dict(ticker='aapl', side='long', weight=1), dict(ticker='AAPL', side='short', weight=1)],
+                       financing_pct=0, borrow_pct=0, transaction_pct=0)
+        headers = {'Content-Type': 'application/json'}
+        with patch('p107.market_data.load_history', return_value=dataset) as history:
+            status, raw, _ = self.request('POST', '/api/research/run', json.dumps(payload), headers)
+        self.assertEqual(status, 200, raw.decode())
+        result = json.loads(raw)
+        self.assertEqual(history.call_args.args[0], ['AAPL', 'SPY'])
+        self.assertEqual([(p['ticker'], p['side'], p['shares']) for p in result['positions']],
+                         [('AAPL', 'long', 13000), ('AAPL', 'short', 3000)])
+        self.assertAlmostEqual(result['summary']['initial_gross_exposure'], 1.6)
+        self.assertAlmostEqual(result['daily'][0]['debt'], 300000)
+        self.assertAlmostEqual(result['daily'][0]['short_collateral'], 300000)
+        self.assertAlmostEqual(result['summary']['price_pnl'], 100000)
+        self.assertAlmostEqual(result['summary']['capital_tax'], 40000)
+        self.assertAlmostEqual(result['summary']['terminal_wealth'], 1060000)
+        self.assertEqual({t['side'] for t in result['trades'] if t['event'] == 'exit'}, {'long', 'short'})
+        self.assertEqual(len(result['no_harvest_control']['positions']), 2)
+        payload['positions'][1]['side'] = 'long'
+        with patch('p107.market_data.load_history') as history:
+            status, raw, _ = self.request('POST', '/api/research/run', json.dumps(payload), headers)
+            self.assertEqual(status, 400)
+            self.assertIn('same ticker and direction', json.loads(raw)['error'])
+            history.assert_not_called()
+
     def test_spy_target_is_independent_of_selected_benchmark(self):
         tickers = ('AAPL', 'QQQ', 'SPY')
         dataset = dict(dates=['2020-01-02', '2020-01-03'],

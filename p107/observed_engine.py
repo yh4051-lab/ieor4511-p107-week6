@@ -9,12 +9,12 @@ from copy import deepcopy
 from datetime import date, timedelta
 from math import isfinite
 
-from .lot_accounting import LotBook
+from .lot_accounting import LotBook, held_more_than_year
 from .market_data import normalize_ticker
 from .taxes import settle
 
 
-def simulate_observed(config,data,policy=None):
+def simulate_observed(config,data,policy=None,allocator=None):
     c=deepcopy(config);policy=policy or {'mode':'full_sale'}
     mode=policy['mode']
     if mode not in ('full_sale','gradual','extension','death','gift'):raise ValueError('Unknown historical exit')
@@ -74,10 +74,21 @@ def simulate_observed(config,data,policy=None):
     carry_st=carry_lt=0.;settled_years=set();received_years=set()
     pnl=dividends=outside_received=harvested=0.
     daily=[];annual=[];trades=[];events=[];closed=False;basis_adjustment=0.
+    optimization_records=[]
+    lab_diagnostics=c.get('lab_diagnostics') is True
+    pre_exit_embedded_tax_liability=None
     def px(t,i):return float(data['prices'][t][i])
     def mv(root,i):
         r=roots[root];return book.quantity(r['active'],r['side'])*px(r['active'],i)
     def equity(i):return cash+collateral-debt+sum(mv(t,i)*(1 if r['side']=='long' else -1) for t,r in roots.items())
+    def embedded_tax_estimate(i):
+        total=0.
+        for lot in book.lots:
+            if lot['qty']<=1e-8:continue
+            gain=lot['qty']*(px(lot['ticker'],i)-lot['tax_basis'])*(1 if lot['side']=='long' else -1)
+            is_lt=lot['side']=='long' and (lot.get('inherited') or held_more_than_year(lot['opened'],dates[i],lot.get('holding_credit',0)))
+            total+=max(0,gain)*rates['tax_lt_pct' if is_lt else 'tax_st_pct']
+        return total
     def fund():
         nonlocal cash,debt
         if cash<0:debt-=cash;cash=0.
@@ -86,7 +97,7 @@ def simulate_observed(config,data,policy=None):
     def charge(amount):
         nonlocal side_cash,cash
         use=min(side_cash,amount);side_cash-=use;cash-=amount-use;fund()
-    def trade(root,delta,i,reason):
+    def trade(root,delta,i,reason,lot_order=None):
         nonlocal cash,collateral,harvested
         if abs(delta)<1e-8:return
         r=roots[root];t=r['active'];side=r['side'];price=px(t,i);qty=abs(delta)
@@ -96,7 +107,7 @@ def simulate_observed(config,data,policy=None):
             else:collateral+=qty*price
             book.open(t,side,qty,price,dates[i],fee/qty)
         else:
-            records=book.close(t,side,qty,price,dates[i],reason,fee/qty)
+            records=book.close(t,side,qty,price,dates[i],reason,fee/qty,lot_order=lot_order)
             if side=='long':cash+=qty*price
             else:
                 released=sum(rec['shares']*price+rec['economic_pnl'] for rec in records)
@@ -112,6 +123,24 @@ def simulate_observed(config,data,policy=None):
         if mode=='extension' and dates[i].year in exit_years:
             extension*=max(0,1-(exit_years.index(dates[i].year)+1)/stages)
         weights={t:r['weight']*((1+extension) if r['side']=='long' else extension) for t,r in roots.items()}
+        lot_orders={}
+        if allocator is not None:
+            plan=allocator(dict(config=deepcopy(c),data=data,dates=dates,index=i,
+                roots=deepcopy(roots),book=book,prices={t:px(t,i) for t in all_names},
+                nav=nav,current_notionals={t:mv(t,i) for t in roots},reason=reason,
+                targets={'long':1+extension,'short':extension}))
+            if not isinstance(plan,dict) or set(plan.get('weights',{}))!=set(roots):
+                raise ValueError('Allocator must provide one target weight for every root')
+            weights={t:float(plan['weights'][t]) for t in roots}
+            if any(not isfinite(w) or w<0 for w in weights.values()):
+                raise ValueError('Allocator weights must be finite and nonnegative')
+            for side,target in [('long',1+extension),('short',extension)]:
+                if abs(sum(w for t,w in weights.items() if roots[t]['side']==side)-target)>1e-6:
+                    raise ValueError('Allocator weights do not satisfy exact long/short targets')
+            lot_orders=plan.get('lot_orders',{})
+            if not isinstance(lot_orders,dict) or any(t not in roots for t in lot_orders):
+                raise ValueError('Allocator supplied invalid lot order roots')
+            optimization_records.append(deepcopy(plan.get('record',{})))
         def fee_at(v):return sum(abs(v*weights[t]-mv(t,i)) for t in roots)*rates['transaction_pct']
         lo=0.;hi=nav
         if fee_at(0)>=nav:raise ValueError('Trading costs exceed equity')
@@ -122,7 +151,7 @@ def simulate_observed(config,data,policy=None):
         changes={t:(lo+hi)/2*weights[t]/px(r['active'],i)-book.quantity(r['active'],r['side']) for t,r in roots.items()}
         for sign in (-1,1):
             for t in sorted(roots):
-                if changes[t]*sign>1e-8:trade(t,changes[t],i,reason)
+                if changes[t]*sign>1e-8:trade(t,changes[t],i,reason,lot_order=lot_orders.get(t) if sign<0 else None)
     def switch(root,i,to_sub):
         r=roots[root];notional=mv(root,i)
         trade(root,-book.quantity(r['active'],r['side']),i,'harvest' if to_sub else 'replacement_exit')
@@ -156,6 +185,9 @@ def simulate_observed(config,data,policy=None):
         events.append(dict(date=dates[i].isoformat(),event=reason,fraction=fraction,net_withdrawal=released))
     target_rebalance(0,'initial_allocation')
     for i,when in enumerate(dates):
+        if lab_diagnostics:
+            prior_price_pnl,prior_dividends,prior_outside=pnl,dividends,outside_received
+            prior_invested_nav=equity(i-1) if i else None
         final=i==len(dates)-1;year_end=i==last_by_year[when.year]
         if i:
             elapsed=(when-dates[i-1]).days/365
@@ -195,6 +227,7 @@ def simulate_observed(config,data,policy=None):
         if not final and year_end and mode=='gradual' and when.year in exit_years and not closed:
             close_fraction(i,1/(len(exit_years)-exit_years.index(when.year)),'staged_exit')
         if final:
+            if lab_diagnostics:pre_exit_embedded_tax_liability=embedded_tax_estimate(i)
             if mode in ('death','gift') and not closed:
                 # Short liabilities are closed in the donor account. They are
                 # neither given away nor assigned a long-asset basis step-up.
@@ -261,6 +294,15 @@ def simulate_observed(config,data,policy=None):
                           short_collateral=collateral,investor_side_cash=side_cash,embedded_gain=book.tax_embedded(prices),
                           capital_identity_error=capital_error,wealth_identity_error=wealth_error,
                           active_substitutes=[r['active'] for t,r in roots.items() if r['active']!=t]))
+        if lab_diagnostics:
+            daily[-1].update(cumulative_harvested_losses=harvested,
+                cumulative_capital_tax=taxes['capital']+taxes['recipient'],
+                cumulative_total_tax=sum(taxes.values()),total_costs=sum(costs.values()),
+                embedded_tax_liability_estimate=embedded_tax_estimate(i),
+                external_flow=outside_received-prior_outside,
+                investment_return=((pnl-prior_price_pnl+dividends-prior_dividends)/prior_invested_nav
+                                   if prior_invested_nav is not None and prior_invested_nav>1e-8 else None),
+                max_concentration=(max((mv(t,i) for t in roots),default=0)/nav if nav>1e-8 else 0. if closed else None))
     summary=dict(initial_cash=initial,terminal_after_tax_wealth=daily[-1]['total_investor_wealth'],
                  cumulative_price_pnl=pnl,cumulative_net_dividends=dividends,
                  outside_gain_proceeds=outside_received,cumulative_harvested_losses=harvested,
@@ -272,5 +314,14 @@ def simulate_observed(config,data,policy=None):
                  max_wealth_identity_error=max(abs(d['wealth_identity_error']) for d in daily),
                  max_capital_identity_error=max(abs(d['capital_identity_error']) for d in daily),
                  harvest_enabled=harvesting,exit_policy=mode)
-    return dict(summary=summary,daily=daily,annual=annual,trades=trades,
+    result=dict(summary=summary,daily=daily,annual=annual,trades=trades,
                 realizations=book.realizations,wash_matches=book.matches,events=events)
+    if lab_diagnostics:
+        summary['pre_exit_embedded_tax_liability_estimate']=pre_exit_embedded_tax_liability
+        result['diagnostic_notes']=[
+            'investment_return is the account price P&L plus net long/short cash dividends, before current costs and taxes, divided by prior invested account NAV. External side cash and its deposits are excluded. Inactive or initial observations are null.',
+            'embedded_tax_liability_estimate sums positive per-lot unrealized gains times the modeled ST/LT rate. It ignores loss netting, carryforwards, closing costs and future wash matches; it is not an actual liquidation tax bill.',
+            'max_concentration is largest absolute active security value divided by invested account NAV. It is zero after closure and can exceed 100% in a levered account.'
+        ]
+    if allocator is not None:result['optimization_records']=optimization_records
+    return result

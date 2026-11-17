@@ -76,10 +76,19 @@ class LotBook:
                 if remaining['wash_used']:break
         return lot
 
-    def close(self,ticker,side,qty,price,when,reason,fee_per_share=0.):
+    def close(self,ticker,side,qty,price,when,reason,fee_per_share=0.,lot_order=None):
         if qty>self.quantity(ticker,side)+1e-6:raise ValueError('Sale exceeds available shares')
+        holdings=list(self.holdings(ticker,side))
+        if lot_order is not None:
+            if not isinstance(lot_order,(list,tuple)) or any(type(i) is not int for i in lot_order):
+                raise ValueError('Lot order must contain integer lot identifiers')
+            by_id={lot['id']:lot for lot in holdings}
+            if len(set(lot_order))!=len(lot_order) or any(i not in by_id for i in lot_order):
+                raise ValueError('Lot order must identify distinct currently held lots')
+            ordered=set(lot_order)
+            holdings=[by_id[i] for i in lot_order]+[lot for lot in holdings if lot['id'] not in ordered]
         remaining=qty;created=[]
-        for lot in list(self.holdings(ticker,side)):
+        for lot in holdings:
             if remaining<=EPS:break
             take=min(remaining,lot['qty']);sign=1 if side=='long' else -1
             economic=take*(price-lot['economic_basis'])*sign

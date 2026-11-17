@@ -132,7 +132,7 @@
 
   function add(position = {}) {
     if (rows().length >= 20) {
-      setStatus('A research run supports at most 20 distinct tickers.');
+      setStatus('A research run supports at most 20 position entries.');
       return;
     }
     const row = document.createElement('div'); row.className = 'stock-position';
@@ -508,8 +508,8 @@
     for (const control of [...section.querySelectorAll('input,select'), initialCash]) if (!control.disabled && !control.reportValidity()) { setStatus('Check the highlighted research input before running.'); return false; }
     const inputs = readInputs();
     if (inputs.end_date <= inputs.start_date) { setStatus('End date must be after start date.'); return false; }
-    const tickers = inputs.positions.map(position => position.ticker);
-    if (new Set(tickers).size !== tickers.length) { setStatus('Use each ticker once. Combine duplicate holdings into a single net position.'); return false; }
+    const positionKeys = inputs.positions.map(position => position.ticker + ':' + position.side);
+    if (new Set(positionKeys).size !== positionKeys.length) { setStatus('Use each ticker once per direction. Combine duplicate Long entries or duplicate Short entries.'); return false; }
     if (inputs.allocation_mode === 'target_exposure') {
       if (inputs.long_exposure_pct + inputs.short_exposure_pct <= 0) { setStatus('Set at least one positive long or short allocation.'); return false; }
       for (const side of ['long', 'short']) {

@@ -164,7 +164,8 @@ and time out of the market can cause later exposures to drift.
 ## Historical data and position mechanics
 
 - Use US USD equities or ETFs. AAPL, MSFT, SPY and BRK-B are examples, not recommendations.
-- Select up to 20 distinct position tickers. Combine duplicate holdings into one net position. The data request can additionally include the selected benchmark and SPY.
+- Select up to 20 position entries. A ticker can appear once as Long and once as Short; the two legs retain separate quantities, trading histories, financing and borrow costs. Combine entries that repeat the same ticker and direction. Market observations are fetched once per ticker; the request can additionally include the selected benchmark and SPY.
+- Opposing positions in one ticker use the main engine's simplified independent-leg tax accounting. Special offsetting-position loss deferrals, holding-period adjustments and constructive-sale rules are not modeled. The exported assumptions identify overlapping tickers. This support applies to the main Historical stock research mode; the separate Portfolio research tax-lot engine retains its own position rules.
 - Target budgets are resolved to fractional shares at the first available session's
   close; the manual mode uses your entered initial share quantities. The loader
   reconstructs nominal historical prices from Yahoo split-adjusted prices. Subsequent splits adjust quantity and per-share basis once.

@@ -1,0 +1,2 @@
+-r requirements-stock.txt
+cvxpy==1.7.5

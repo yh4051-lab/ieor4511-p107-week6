@@ -255,6 +255,129 @@ class ResearchTests(unittest.TestCase):
         self.assertAlmostEqual(r['summary']['terminal_wealth'], 106)
         self.assertAlmostEqual(r['summary']['initial_gross_exposure'], 1)
 
+    def test_same_ticker_target_allocations_keep_both_legs_and_fetch_history_once(self):
+        c = configuration(3)
+        c.update(allocation_mode='target_exposure', long_exposure_pct=130,
+                 short_exposure_pct=30,
+                 positions=[dict(ticker=' aapl ', side='long', weight=3),
+                            dict(ticker='AAPL', side='short', weight=7)])
+        original = deepcopy(c)
+        d = history(['2020-01-02', '2020-01-03'],
+                    {'AAPL': [100, 120], 'SPY': [100, 100]})
+        calls = []
+        def provider(tickers, *args):
+            calls.append(tickers)
+            return deepcopy(d)
+        r = run_research(c, provider)
+        self.assertEqual(calls, [['AAPL', 'SPY']])
+        self.assertEqual(c, original)
+        opened = {t['side']: t for t in r['trades'] if t['event'] == 'open'}
+        self.assertEqual(len(r['positions']), 2)
+        self.assertAlmostEqual(opened['long']['shares'], 1.3)
+        self.assertAlmostEqual(opened['short']['shares'], .3)
+        self.assertAlmostEqual(r['daily'][0]['free_cash'], 0)
+        self.assertAlmostEqual(r['daily'][0]['debt'], 30)
+        self.assertAlmostEqual(r['daily'][0]['short_collateral'], 30)
+        self.assertAlmostEqual(r['summary']['initial_net_exposure'], 1)
+        self.assertAlmostEqual(r['summary']['initial_gross_exposure'], 1.6)
+        # The long gains $26 and the short loses $6: $20 net, $8 ST tax.
+        self.assertAlmostEqual(r['annual'][0]['gain_st'], 26)
+        self.assertAlmostEqual(r['annual'][0]['loss_st'], 6)
+        self.assertAlmostEqual(r['summary']['capital_tax'], 8)
+        self.assertAlmostEqual(r['summary']['terminal_wealth'], 112)
+        self.assertEqual(len(r['no_harvest_control']['positions']), 2)
+        self.assertAlmostEqual(r['no_harvest_control']['summary']['terminal_wealth'], 112)
+        self.assertTrue(any('straddle and constructive-sale' in note for note in r['assumptions']))
+
+    def test_same_ticker_manual_legs_apply_splits_and_dividends_separately(self):
+        c = configuration(2, end='2020-01-06')
+        c['positions'] = [dict(ticker='AAPL', side='long', shares=1.3),
+                          dict(ticker='AAPL', side='short', shares=.3)]
+        d = history(['2020-01-02', '2020-01-03', '2020-01-06'],
+                    {'AAPL': [100, 50, 55], 'SPY': [100, 100, 100]},
+                    dividends={'AAPL': [0, 1, 0]}, splits={'AAPL': [0, 2, 0]})
+        r = run(c, d)
+        exits = {t['side']: t for t in r['trades'] if t['event'] == 'exit'}
+        self.assertAlmostEqual(exits['long']['shares'], 2.6)
+        self.assertAlmostEqual(exits['short']['shares'], .6)
+        self.assertAlmostEqual(exits['long']['pnl'], 13)
+        self.assertAlmostEqual(exits['short']['pnl'], -3)
+        self.assertAlmostEqual(r['daily'][0]['debt'], 30)
+        self.assertAlmostEqual(r['daily'][0]['short_collateral'], 30)
+        # Split creates no P&L; $2.60 long dividend less $0.60 short payment,
+        # with 25% tax on the gross long dividend ($0.65), leaves $1.35.
+        self.assertAlmostEqual(r['daily'][1]['equity'], 101.35)
+        self.assertAlmostEqual(r['summary']['price_pnl'], 10)
+        self.assertAlmostEqual(r['summary']['dividend_cash'], 2)
+        self.assertAlmostEqual(r['summary']['dividend_tax'], .65)
+        self.assertAlmostEqual(r['summary']['capital_tax'], 4)
+        self.assertAlmostEqual(r['summary']['terminal_wealth'], 107.35)
+        self.assertAlmostEqual(r['daily'][-1]['short_collateral'], 0)
+        self.assertAlmostEqual(r['daily'][-1]['debt'], 0)
+        self.assertAlmostEqual(r['summary']['wealth_identity_error'], 0)
+
+    def test_fully_offset_same_ticker_legs_retain_gross_financing_and_borrow_costs(self):
+        c = configuration(2, start='2021-01-04', end='2022-01-04')
+        c.update(financing_pct=10, borrow_pct=20, rebate_pct=10,
+                 tax_st_pct=0, tax_lt_pct=0,
+                 positions=[dict(ticker='AAPL', side='long', shares=1.3),
+                            dict(ticker='AAPL', side='short', shares=1.3)])
+        r = run(c, history(['2021-01-04', '2022-01-04'],
+                           {'AAPL': [100, 100], 'SPY': [100, 100]}))
+        self.assertAlmostEqual(r['summary']['initial_net_exposure'], 0)
+        self.assertAlmostEqual(r['summary']['initial_gross_exposure'], 2.6)
+        self.assertAlmostEqual(r['daily'][0]['debt'], 30)
+        self.assertAlmostEqual(r['daily'][0]['short_collateral'], 130)
+        costs = r['summary']['cost_breakdown']
+        self.assertAlmostEqual(costs['financing'], 3)
+        self.assertAlmostEqual(costs['borrow'], 26)
+        self.assertAlmostEqual(costs['rebate'], 13)
+        self.assertAlmostEqual(r['summary']['costs'], 16)
+        self.assertAlmostEqual(r['summary']['terminal_wealth'], 84)
+        self.assertAlmostEqual(r['summary']['wealth_identity_error'], 0)
+
+    def test_same_ticker_harvest_and_cooldown_states_are_independent_by_direction(self):
+        cases = [('long', [100, 80, 82, 70, 90, 100], 23.4, 10.4, 89.6),
+                 ('short', [100, 120, 118, 110, 100, 100], 5.4, 5.4, 94.6)]
+        for side, prices, loss, carry, wealth in cases:
+            with self.subTest(harvested_side=side):
+                c = configuration(3, end='2020-03-10')
+                c['positions'] = [dict(ticker='AAPL', side='long', shares=1.3),
+                                  dict(ticker='AAPL', side='short', shares=.3)]
+                d = history(['2020-01-02', '2020-02-05', '2020-02-06',
+                             '2020-03-06', '2020-03-09', '2020-03-10'],
+                            {'AAPL': prices, 'SPY': [100] * 6})
+                r = run(c, d)
+                harvests = [t for t in r['trades'] if t['event'] == 'harvest']
+                reentries = [t for t in r['trades'] if t['event'] == 'reentry']
+                self.assertEqual(len(harvests), 1)
+                self.assertEqual(len(reentries), 1)
+                self.assertEqual(harvests[0]['side'], side)
+                self.assertEqual(harvests[0]['date'], '2020-02-06')
+                self.assertEqual(reentries[0]['side'], side)
+                self.assertEqual(reentries[0]['date'], '2020-03-09')
+                self.assertAlmostEqual(harvests[0]['pnl'], -loss)
+                self.assertAlmostEqual(r['summary']['harvested_loss'], loss)
+                self.assertAlmostEqual(r['summary']['remaining_carry_st'], carry)
+                self.assertAlmostEqual(r['summary']['terminal_wealth'], wealth)
+                self.assertAlmostEqual(r['no_harvest_control']['summary']['terminal_wealth'], 100)
+                self.assertAlmostEqual(r['summary']['wealth_identity_error'], 0)
+
+    def test_duplicate_same_ticker_and_direction_is_rejected_before_history_download(self):
+        for side in ('long', 'short'):
+            c = configuration(3)
+            c['positions'] = [dict(ticker=' aapl ', side=side, shares=1),
+                              dict(ticker='AAPL', side=side, shares=2)]
+            with self.subTest(side=side), self.assertRaisesRegex(ValueError, 'same ticker and direction'):
+                run_research(c, lambda *args: self.fail('Duplicate validation must precede download'))
+
+    def test_invalid_direction_is_rejected_before_building_position_key(self):
+        for side in ('buy', None, [], {}):
+            c = configuration(3)
+            c['positions'].append(dict(ticker='AAPL', side=side, shares=1))
+            with self.subTest(side=side), self.assertRaisesRegex(ValueError, 'Position side must be long or short'):
+                run_research(c, lambda *args: self.fail('Direction validation must precede download'))
+
     def test_level_one_130_30_seven_percent_and_matched_benchmark(self):
         c = configuration(1)
         c['positions'] = [dict(ticker='AAPL', side='long', shares=130),

@@ -51,11 +51,12 @@ def _config(inputs):
         if not isinstance(p, dict):
             raise ValueError('Each position must be an object.')
         p['ticker'] = normalize_ticker(p.get('ticker'))
-        if p['ticker'] in seen:
-            raise ValueError('Combine duplicate tickers into one net position.')
-        seen.add(p['ticker'])
         if p.get('side') not in ('long', 'short'):
             raise ValueError('Position side must be long or short.')
+        position_key = (p['ticker'], p['side'])
+        if position_key in seen:
+            raise ValueError('Combine duplicate entries for the same ticker and direction into one position.')
+        seen.add(position_key)
         if c['allocation_mode'] == 'shares':
             p['shares'] = _number(p.get('shares'), 'Shares', .000001, 1e8)
         else:
@@ -399,6 +400,16 @@ def run_research(inputs, history_provider=None):
         'Only full final liquidation is modeled. Gradual exits, liquidity shocks, death/basis step-up, detailed state rules and household tax returns remain outside this version.',
         'No survivorship-free universe, borrow-availability verification, historical execution spreads or market-impact calibration is supplied by Yahoo. Historical outcomes and simplified tax assumptions are research scenarios, not client recommendations.'
     ]
+    long_tickers = {p['ticker'] for p in c['positions'] if p['side'] == 'long'}
+    short_tickers = {p['ticker'] for p in c['positions'] if p['side'] == 'short'}
+    if long_tickers & short_tickers:
+        result['assumptions'].append(
+            'Overlapping long and short positions in the same ticker are retained as independent legs, '
+            'including their gross exposures, collateral, costs, dividends and harvesting schedules. '
+            'The existing simplified tax rules apply separately to each leg; offsetting-position, '
+            'straddle and constructive-sale tax treatment is not modeled. This does not establish '
+            'that an overlapping position or its losses receive the modeled tax treatment.'
+        )
     # Include the exact dataset so a downloaded run can be replayed without Yahoo.
     result['data'] = data
     digest = json.dumps(dict(inputs=inputs,data=data),sort_keys=True,allow_nan=False).encode()

@@ -25,6 +25,7 @@ from p107.analysis import breakeven
 from p107.market_data import get_quote, normalize_ticker
 from p107.portfolio import calculate_portfolio
 from p107.research import run_research
+from p107.tax_lab import tax_lab_defaults, run_tax_lab, tax_lab_zip
 from p107.studies import defaults as study_defaults, run_study
 
 from build_info import build_id
@@ -191,6 +192,8 @@ class AppServer(ThreadingHTTPServer):
         super().__init__(address, Handler)
         self.runs = {}
         self.studies = {}
+        self.tax_lab_runs = {}
+        self.tax_lab_busy = threading.Lock()
         self.run_lock = threading.Lock()
 
 
@@ -221,7 +224,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send(403, json_bytes({'error': 'Please use the local application page.'}))
             return False
         # Opening the app from a bookmark/chat is a cross-site navigation, not an API call.
-        landing_navigation = self.command == 'GET' and urlsplit(self.path).path in ('/','/studies','/assumptions') and self.headers.get('Sec-Fetch-Mode') == 'navigate'
+        landing_navigation = self.command == 'GET' and urlsplit(self.path).path in ('/','/studies','/assumptions','/tax-lab') and self.headers.get('Sec-Fetch-Mode') == 'navigate'
         if self.headers.get('Sec-Fetch-Site') == 'cross-site' and not landing_navigation:
             self.send(403, json_bytes({'error': 'Please use the local application page.'}))
             return False
@@ -232,7 +235,22 @@ class Handler(BaseHTTPRequestHandler):
             return
         path = urlsplit(self.path).path
         if path == '/api/health':
-            self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__, 'build_id': BUILD_ID, 'features': ['stock_portfolio', 'three_level_research', 'integrated_research_v2','sponsor_studies']}))
+            self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__, 'build_id': BUILD_ID, 'features': ['stock_portfolio', 'three_level_research', 'integrated_research_v2','sponsor_studies','tax_aware_lab']}))
+        elif path == '/api/tax-lab/defaults':
+            self.send(200, json_bytes(tax_lab_defaults()))
+        elif path in ('/tax-lab', '/tax-lab.js', '/tax-lab.css'):
+            name, mime = {'/tax-lab': ('tax-lab.html', 'text/html'),
+                          '/tax-lab.js': ('tax-lab.js', 'text/javascript'),
+                          '/tax-lab.css': ('tax-lab.css', 'text/css')}[path]
+            self.send(200, (ROOT / 'dist' / name).read_bytes(), mime + '; charset=utf-8')
+        elif path.startswith('/api/tax-lab/download/'):
+            with self.server.run_lock:
+                result = self.server.tax_lab_runs.get(path.rsplit('/', 1)[-1])
+            if result is None:
+                self.send(404, json_bytes({'error': '請先重新執行研究，再匯出結果。'}))
+            else:
+                self.send(200, tax_lab_zip(result), 'application/zip',
+                          f"P107_tax_lab_{result['run_id'][:8]}.zip")
         elif path == '/api/defaults':
             self.send(200, json_bytes({'inputs': defaults()}))
         elif path == '/api/studies/defaults':
@@ -267,15 +285,29 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.local_request():
             return
-        if self.path not in ('/api/run', '/api/portfolio/quotes', '/api/portfolio/run', '/api/research/run','/api/studies/run'):
+        if self.path not in ('/api/run', '/api/portfolio/quotes', '/api/portfolio/run', '/api/research/run','/api/studies/run','/api/tax-lab/run'):
             self.send(404, json_bytes({'error': 'Operation not found.'}))
             return
         try:
             length = int(self.headers.get('Content-Length', '0'))
-            maximum=5000000 if self.path=='/api/studies/run' else 10000
+            maximum=5000000 if self.path in ('/api/studies/run','/api/tax-lab/run') else 10000
             if not 0 < length <= maximum or self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                 raise ValueError('Invalid request format.')
             inputs = json.loads(self.rfile.read(length))
+            if self.path == '/api/tax-lab/run':
+                if not self.server.tax_lab_busy.acquire(blocking=False):
+                    self.send(409, json_bytes({'error': '另一項研究仍在執行，請稍後再試。'}))
+                    return
+                try:
+                    result = run_tax_lab(inputs)
+                    with self.server.run_lock:
+                        self.server.tax_lab_runs[result['run_id']] = result
+                        while len(self.server.tax_lab_runs) > 5:
+                            self.server.tax_lab_runs.pop(next(iter(self.server.tax_lab_runs)))
+                    self.send(200, json_bytes(result))
+                finally:
+                    self.server.tax_lab_busy.release()
+                return
             if self.path=='/api/studies/run':
                 result=run_study(inputs)
                 with self.server.run_lock:
