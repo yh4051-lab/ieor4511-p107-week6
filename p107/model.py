@@ -73,7 +73,7 @@ def _exit_policy(config):
         if type(gift_year) is not int or not 1<=gift_year<=config['horizon_years']:
             raise ValueError('gift_year must be within the investment horizon')
         for key in ('recipient_tax_st','recipient_tax_lt','recipient_ordinary_tax'):
-            val=policy.get(key,config['tax_st'] if key!='recipient_tax_lt' else config['tax_lt'])
+            val=policy.get(key, config['tax_st'] if key=='recipient_tax_st' else config['tax_lt'] if key=='recipient_tax_lt' else config['ordinary_tax_rate'])
             if not isinstance(val,(int,float)) or not isfinite(val) or not 0<=val<1:
                 raise ValueError('Invalid recipient tax-rate assumption')
     return policy
@@ -227,7 +227,7 @@ def simulate(config, strategy_name):
                    net_exposure=long_exposure-short_exposure,
                    gross_exposure=long_exposure+short_exposure,
                     extension_scale=extension_scale, transition_realized_gain=transition_gain,
-                    transition_transaction_cost=transition_cost, exit_mode=exit_mode,
+                    transition_transaction_cost=transition_cost, exit_mode=exit_mode, gift_year=gift_year,
                    market_price_return=config['market_price_returns'][i], alpha_pre_cost=s['alpha_pre_cost'],
                    pre_cost_investment_pnl=pnl, manager_fee=manager, advisor_fee=advisor,
                    long_financing_cost=financing, short_rebate=rebate, short_borrow_cost=borrow,
