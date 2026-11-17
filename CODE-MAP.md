@@ -1,5 +1,21 @@
 # Code map — integrated after-tax stock research
 
+## November 17 sponsor studies
+
+| File | Responsibility |
+|---|---|
+| `p107/dom_historical.py` | Rebalance on post-fee NAV, FIFO trades, reviewed replacements, matched controls, daily wealth identities. |
+| `p107/model.py` | Optional whole-portfolio staged exits, extension reduction, death and separate donor/recipient gift accounting. |
+| `p107/dom_sampling.py` | Seeded disjoint books from a supplied formation-date universe; paired benchmark/no-harvest comparisons. |
+| `p107/studies.py` | Shared four-study adapter, provenance, exact offline request, source hashes. |
+| `web/dist/studies.*` | English inputs/results/export workspace, accessible from the main header. |
+| `web/server.py` | Study API and deterministic export ZIP; original routes retained. |
+| `tools/run_study.py` | Replay a browser export offline. |
+| `tools/verify_sponsor_studies.py` | Four deterministic studies and 20 synthetic portfolios; comparison CSVs and verification report. |
+| `tests/test_sponsor_studies.py`, `web/tests/test_web.py` | Accounting regressions, API validation and export/replay checks. |
+
+The table below describes the earlier stock interface, which remains available.
+
 | File | New/updated | Responsibility |
 |---|---|---|
 | `web/dist/index.html` | Updated | Default-open historical form, one Run comparison submit button, Analysis mode selector, inactive-model fieldsets and matching Summary/Annual ledger/Assumptions & scope panels. |

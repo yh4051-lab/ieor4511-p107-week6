@@ -1,16 +1,32 @@
 test_advanced_fields_and_base_remain_separate (test_web.AdapterTests.test_advanced_fields_and_base_remain_separate) ... ok
+test_build_identity_tracks_source_assets_and_config_not_documentation (test_web.AdapterTests.test_build_identity_tracks_source_assets_and_config_not_documentation) ... ok
+test_child_start_uses_selected_port_and_waits_for_matching_health (test_web.AdapterTests.test_child_start_uses_selected_port_and_waits_for_matching_health) ... ok
 test_default_matches_public_cli_outputs (test_web.AdapterTests.test_default_matches_public_cli_outputs) ... ok
 test_download_reproduces_main_comparison_and_checksums (test_web.AdapterTests.test_download_reproduces_main_comparison_and_checksums) ... ok
+test_explicit_occupied_port_is_not_silently_changed (test_web.AdapterTests.test_explicit_occupied_port_is_not_silently_changed) ... ok
 test_invalid_input_is_rejected (test_web.AdapterTests.test_invalid_input_is_rejected) ... ok
+test_launcher_skips_old_build_without_stopping_its_process (test_web.AdapterTests.test_launcher_skips_old_build_without_stopping_its_process) ... ok
+test_launcher_starts_on_free_default_port_and_opens_actual_url (test_web.AdapterTests.test_launcher_starts_on_free_default_port_and_opens_actual_url) ... ok
 test_long_term_switch_clears_short_term_gains (test_web.AdapterTests.test_long_term_switch_clears_short_term_gains) ... ok
 test_no_outside_gains_reverses_core_comparison (test_web.AdapterTests.test_no_outside_gains_reverses_core_comparison) ... ok
 test_bad_json_and_wrong_content_type_return_errors (test_web.HttpTests.test_bad_json_and_wrong_content_type_return_errors) ... ok
+test_integrated_exposure_allocation_endpoint_and_launcher (test_web.HttpTests.test_integrated_exposure_allocation_endpoint_and_launcher) ... ok
 test_landing_navigation_from_external_link_is_allowed (test_web.HttpTests.test_landing_navigation_from_external_link_is_allowed) ... ok
 test_launcher_recognizes_running_public_server (test_web.HttpTests.test_launcher_recognizes_running_public_server) ... ok
+test_launcher_rejects_integrated_server_with_missing_or_different_build (test_web.HttpTests.test_launcher_rejects_integrated_server_with_missing_or_different_build) ... ok
 test_local_page_api_and_download (test_web.HttpTests.test_local_page_api_and_download) ... ok
+test_original_launcher_uses_integrated_server_and_honors_no_browser (test_web.HttpTests.test_original_launcher_uses_integrated_server_and_honors_no_browser) ... ok
+test_portfolio_api_and_assets (test_web.HttpTests.test_portfolio_api_and_assets) ... ok
+test_portfolio_bad_requests (test_web.HttpTests.test_portfolio_bad_requests) ... ok
 test_private_files_and_foreign_origins_not_served (test_web.HttpTests.test_private_files_and_foreign_origins_not_served) ... ok
+test_sponsor_exit_and_one_time_routes (test_web.HttpTests.test_sponsor_exit_and_one_time_routes) ... ok
+test_sponsor_historical_download_is_exact_offline_replay (test_web.HttpTests.test_sponsor_historical_download_is_exact_offline_replay) ... ok
+test_sponsor_study_pages_and_validation (test_web.HttpTests.test_sponsor_study_pages_and_validation) ... ok
+test_spy_target_is_independent_of_selected_benchmark (test_web.HttpTests.test_spy_target_is_independent_of_selected_benchmark) ... ok
+test_stock_launcher_rejects_prior_research_server (test_web.HttpTests.test_stock_launcher_rejects_prior_research_server) ... ok
+test_three_level_research_endpoint (test_web.HttpTests.test_three_level_research_endpoint) ... ok
 
 ----------------------------------------------------------------------
-Ran 11 tests in 0.748s
+Ran 27 tests in 1.511s
 
 OK

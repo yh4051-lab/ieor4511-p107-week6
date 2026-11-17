@@ -1,187 +1,153 @@
-# Dominic Corabi feedback — November 10, 2026
+# Sponsor studies: November 10 feedback
 
-Status: **research extension, not production tax advice or real-client backtest**.
-All outputs in `examples/dom_synthetic_*` are deliberately fabricated test
-fixtures, never S&P 500 history or actual manager performance. The public GitHub
-repository must not contain restricted Quantinno/AQR/client input files.
+Updated November 17, 2026. This is a research model with explicit assumptions.
+Software tests do not establish investment performance or tax compliance.
 
-This branch implements four follow-ups in separate, inspectable components.
-Existing `p107/model.py` and `p107/research.py` retain their old behavior
-without the new opt-in options.
+## Open and use the studies
 
-## 1. Maintain 130/30 and substitute while harvesting
+Start `python web/launch.py`, then choose **Sponsor studies →** in the header.
+The page is `/studies` on the local address printed by the launcher.
 
-- `p107/dom_historical.py::historical_13030` implements dollar-target
-  rebalancing to gross 130% long and 30% short exposure, using NAV each
-  `rebalance_every_sessions` (default 21); it also rebalances immediately
-  after a harvest/replacement swap.
-- On a prior-session eligible loss signal, the next session closes the original
-  tax lots and opens an explicitly mapped temporary replacement with the
-  **same dollar market exposure**, rather than holding that slice in idle cash.
-  It waits **more than 30 calendar days** after the sale before repurchasing
-  the original, with a configurable cooldown >=30 and minimum holding >=31.
-- FIFO lots, annual capital-gain netting/carryforwards, cash, restricted short
-  collateral, debt, interest, short rebates, fees, rebalancing trades and end
-  liquidation are tracked. See `trades`, `daily` and `annual` ledgers.
-- Start/end rebalancing uses the available daily close as an idealized
-  execution convention. Exact exposure will deviate slightly due to fees.
-- A replacement **must** carry a user-supplied
-  `reviewed_not_substantially_identical=true`. That is an assumption
-  requiring independent professional verification. This code **does not**
-  certify wash-sale compliance across household accounts, affiliates,
-  options, replacement ETFs or short-sale constructive-sale rules. Real
-  borrowing availability, spreads and margin calls are not modeled.
-- Opt-in routing: `run_research({"engine_mode":"rebalanced_13030",...})`.
-  Existing no-opt-in research stays intact. Browser's existing
-  `/api/research/run` accepts this opt-in payload; the legacy form does not
-  expose all of the new knobs.
-
-**Reproduce without external data:**
+1. Choose one of the four studies.
+2. Review inputs and expand **Costs and tax assumptions**. These rates are
+   illustrative and can be changed. Run the study after changing inputs.
+3. Read the comparison and run-specific assumptions below it. The same outside
+   proceeds are included across strategies: total wealth is not just the return
+   on starting capital.
+4. Choose **Download study ZIP** for CSVs, complete results, exact inputs, source
+   hashes and an offline replay command:
 
 ```sh
-python tools/dom_feedback.py historical \
-  --config configs/example_dom_historical.json \
-  --historical-data examples/dom_synthetic_history.json \
-  --out /tmp/dom_history.json
+python tools/run_study.py --input request.json --out replay.json
 ```
 
-This fixture uses synthetic `T1..T12` / `S1..S12` tickers, not real prices.
-For genuine historical analysis, supply documented daily nominal split/dividend
-data and valid separately reviewed replacement mappings. A generated
-historical run is only as reliable as those observations and assumptions.
+Observed prices stay in the downloaded package. Do not commit private data or
+restricted provider files to the public repository.
 
-## 2. Lifetime full sale, gradual 3–5-year exit, gift, death
+## Coverage of the four questions
 
-- `p107/model.py` accepts an optional `exit_policy`, with default
-  `{"mode":"full_liquidation"}` preserving the original calculation.
-- `{"mode":"gradual","years":3|4|5,
-  "extension_embedded_gain_share":0.5}` phases down **extensions** over
-  multiple years, scales financing, short rebate and harvested loss rates,
-  and recognizes an explicit share of embedded gains each year.
-  The embedded-gain allocation is user-assumed, **not inferred from lots**.
-- `{"mode":"death","step_up_long_embedded_fraction":0.8}`
-  estimates how much gain could be excluded when qualifying **long-book**
-  basis is adjusted at death. The residual fraction remains exposed to tax,
-  including short-related liabilities. The fraction must be supplied; no
-  exact security-level attribution is available in the aggregate model.
-- `{"mode":"gift","gift_year":3,"recipient_liquidates":true,
-  "recipient_tax_st":0.25,"recipient_tax_lt":0.15}` transfers the original
-  basis in Year 3, **does not transfer personal donor capital-loss
-  carryforwards**, applies recipient rates in later years, and models a
-  recipient sale at the end of the original horizon for an apples-to-apples
-  after-tax comparison. The default gift year is the final year.
-  An unliquidated gift is not equivalent to spendable after-tax wealth.
-  Donor credits, any gift taxes and family-level tax netting require
-  separate analysis.
-- None of these calculate estate or gift tax, state-specific nuances,
-  special dual-basis loss rules for gifts, inheritance exceptions,
-  dividend timing, detailed short character, or full household tax returns.
-  A death step-up is not assumed on unclosed short positions.
+| Question | Implemented and exposed in the UI | Remaining limits |
+|---|---|---|
+| Rebalance 130/30 and replace during the wash-sale window | Scheduled post-fee NAV targets; next-session harvesting; mapped temporary securities; return after more than 30 calendar days; trade, daily and annual ledgers | Replacement suitability is an input, not a legal determination. Full wash-sale matching and margin/borrow constraints remain open. |
+| Hold until death, gift, exit over 3–5 years | Seven annual-scenario policies: full sale, whole-portfolio sales over 3/4/5 years, extension reduction, death, gift with recipient sale | Annual aggregate proxies, not historical lot-level exit simulations. No gift/estate tax or legal transfer of short liabilities. |
+| One-time outside gain of $1M/$3M/$5M | Zero-gain control plus all three amounts, event year and ST/LT character; Core break-even versus Index and Direct Indexing | Assumed return/loss schedules; finite-grid root search; gain cash is an incremental cash-flow proxy. |
+| Random portfolios or PIT S&P 500 | Seeded disjoint long/short draws, each run with harvesting, no-harvest and benchmark comparisons; membership/provenance CSV input | Authentic PIT index data has not been supplied. The included 20-draw verification is synthetic, not an S&P 500 backtest. |
 
-**Reproduce exit differences under explicitly assumed fractions:**
+### 1. Rebalance and replace
+
+`p107/dom_historical.py` solves targets on NAV after transaction fees. Market
+moves cause exposure drift between scheduled trades. A prior-close loss signal
+executes at the following close. Before harvesting an original ticker, all its
+open lots must be older than 30 days. Its explicitly mapped substitute is held
+during the cooldown instead of leaving that slice in cash.
+
+Costs include manager/advisor fees, financing debt, short borrow, taxable rebates
+and trading charges. Cash, restricted short collateral and debt are separate.
+Outside gain proceeds go to investor side cash, not into the leveraged account.
+Taxes use side cash first; a shortfall is funded by account cash/debt. Outside
+events are settled at calendar year-end in this engine.
+
+Controls are the same portfolio without harvesting and a passive 100%-long
+benchmark with its own manager rate (default 0.03%). Prices, dates, initial
+equity and outside gains match. Harvesting benefit isolates the rule comparison;
+benchmark differences also include stock selection and leverage. The final
+wealth point includes liquidation taxes.
+
+Daily checks reconcile total wealth to initial equity, outside proceeds, price
+P&L, net long/short dividends, costs and all taxes. They also reconcile realized
+plus embedded price gains to cumulative price P&L.
+
+This is not a full wash-sale engine. Rebalance losses, substitute-disposal
+losses, household accounts, substantially identical exposures and special short
+rules need further matching. FIFO and ST treatment of shorts are research
+conventions. Close execution, borrow availability and no margin calls are
+assumptions. Nonpositive account equity stops the run.
+
+### 2. Exit choices
+
+These comparisons use `p107/model.py`, with annual assumed returns and losses.
+They do not use historical prices from the other study.
+
+- **Full sale:** final liquidation with exit costs and taxes.
+- **3/4/5-year full-portfolio exit:** sell 1 / remaining exit years of the
+  remaining portfolio each year, remove proportional basis, and move proceeds
+  after trading costs to side cash. Exposure, costs and future loss amounts
+  decline as assets leave. The final year sells the remainder.
+- **Extension reduction:** reduce long/short extensions over three years, retain
+  the long-only core, then sell it. This differs from full withdrawal. Realized
+  extension gain is an explicit aggregate assumption.
+- **Hold until death:** eligible long-only assets adjust to FMV; Core uses the
+  entered eligible share of net embedded gain as a proxy. This does not establish
+  lot-level eligible gains or grant an adjustment to short liabilities. Losses
+  also adjust in a below-basis death scenario.
+- **Gift with recipient sale:** carry donor basis into the recipient account,
+  keep donor carryforwards with donor outside gains, and apply recipient rates
+  only to the recipient portfolio. Compare combined donor/recipient family
+  wealth. The recipient sells at the same horizon; no automatic tax-free gift
+  wealth is credited. Below-aggregate-basis gifts are rejected because dual-basis
+  tax lots are not implemented. Individual mixed gain/loss lots need review too.
+
+No estate/gift taxes, exceptions to inherited basis or legal transfer of shorts
+are simulated. These are research questions, not actual account tax advice.
+
+### 3. One-time gain threshold
+
+One event occurs only in the selected year. The page compares $0/$1M/$3M/$5M and
+searches $0–$5M in $25,000 intervals, refining sign changes by bisection. Root
+residuals are retained. **No crossing** is not a zero-dollar threshold. A finite
+grid can miss a tangency or a very narrow crossing.
+
+Common original principal of outside investments is excluded; incremental cash
+equals taxable gain. Actual client analysis needs proceeds and basis separately.
+Compare strategy differences, not balances increased by larger outside deposits.
+
+### 4. Random portfolios and data
+
+The browser accepts 1–200 draws and a reproducible seed. Long and short names do
+not overlap within a draw. Formation, costs, rates, horizon and outside flows
+match across portfolios. Median, 5th/95th percentile and benchmark win fraction
+describe the supplied universe; they are not forecasts or confidence intervals.
+
+Non-synthetic studies require membership CSV fields `ticker`, `member_from`,
+`member_to` (exclusive; blank if ongoing), `source_id`, and
+`point_in_time_verified`. Optional `published_as_of` cannot be later than
+formation. The data owner must substantiate this attestation; the program cannot
+authenticate it. Formation must equal history start. Enter replacement mappings
+for every eligible name. Today's S&P 500 list is not historical membership.
+
+Prices can come from the existing Yahoo adapter or uploaded JSON with `dates`,
+`prices`, `splits`, `dividends`, and `metadata`. Missing series fail the run;
+failed portfolios are not silently removed. True PIT research still needs
+membership and delisted-security records, corporate-action coverage and
+historical borrow/replacement availability. Yahoo alone does not supply these.
+
+Bundled `dom_synthetic_*` files contain invented test symbols and prices labeled
+**SYNTHETIC SOFTWARE TEST — NOT MARKET HISTORY**. They exercise software without
+claiming a historical record or manager performance.
+
+## Reproduce verification
 
 ```sh
-python tools/dom_feedback.py scenario \
-  --config configs/example_hypothetical.json \
-  --event-year 2 --stepup-long-fraction 0.8 \
-  --out /tmp/dom_scenarios.json
-```
-
-This generates comparable after-tax terminal wealth for each of the index,
-long-only DI and core 130/30 strategies under the respective **modelled**
-exit policies. Do **not** extrapolate the results as legal advice.
-
-## 3. One-time outside capital gains and break-even
-
-- `p107/model.py::with_gains(...,timing='year',event_year=2)`
-  places the outside gain **only in that year** rather than in every year.
-- `p107/analysis.py::one_time_gain_comparison` evaluates $1M, $3M,
-  and $5M as distinct one-time outside ST or LT capital gains.
-- `one_time_gain_breakeven` computes numeric crossing(s) in incremental
-  terminal after-tax wealth against another strategy. It does not
-  falsely call a no-crossing result a zero break-even. Finite grid may
-  miss a tangency or extremely narrow crossing.
-- The inherited toy model assumes outside cash proceeds equal the gain.
-  Real clients have a separate tax basis, gross proceeds and cash flows;
-  this proxy must be replaced before treating results as a recommendation.
-
-The `scenario` command above writes per-gain differences and break-even
-diagnostics, with the event year recorded.
-
-## 4. Multiple random portfolios, with point-in-time selection
-
-- `p107/dom_sampling.py` samples disjoint long and short portfolios
-  using a fixed seed, with reproducible quantiles across outcomes.
-- It requires user-supplied membership rows with a historical effective
-  interval, source ID, point-in-time verification attestation and, when
-  supplied, a source publication date no later than the formation date.
-- It **never downloads today's S&P 500 constituents and calls them
-  historical**. True survivorship-free point-in-time S&P 500 membership
-  has **not been provided**. No authentic S&P results are claimed.
-- To generate configurations only, run `sample`. To actually run multiple
-  portfolios using an audited price input and the rebalance engine, run
-  `cohort`.
-
-```sh
-python tools/dom_feedback.py cohort \
-  --config configs/example_dom_historical.json \
-  --memberships examples/dom_synthetic_memberships.csv \
-  --historical-data examples/dom_synthetic_history.json \
-  --asof 2020-01-01 --long-count 3 --short-count 3 \
-  --samples 20 --seed 4511 --out /tmp/dom_cohort.json
-```
-
-The 20-sample example is a **synthetic system test**, not a market result.
-For defensible PIT US equity portfolios, obtain an audited membership
-dataset (e.g. authorized CRSP/Compustat or historical index constituency),
-historical prices with delisted securities, splits, dividends, and
-borrow/replacement availability. Explicitly evaluate data leakage.
-
-## Verification
-
-CI workflow: `.github/workflows/verify-dom-feedback.yml`.
-
-```sh
-python -m compileall -q p107 tests tools
 python -m unittest discover -s tests -v
+python -m unittest discover -s web/tests -v
+python tools/verify_sponsor_studies.py
+python tools/verify_project.py
 ```
 
-GitHub Actions also runs all three synthetic CLI examples and checks the
-number of one-time gain scenarios, the exit-scenario count, 130/30 target
-and reproducible 20-portfolio cohort.
+The study verifier writes 56 comparison rows: 21 exits, 12 one-time gains,
+3 historical controls and 20 random draws. Each study is replayed with its exact
+exported observations and compared for equality. Historical ledgers also check
+daily capital P&L and wealth. Current verification reports record counts and
+source hashes. CI runs model/web tests, four-study replay and legacy command-line
+examples without external prices.
 
-## Review required before sponsor use
+## Tax source references
 
-1. Obtain and document actual point-in-time security membership history,
-   clean price and corporate action records, tradability, borrow and short
-   availability, and credible replacement-security mapping.
-2. Obtain client-specific capital gain timing, basis, marginal rates and
-   planned exit pathways. Disentangle external taxable gain from gross
-   sale proceeds.
-3. Validate the tax character and wash-sale treatment with a qualified
-   tax professional (especially shorts, loss lots, gifts and estate).
-4. Run sensitivity on manager fees, collateral/financing, spreads,
-   stressed market regimes and liquidation-trigger probabilities.
-5. Compare costs and returns of index/long-only/13030 under equal
-   investor cash flows, and distinguish *deferral* from permanent tax
-   savings. Do not present synthetic results as actual historical evidence.
+- [IRS Publication 550](https://www.irs.gov/publications/p550): the 30-day
+  before/after wash-sale window and special short/account rules; a cooldown
+  alone does not establish compliance.
+- [IRS Publication 551](https://www.irs.gov/publications/p551): inherited basis
+  differs from gift basis; below-basis gifts can require dual bases.
 
-**Public repo security:** only synthetic code/config/test data in this PR.
-Do not push restricted provider PDFs or real investor records.
-
-
-## Tax primary references
-
-- IRS Publication 550: <https://www.irs.gov/publications/p550> describes
-  the 30-day **before and after** wash-sale window, substantially identical
-  securities, spouses/IRA and special short-sale considerations. A 30-day
-  cooldown plus a user-reviewed replacement is **not** a compliance
-  guarantee. The replacement rule here is deliberately described as a
-  testable account-level proxy.
-- IRS Publication 551: <https://www.irs.gov/publications/p551> distinguishes
-  inherited basis (usually FMV at death) from gift basis (usually donor basis,
-  with special dual-basis rules when FMV is below donor basis). No generalized
-  death step-up is applied to short liabilities in the model.
-
-As of November 2026 these remain research references, not a complete
-tax treatment for each client or transaction. Consult specialized tax counsel.
+Reviewed November 17, 2026. Only the documented research conventions above are
+implemented.

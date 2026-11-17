@@ -1,6 +1,6 @@
 # P107: After-tax strategy comparison
 
-IEOR E4511, Week 6 | Wedmont Private Capital
+IEOR E4511, P107 | Wedmont Private Capital
 
 Team: Yaozhong Hu and Chun-An Ko
 
@@ -9,6 +9,15 @@ This is our initial Python model comparing a $1 million cash investment in an in
 **The public example uses independent illustrative assumptions. It is not a historical backtest, provider performance, actual tax savings, or a completed final-project model.** The original source-based configuration and data are available separately to course reviewers through the [restricted data package](https://drive.google.com/file/d/1qM3_vRim7PjjDtkDC0bFYVb8deZpJyNk/view). See [reproduction instructions](docs/RESTRICTED_DATA.md).
 
 ## Run the browser interface
+
+**November 17 update:** choose **Sponsor studies →** in the header for the four
+employer follow-ups. The `/studies` page runs rebalancing with replacement
+securities, exit comparisons, one-time outside gains, and seeded random
+portfolios. It includes CSV exports and an exact offline replay package.
+See [the study guide and coverage](docs/DOM_FEEDBACK_2026_11_10.md).
+The default historical/cohort examples are synthetic software tests, not market
+evidence. Exit and one-time-gain comparisons use the separate annual scenario
+model; they do not silently inherit historical stock returns.
 
 Download this repository using **Code > Download ZIP** and extract it into a new folder. On Windows with Python 3.12, double-click **START-STOCK.bat** to install the historical-data dependency and open the complete interface. To start from a terminal in the project folder, run:
 
@@ -56,7 +65,7 @@ The requirements file pins optional figure dependencies. For CSVs without figure
 
 The public default uses five years, 6% annual price appreciation, no dividends or alpha, $100,000 of annual outside ST gains, and illustrative 40% ST / 20% LT tax rates. Terminal wealth includes the same outside cash flows for every strategy; it is not the return on the $1 million investment alone. Current tax relief is not counted twice, and embedded gains are included in full-liquidation taxes.
 
-The original illustrative model still requires review of its source-based ST/LT estimates and cost assumptions. The historical module below supports configurable exposures, including 150/50 and 200/100. Full wash-sale rules, calibrated tracking risk, gradual exits and estate scenarios remain further research work.
+The original illustrative model still requires review of its ST/LT loss and cost assumptions. The historical module below supports configurable exposures, including 150/50 and 200/100. The new sponsor workspace adds simplified exit and estate scenarios. Full wash-sale matching, authentic point-in-time data, calibrated tracking risk and client-specific tax treatment remain open work.
 
 ## Custom Stock Research — After-Tax Loss Harvesting
 

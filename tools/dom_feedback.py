@@ -11,7 +11,7 @@ from p107.analysis import one_time_gain_comparison, one_time_gain_breakeven
 from p107.model import compare
 from p107.research import run_research
 from p107.dom_sampling import sample_portfolios, evaluate_portfolio_cohort
-from p107.dom_historical import historical_13030
+from p107.dom_historical import historical_comparison
 
 
 def dump(path,data):
@@ -28,8 +28,10 @@ def scenario(config, out, event_year, stepup):
     exits=[]
     policies=[dict(mode='full_liquidation'),dict(mode='gift',recipient_liquidates=True),
               dict(mode='death',step_up_long_embedded_fraction=stepup)]
-    policies += [dict(mode='gradual',years=k,extension_embedded_gain_share=.5)
+    policies += [dict(mode='gradual_liquidation',years=k)
                  for k in (3,4,5) if k<=config['horizon_years']]
+    if config['horizon_years']>=3:
+        policies.append(dict(mode='gradual',years=3,extension_embedded_gain_share=.5))
     for policy in policies:
         c=deepcopy(config);c['exit_policy']=policy
         summaries,_=compare(c)
@@ -41,7 +43,7 @@ def scenario(config, out, event_year, stepup):
                   exit_scenarios=exits,
                   limitations=['Gift proxy assumes immediate heir/recipient sale: no automatic gain escape.',
                                'Step-up uses user-supplied allocation of embedded gain to eligible long book.',
-                               'Gradual exit reallocates aggregate exposure; not a trade-by-trade tax-lot model.',
+                               'Gradual liquidation sells the full portfolio in stages; extension reduction is a separate policy.',
                                'Outside gross proceeds equal gain in this prototype; replace for real clients.']))
 
 
@@ -95,7 +97,7 @@ def main():
         data=json.loads(a.historical_data.read_text(encoding='utf-8'))
         analysis=evaluate_portfolio_cohort(
             c,members,a.asof,a.long_count,a.short_count,
-            lambda spec:historical_13030(spec,deepcopy(data)),
+            lambda spec:historical_comparison(spec,deepcopy(data)),
             draws=a.samples,seed=a.seed)
         dump(a.out,analysis)
     else:

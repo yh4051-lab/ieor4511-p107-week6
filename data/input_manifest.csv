@@ -1,3 +1,6 @@
 file,classification,sha256,source
 configs/example_hypothetical.json,independent illustrative assumptions,5644301f528161c6af96691c6aa15da8691e7c3f3da41bb6546cf2516899a9c4,Project educational example; not market or provider observations
 data/illustrative_loss_schedule.csv,independent illustrative assumptions,d1a9eb6fff5db390fae2e480fb49cf31890342ef0ac1c82e6c926ef6b185a229,Project educational example; not market or provider observations
+configs/example_dom_historical.json,synthetic software fixture; not market history,d3fbfaff088152daded85aa2f45b105ca6a480a38c1432c08cf8cc11cd8d2b3f,Independent generated test fixture; no index membership or provider performance claim
+examples/dom_synthetic_history.json,synthetic software fixture; not market history,a6e196f13f1efd05860d8d87b796f5d66970957198428eb30c4527dda3c4a7d8,Independent generated test fixture; no index membership or provider performance claim
+examples/dom_synthetic_memberships.csv,synthetic software fixture; not market history,94ca1549c0d07da648f130f6e20e3fc84557065f754b8860545acb7dd3c0a869,Independent generated test fixture; no index membership or provider performance claim

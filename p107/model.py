@@ -5,6 +5,7 @@ Expenses are funded by proportional sales; gains on those sales are taxed.
 All final-year realizations are netted together before assessing exit taxes.
 """
 from copy import deepcopy
+from dataclasses import replace
 from math import isclose, isfinite
 from .taxes import settle
 
@@ -53,14 +54,14 @@ def _exit_policy(config):
     if not isinstance(policy, dict):
         raise ValueError('exit_policy must be an object')
     mode = policy.get('mode', 'full_liquidation')
-    if mode not in ('full_liquidation', 'gradual', 'death', 'gift'):
+    if mode not in ('full_liquidation', 'gradual', 'gradual_liquidation', 'death', 'gift'):
         raise ValueError('Unsupported exit policy')
-    if mode == 'gradual':
+    if mode in ('gradual', 'gradual_liquidation'):
         years = policy.get('years')
         if type(years) is not int or years not in (3, 4, 5) or years > config['horizon_years']:
             raise ValueError('Gradual exit requires 3-5 years within holding horizon')
-        share = policy.get('extension_embedded_gain_share')
-        if not isinstance(share, (int, float)) or not isfinite(share) or not 0 <= share <= 1:
+        share = policy.get('extension_embedded_gain_share', 0.)
+        if mode=='gradual' and (not isinstance(share, (int, float)) or not isfinite(share) or not 0 <= share <= 1):
             raise ValueError('Specify hypothetical extension_embedded_gain_share in [0,1]')
     if mode == 'death':
         share = policy.get('step_up_long_embedded_fraction')
@@ -92,6 +93,7 @@ def simulate(config, strategy_name):
     s = next(x for x in config['strategies'] if x['name'] == strategy_name)
     nav = basis = config['initial_cash']
     cash = carry_s = carry_l = 0.0
+    donor_carry_s = donor_carry_l = 0.0
     rows = []
     n = config['horizon_years']
     cumulative_harvest = cumulative_costs = cumulative_pnl = 0.0
@@ -104,7 +106,10 @@ def simulate(config, strategy_name):
         if gift_year==year:
             # Tax losses personal to donor are not transferred to a recipient.
             # Cost basis of the gifted security portfolio DOES carry over.
+            donor_carry_s,donor_carry_l=carry_s,carry_l
             carry_s=carry_l=0.
+            if basis > nav + 1e-8:
+                raise ValueError('Gift below aggregate basis requires dual-basis tax lots; this aggregate scenario is unsupported')
         effective_tax_st = (policy.get('recipient_tax_st',config['tax_st'])
                             if exit_mode=='gift' and year>=gift_year else config['tax_st'])
         effective_tax_lt = (policy.get('recipient_tax_lt',config['tax_lt'])
@@ -119,6 +124,8 @@ def simulate(config, strategy_name):
         step = max(0, year - (n - unwind_years)) if unwind_years else 0
         extension_scale = max(0., 1. - (step - 1) / unwind_years) if step else 1.
         reduction = 1. / unwind_years if step else 0.
+        if s['short_exposure']==0:
+            extension_scale, reduction = 1., 0.
         long_exposure = 1 + (s['long_exposure'] - 1) * extension_scale
         short_exposure = s['short_exposure'] * extension_scale
         manager, advisor = start * s['manager_fee'], start * s['advisor_fee']
@@ -147,7 +154,7 @@ def simulate(config, strategy_name):
         gains_s, gains_l = rg_s + es, rg_l + el
         losses_s, losses_l = hs + ls, hl + ll
         transition_gain = 0.
-        if step and year < n:
+        if step and year < n and s['short_exposure']>0:
             # Proportion of current embedded gain attributable to extensions is
             # an EXPLICIT illustrative input, not inferred from aggregate basis.
             fraction_removed = min(1., reduction / extension_scale)
@@ -156,33 +163,53 @@ def simulate(config, strategy_name):
             gs, gl, lss, lsl = _split(transition_gain, st_frac)
             gains_s += gs; gains_l += gl
             losses_s += lss; losses_l += lsl
+        partial_proceeds=partial_gross=partial_cost=0.
+        if exit_mode=='gradual_liquidation' and n-policy['years'] < year < n:
+            partial_gross=v/(n-year+1)
+            basis_removed=partial_gross*b/v
+            partial_cost=partial_gross*(long_exposure+short_exposure)*s['exit_transaction_rate']
+            partial_proceeds=partial_gross-partial_cost
+            partial_gain=partial_proceeds-basis_removed
+            gs,gl,lss,lsl=_split(partial_gain,st_frac)
+            gains_s+=gs;gains_l+=gl;losses_s+=lss;losses_l+=lsl
+            transition_gain+=partial_gross-basis_removed
+            v-=partial_gross;b-=basis_removed
         outside_s, outside_l = config['outside_st_gains'][i], config['outside_lt_gains'][i]
+        transferred = gift_year is not None and year>=gift_year
+        donor_tax=0.
+        if transferred:
+            donor=settle(outside_s,outside_l,0.,0.,donor_carry_s,donor_carry_l,
+                         config['tax_st'],config['tax_lt'])
+            donor_tax=donor.tax
+            donor_carry_s,donor_carry_l=donor.carry_st,donor.carry_lt
         interest_tax = max(rebate - financing * s['interest_deduction_fraction'], 0) * effective_ordinary_tax
         cash_interest = cash * config['cash_return_after_tax']
-        available_cash = cash + cash_interest + outside_s + outside_l
+        available_cash = cash + cash_interest + outside_s + outside_l + partial_proceeds
         outside_aftertax_without_strategy = (
             outside_aftertax_without_strategy * (1+config['cash_return_after_tax'])
-            + outside_s * (1-effective_tax_st) + outside_l * (1-effective_tax_lt))
+            + outside_s * (1-config['tax_st']) + outside_l * (1-config['tax_lt']))
 
         def tax_at_sale(withdrawal, exit_cost=0, exempt_embedded=0):
             gain = withdrawal * (1-b/v) - exit_cost - exempt_embedded
             a, c, d, e = _split(gain, st_frac)
-            return settle(outside_s + gains_s + a, outside_l + gains_l + c,
+            result = settle((0. if transferred else outside_s) + gains_s + a,
+                          (0. if transferred else outside_l) + gains_l + c,
                           losses_s + d, losses_l + e, cs0, cl0,
                           effective_tax_st, effective_tax_lt)
+            return replace(result,tax=result.tax+donor_tax)
 
         pre_exit = tax_at_sale(0)
         internal_only = settle(gains_s, gains_l, losses_s, losses_l, cs0, cl0,
                                effective_tax_st, effective_tax_lt)
         # Tax change caused by adding outside gains; bounds avoid attributing internal offsets to outside gains.
-        outside_tax_without_losses = outside_s*effective_tax_st + outside_l*effective_tax_lt
+        outside_tax_without_losses = outside_s*config['tax_st'] + outside_l*config['tax_lt']
         outside_relief = outside_tax_without_losses - (pre_exit.tax - internal_only.tax)
         tax_sale = tax_sale_gain = exit_cost = exit_tax = terminal = 0.0
         if year == n:
             exit_cost = v * (long_exposure+short_exposure) * s['exit_transaction_rate']
             # Death: assume only a supplied fraction belongs to eligible long
             # holdings receiving basis adjustment. Shorts remain taxable.
-            stepped_up_gain = ((v-b) * policy['step_up_long_embedded_fraction']
+            stepped_up_gain = ((v-b) * (1. if s['short_exposure']==0 else policy['step_up_long_embedded_fraction'])
                                if exit_mode == 'death' else 0.)
             tax_final = tax_at_sale(v, exit_cost, stepped_up_gain)
             exit_tax = tax_final.tax - pre_exit.tax  # may be negative in a loss-making exit
@@ -210,9 +237,9 @@ def simulate(config, strategy_name):
             basis_sold += basis_removed_tax
         carry_s, carry_l = tax_final.carry_st, tax_final.carry_lt
         tax_gs,tax_gl,tax_ls,tax_ll = _split(tax_sale_gain,st_frac)
-        exit_gs,exit_gl,exit_ls,exit_ll = _split(v-b-exit_cost,st_frac) if year==n else (0,0,0,0)
+        exit_gs,exit_gl,exit_ls,exit_ll = _split(v-b-exit_cost-stepped_up_gain,st_frac) if year==n else (0,0,0,0)
         cumulative_harvest += hs + hl
-        cumulative_costs += expenses - rebate + exit_cost
+        cumulative_costs += expenses - rebate + exit_cost + partial_cost
         cumulative_pnl += pnl
         cumulative_tax += tax_final.tax + interest_tax
         cumulative_capital_realized += rg_s + rg_l - hs - hl + expense_gain + tax_sale_gain + transition_gain
@@ -222,12 +249,15 @@ def simulate(config, strategy_name):
         if abs(identity_error) > 0.0001:
             raise ArithmeticError('Realized plus unrealized capital P&L does not reconcile')
         row = dict(strategy=strategy_name, year=year, hypothetical=True,
-                   nav_start=start, long_market_value=start*s['long_exposure'],
-                   short_market_value_abs=start*s['short_exposure'],
+                   nav_start=start, long_market_value=start*long_exposure,
+                   short_market_value_abs=start*short_exposure,
                    net_exposure=long_exposure-short_exposure,
                    gross_exposure=long_exposure+short_exposure,
                     extension_scale=extension_scale, transition_realized_gain=transition_gain,
                     transition_transaction_cost=transition_cost, exit_mode=exit_mode, gift_year=gift_year,
+                   partial_exit_gross=partial_gross, partial_exit_proceeds=partial_proceeds,
+                   partial_exit_cost=partial_cost, donor_outside_capital_tax=donor_tax,
+                   donor_carry_st_end=donor_carry_s,donor_carry_lt_end=donor_carry_l,
                    market_price_return=config['market_price_returns'][i], alpha_pre_cost=s['alpha_pre_cost'],
                    pre_cost_investment_pnl=pnl, manager_fee=manager, advisor_fee=advisor,
                    long_financing_cost=financing, short_rebate=rebate, short_borrow_cost=borrow,
@@ -263,14 +293,17 @@ def simulate(config, strategy_name):
                     exit_mode=exit_mode, gift_year=gift_year,
                     exit_caveat=(
                         'Gift transfers donor basis at gift_year and liquidates recipient at horizon; '
-                        'donor personal loss carryforwards do not transfer. Estate/gift tax, dual-basis '
-                        'loss rules and family-level tax reconciliation are excluded.'
+                        'donor loss carryforwards stay with donor outside gains. Recipient portfolio '
+                        'and donor gains are taxed separately; reported wealth combines the family. '
+                        'Estate/gift tax, dual-basis loss lots and legal transfer of short liabilities are excluded.'
                         if exit_mode=='gift' else
                         'Death step-up applies only to user-specified eligible long-book share of '
                         'aggregate embedded gains; short positions and estate tax require separate treatment.'
                         if exit_mode=='death' else
                         'Gradual extension reduction uses an illustrative proportional gain attribution, '
                         'not executable lot-level optimization.' if exit_mode=='gradual' else
+                        'Proportional full-portfolio sales over the last 3-5 years, with proceeds in side cash.'
+                        if exit_mode=='gradual_liquidation' else
                         'Full terminal liquidation under simplified aggregate basis.'),
                     initial_cash=config['initial_cash'],
                    outside_gross_gain_proceeds=sum(config['outside_st_gains'][:n])+sum(config['outside_lt_gains'][:n]),

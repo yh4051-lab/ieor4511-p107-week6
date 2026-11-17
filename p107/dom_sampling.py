@@ -24,6 +24,8 @@ def _members_at_date(memberships, as_of):
             raise ValueError('Every membership requires source ID and independent PIT verification')
         start=date.fromisoformat(record['member_from'])
         end=date.fromisoformat(record['member_to']) if record.get('member_to') else None
+        if end is not None and end <= start:
+            raise ValueError('Membership end must be after membership start')
         published=record.get('published_as_of')
         if published and date.fromisoformat(published)>when:
             raise ValueError('Membership source not known at formation date (lookahead)')
@@ -73,6 +75,8 @@ def evaluate_portfolio_cohort(base_config, memberships, as_of, n_long, n_short,
     """
     if not callable(run_one):
         raise ValueError('Supply a callable research engine')
+    if base_config.get('start_date',as_of)!=as_of:
+        raise ValueError('Portfolio formation date must equal the requested history start date')
     samples=sample_portfolios(memberships,as_of,n_long,n_short,draws,seed,
                               base_config.get('substitutes'))
     results=[]
@@ -81,21 +85,35 @@ def evaluate_portfolio_cohort(base_config, memberships, as_of, n_long, n_short,
         c['positions']=sample['positions']
         if sample['substitutes'] is not None:c['substitutes']=sample['substitutes']
         outcome=run_one(c)
-        summary=outcome['summary']
+        summary=outcome['summary'] if 'summary' in outcome else outcome['results']['harvest']['summary']
         ending=float(summary['terminal_after_tax_wealth'])
         if not isfinite(ending):
             raise ValueError('Portfolio result not finite')
-        results.append(dict(sample_id=sample['portfolio_number'],seed=seed,
+        row=dict(sample_id=sample['portfolio_number'],seed=seed,
                             formation_date=as_of,long_names=[p['ticker'] for p in c['positions'] if p['side']=='long'],
                             short_names=[p['ticker'] for p in c['positions'] if p['side']=='short'],
                             after_tax_terminal_wealth=ending,
                             harvested_losses=summary.get('cumulative_harvested_losses'),
-                            provenance='user_supplied_PIT_membership'))
+                            provenance='user_supplied_PIT_membership')
+        if 'results' in outcome:
+            row['no_harvest_wealth']=outcome['results']['no_harvest']['summary']['terminal_after_tax_wealth']
+            row['benchmark_wealth']=outcome['results']['benchmark']['summary']['terminal_after_tax_wealth']
+            row['harvesting_benefit']=ending-row['no_harvest_wealth']
+            row['incremental_wealth_vs_benchmark']=ending-row['benchmark_wealth']
+        results.append(row)
     ordered=sorted(x['after_tax_terminal_wealth'] for x in results)
     def quantile(p):
         k=(len(ordered)-1)*p;i=int(k);j=min(len(ordered)-1,i+1)
         return ordered[i]*(1-(k-i))+ordered[j]*(k-i)
-    return dict(draws=draws,seed=seed,formation_date=as_of,
+    deltas=sorted(x['incremental_wealth_vs_benchmark'] for x in results if 'incremental_wealth_vs_benchmark' in x)
+    comparison_stats={}
+    if deltas:
+        def qdelta(p):
+            k=(len(deltas)-1)*p;i=int(k);j=min(i+1,len(deltas)-1)
+            return deltas[i]*(1-(k-i))+deltas[j]*(k-i)
+        comparison_stats=dict(benchmark_win_fraction=sum(x>0 for x in deltas)/len(deltas),
+                              p05_delta=qdelta(.05),median_delta=qdelta(.5),p95_delta=qdelta(.95))
+    return dict(draws=draws,seed=seed,formation_date=as_of,**comparison_stats,
                 p05_wealth=quantile(.05),median_wealth=quantile(.5),p95_wealth=quantile(.95),
                 results=results,
                 limitations=['No PIT membership, no defensible historical-universe claim.',

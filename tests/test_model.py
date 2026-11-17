@@ -222,9 +222,16 @@ class SourceAndReproTests(unittest.TestCase):
         import hashlib
         with (ROOT/'data/input_manifest.csv').open(encoding='utf-8') as f:
             rows=list(csv.DictReader(f))
-        self.assertEqual(len(rows),2)
+        expected={
+            'configs/example_hypothetical.json':'independent illustrative assumptions',
+            'data/illustrative_loss_schedule.csv':'independent illustrative assumptions',
+            'configs/example_dom_historical.json':'synthetic software fixture; not market history',
+            'examples/dom_synthetic_history.json':'synthetic software fixture; not market history',
+            'examples/dom_synthetic_memberships.csv':'synthetic software fixture; not market history'}
+        self.assertEqual({r['file'] for r in rows},set(expected))
+        self.assertEqual(len(rows),len(expected))
         for r in rows:
-            self.assertEqual(r['classification'],'independent illustrative assumptions')
+            self.assertEqual(r['classification'],expected[r['file']])
             self.assertEqual(hashlib.sha256((ROOT/r['file']).read_bytes()).hexdigest(),r['sha256'])
 
     def test_breakeven_bracket_and_residual(self):

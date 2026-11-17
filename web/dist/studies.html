@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P107 · Sponsor studies</title><link rel="stylesheet" href="/studies.css"><script src="/studies.js" defer></script></head>
+<body>
+<a class="skip" href="#results">Skip to results</a>
+<header><a class="brand" href="/">P107 <span>Wedmont / Columbia</span></a><a href="/">← Main comparison</a></header>
+<main>
+<div class="heading"><div><p class="eyebrow">NOVEMBER 10 · EMPLOYER FOLLOW-UP</p><h1>Four questions. One research workspace.</h1><p>Explore rebalancing, exit choices, one-time gains and portfolio selection.</p></div><span class="badge">Local calculations</span></div>
+<nav aria-label="Choose a study" id="study-nav">
+<button type="button" data-mode="historical">01 · Rebalance & replace</button><button type="button" data-mode="exits" aria-current="page">02 · Exit choices</button><button type="button" data-mode="one_time">03 · One-time gains</button><button type="button" data-mode="cohort">04 · Random portfolios</button>
+</nav>
+<div class="layout">
+<form id="study-form" class="panel">
+<div class="form-head"><h2 id="input-title">Study inputs</h2><button type="button" id="reset">Reset example</button></div>
+<p id="study-description" class="muted"></p>
+<label>Starting investment ($)<input id="cash" type="number" min="10000" max="100000000" value="1000000" required></label>
+<div id="annual-fields">
+<div class="pair"><label>Horizon (years)<input id="horizon" type="number" min="3" max="10" step="1" value="5" required></label><label>Price return (% / year)<input id="return" type="number" min="-20" max="20" step="any" value="6" required></label></div>
+<p class="note">Illustrative annual returns and harvested losses, not historical stock prices. All strategies start with the same cash.</p>
+<div id="exit-fields">
+<label>Annual outside gains ($)<input id="annual-gain" type="number" min="0" max="100000000" value="100000" required></label>
+<label>Core embedded gain attributed to eligible long holdings (%)<input id="stepup" type="number" min="0" max="100" step="any" value="80" required></label>
+<p class="note">Assumption for the death scenario. Long-only holdings use full FMV basis adjustment. Short liabilities receive no automatic adjustment.</p>
+<label>Gift at start of year<input id="gift-year" type="number" min="1" max="10" step="1" value="3" required></label>
+<div class="pair"><label>Recipient ST tax (%)<input id="recipient-st" type="number" min="0" max="60" step="any" value="40"></label><label>Recipient LT tax (%)<input id="recipient-lt" type="number" min="0" max="60" step="any" value="20"></label></div>
+<p class="note">Gift wealth combines donor and recipient assets after separate taxes. It is not cash retained by the donor alone. Estate and gift taxes are excluded.</p>
+</div>
+<div id="gain-fields" hidden>
+<label>One-time gain in year<input id="event-year" type="number" min="1" max="10" step="1" value="2" required></label>
+<label>Gain character<select id="gain-character"><option value="st">Short-term</option><option value="lt">Long-term</option></select></label>
+<p class="note">Tests $0, $1M, $3M and $5M in this year only. Searches $0–$5M for break-even against both Index and Direct Indexing.</p>
+</div>
+</div>
+<div id="historical-fields" hidden>
+<label>Price data<select id="data-source"><option value="synthetic">Synthetic example · offline</option><option value="live">Fetch historical prices · Yahoo Finance</option><option value="uploaded">Upload saved price observations</option></select></label>
+<p id="data-note" class="notice">Synthetic prices and membership rows test the software. They are not actual stocks or S&P 500 history.</p>
+<div class="pair"><label>Start date<input id="start" type="date" value="2020-01-01" required></label><label>End / full sale date<input id="end" type="date" value="2020-03-30" required></label></div>
+<label>Benchmark ticker<input id="benchmark" value="SPY" required></label>
+<label>Positions and replacements<textarea id="positions" rows="5" spellcheck="false" required>T1,long,1,S1
+T2,short,1,S2</textarea></label>
+<p class="note">One row per stock: ticker, long/short, relative weight, replacement ticker. In Random portfolios, this defines the replacement map; the membership file defines the sample universe.</p>
+<label class="check" id="review-label" hidden><input id="replacement-reviewed" type="checkbox"> I have reviewed these replacement assumptions. This does not certify household wash-sale compliance.</label>
+<label id="history-upload-label" hidden>Price observations (.json)<input id="history-file" type="file" accept=".json,application/json"></label>
+<div class="pair"><label>Rebalance every (sessions)<input id="rebalance" type="number" min="1" max="10000" step="1" value="20" required></label><label>Loss trigger (%)<input id="threshold" type="number" min="0.01" max="100" step="any" value="8" required></label></div>
+<p class="note">Target 130% long / 30% short after trading fees. Harvest signals execute next close. Original-stock reentry waits more than 30 calendar days; a mapped replacement maintains the position meanwhile.</p>
+<div class="pair"><label>Outside gain calendar year<input id="outside-year" type="number" min="1900" max="2200" step="1" value="2020"></label><label>One-time outside ST gain ($)<input id="historical-gain" type="number" min="0" max="100000000" value="1000000"></label></div>
+<div id="cohort-fields" hidden>
+<div class="pair"><label>Portfolios<input id="samples" type="number" min="1" max="200" step="1" value="20"></label><label>Random seed<input id="seed" type="number" step="1" value="4511"></label></div>
+<div class="pair"><label>Stocks per long book<input id="n-long" type="number" min="1" max="100" step="1" value="3"></label><label>Stocks per short book<input id="n-short" type="number" min="1" max="100" step="1" value="3"></label></div>
+<label>Point-in-time membership (.csv)<input id="members-file" type="file" accept=".csv,text/csv"></label>
+<p class="note">Optional for the synthetic example; required for other data. Columns: ticker, member_from, member_to, published_as_of, source_id, point_in_time_verified. Membership ends are exclusive; formation uses the start date. No genuine S&P 500 membership file is included.</p>
+</div>
+</div>
+<details><summary>Costs and tax assumptions</summary>
+<div class="pair"><label>ST / donor tax (%)<input id="tax-st" type="number" min="0" max="60" step="any" value="40"></label><label>LT / donor tax (%)<input id="tax-lt" type="number" min="0" max="60" step="any" value="20"></label></div>
+<div class="pair"><label>Manager fee (%)<input id="manager" type="number" min="0" max="10" step="any" value="0.4"></label><label>Advisor fee (%)<input id="advisor" type="number" min="0" max="10" step="any" value="0.1"></label></div>
+<div class="pair"><label>Financing (%)<input id="finance" type="number" min="0" max="30" step="any" value="5"></label><label>Borrow (%)<input id="borrow" type="number" min="0" max="20" step="any" value="1"></label></div>
+<div class="pair"><label>Short rebate (%)<input id="rebate" type="number" min="0" max="20" step="any" value="0"></label><label>Historical trading cost (%)<input id="trade" type="number" min="0" max="5" step="any" value="0.05"></label></div>
+<p class="note">Annual rates except per-trade cost. Index manager fee is 0.03%; DI is 0.25% in annual studies. These are assumptions, not current quotes. Historical studies apply the advisor fee to every comparison.</p>
+</details>
+<div class="run-bar"><button id="run" class="primary" type="submit" disabled>Run study →</button><p id="status" role="status" aria-live="polite">Loading examples…</p></div>
+</form>
+<section id="results" tabindex="-1">
+<div class="results-head"><div><p class="eyebrow" id="result-label">ILLUSTRATIVE SCENARIOS</p><h2 id="result-title">Compare the exit choices</h2></div><button id="download" disabled>Download study ZIP ↓</button></div>
+<div id="error" class="error" role="alert" hidden></div>
+<div id="output"><div class="empty panel"><h3>Start with a reproducible example</h3><p>Choose a study, review the inputs, then press Run study. Results include after-tax wealth, costs and an audit trail.</p><p>Historical examples use synthetic fixtures. Real-market conclusions require documented prices, membership and replacement assumptions.</p></div></div>
+</section>
+</div>
+<footer>IEOR E4511 · P107 research model · Prices, taxes and execution have stated limits. Passing software tests does not establish investment performance.</footer>
+</main></body></html>

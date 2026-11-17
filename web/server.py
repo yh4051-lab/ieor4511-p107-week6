@@ -25,6 +25,7 @@ from p107.analysis import breakeven
 from p107.market_data import get_quote, normalize_ticker
 from p107.portfolio import calculate_portfolio
 from p107.research import run_research
+from p107.studies import defaults as study_defaults, run_study
 
 from build_info import build_id
 
@@ -157,12 +158,34 @@ def result_zip(result):
     return out.getvalue()
 
 
+def study_zip(result):
+    files={'request.json':json_bytes(result['request']), 'result.json':json_bytes(result),
+           'summary.csv':csv_bytes(result['rows']),
+           'README.txt':('P107 sponsor study. Read data_label and warnings in result.json.\n'
+                         'Replay: python tools/run_study.py --input request.json --out replay.json\n'
+                         'The exported request contains the exact input observations. No network is needed for replay.\n').encode()}
+    if result.get('annual'):
+        files['annual.csv']=csv_bytes(result['annual'])
+    if result['mode']=='historical':
+        for name,run in result['results'].items():
+            for table in ('daily','annual','trades'):
+                if run[table]: files[f'{name}_{table}.csv']=csv_bytes(run[table])
+    files['FILE_MANIFEST.json']=json_bytes({n:hashlib.sha256(b).hexdigest() for n,b in files.items()})
+    output=io.BytesIO()
+    with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as z:
+        for name,body in files.items():
+            info=zipfile.ZipInfo(name,(2026,1,1,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED
+            z.writestr(info,body)
+    return output.getvalue()
+
+
 class AppServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, address):
         super().__init__(address, Handler)
         self.runs = {}
+        self.studies = {}
         self.run_lock = threading.Lock()
 
 
@@ -193,7 +216,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send(403, json_bytes({'error': 'Please use the local application page.'}))
             return False
         # Opening the app from a bookmark/chat is a cross-site navigation, not an API call.
-        landing_navigation = self.command == 'GET' and self.path == '/' and self.headers.get('Sec-Fetch-Mode') == 'navigate'
+        landing_navigation = self.command == 'GET' and self.path in ('/','/studies') and self.headers.get('Sec-Fetch-Mode') == 'navigate'
         if self.headers.get('Sec-Fetch-Site') == 'cross-site' and not landing_navigation:
             self.send(403, json_bytes({'error': 'Please use the local application page.'}))
             return False
@@ -204,9 +227,19 @@ class Handler(BaseHTTPRequestHandler):
             return
         path = urlsplit(self.path).path
         if path == '/api/health':
-            self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__, 'build_id': BUILD_ID, 'features': ['stock_portfolio', 'three_level_research', 'integrated_research_v2']}))
+            self.send(200, json_bytes({'app': APP_ID, 'model_version': __version__, 'build_id': BUILD_ID, 'features': ['stock_portfolio', 'three_level_research', 'integrated_research_v2','sponsor_studies']}))
         elif path == '/api/defaults':
             self.send(200, json_bytes({'inputs': defaults()}))
+        elif path == '/api/studies/defaults':
+            self.send(200,json_bytes(study_defaults()))
+        elif path in ('/studies','/studies.js','/studies.css'):
+            name,mime={'/studies':('studies.html','text/html'),'/studies.js':('studies.js','text/javascript'),'/studies.css':('studies.css','text/css')}[path]
+            self.send(200,(ROOT/'dist'/name).read_bytes(),mime+'; charset=utf-8')
+        elif path.startswith('/api/studies/download/'):
+            with self.server.run_lock:
+                result=self.server.studies.get(path.rsplit('/',1)[-1])
+            if result is None:self.send(404,json_bytes({'error':'Run the study again before downloading.'}))
+            else:self.send(200,study_zip(result),'application/zip',f"P107_{result['mode']}_{result['run_id'][:8]}.zip")
         elif path in ('/', '/app.js', '/style.css', '/portfolio.js', '/portfolio.css'):
             name, mime = {'/': ('index.html', 'text/html; charset=utf-8'), '/app.js': ('app.js', 'text/javascript; charset=utf-8'), '/style.css': ('style.css', 'text/css; charset=utf-8'), '/portfolio.js': ('portfolio.js', 'text/javascript; charset=utf-8'), '/portfolio.css': ('portfolio.css', 'text/css; charset=utf-8')}[path]
             self.send(200, (ROOT / 'dist' / name).read_bytes(), mime)
@@ -224,14 +257,21 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.local_request():
             return
-        if self.path not in ('/api/run', '/api/portfolio/quotes', '/api/portfolio/run', '/api/research/run'):
+        if self.path not in ('/api/run', '/api/portfolio/quotes', '/api/portfolio/run', '/api/research/run','/api/studies/run'):
             self.send(404, json_bytes({'error': 'Operation not found.'}))
             return
         try:
             length = int(self.headers.get('Content-Length', '0'))
-            if not 0 < length <= 10000 or self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
+            maximum=5000000 if self.path=='/api/studies/run' else 10000
+            if not 0 < length <= maximum or self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                 raise ValueError('Invalid request format.')
             inputs = json.loads(self.rfile.read(length))
+            if self.path=='/api/studies/run':
+                result=run_study(inputs)
+                with self.server.run_lock:
+                    self.server.studies[result['run_id']]=result
+                    while len(self.server.studies)>10:self.server.studies.pop(next(iter(self.server.studies)))
+                self.send(200,json_bytes(result));return
             if self.path == '/api/research/run':
                 self.send(200, json_bytes(run_research(inputs)))
                 return

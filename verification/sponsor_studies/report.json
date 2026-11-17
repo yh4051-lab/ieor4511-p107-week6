@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "market_performance_claims": false,
+  "checks": [
+    {
+      "mode": "exits",
+      "data_label": "Illustrative assumptions",
+      "rows": 21,
+      "exact_offline_replay": true,
+      "run_id": "74084f3b2cf4db9688ea",
+      "summary_sha256": "74c7e66b0394bf238c8681268af15c7359d029a73a7f6df35acd299dc302efb4"
+    },
+    {
+      "mode": "one_time",
+      "data_label": "Illustrative assumptions",
+      "rows": 12,
+      "exact_offline_replay": true,
+      "run_id": "38c2d953c487f60a70cd",
+      "summary_sha256": "59d7630a0f0af4013d0b5f1a7bd9fa323619e156b01bb29544f5d52ead225bc5"
+    },
+    {
+      "mode": "historical",
+      "data_label": "SYNTHETIC SOFTWARE TEST \u2014 NOT MARKET HISTORY",
+      "rows": 3,
+      "exact_offline_replay": true,
+      "run_id": "2d8189f0143676998d79",
+      "summary_sha256": "30d0326514ed963b625664a96680786ee80594dc90323310533543e35f87f281"
+    },
+    {
+      "mode": "cohort",
+      "data_label": "SYNTHETIC SOFTWARE TEST \u2014 NOT MARKET HISTORY",
+      "rows": 20,
+      "exact_offline_replay": true,
+      "run_id": "dee47c63f3db2e63b4c9",
+      "summary_sha256": "f397794afaa223e2301828c91fce2762cf75cc81580b9fedfbab2ae7fdb93320"
+    }
+  ],
+  "source_sha256": {
+    "__init__.py": "6ee3180d50388564b7b025780d857cbbe0ef40f5ab5926f657847240953c9d43",
+    "__main__.py": "f82538710ebe1018cdd6d2741b04a807fbada0a9d351dea3ef31549f46bfeac5",
+    "analysis.py": "c70188a5194506dd0aa9368fc87affd79da8330a2ef0e9148aa4c828efaff849",
+    "dom_historical.py": "4e25e7e22dbb73401fa43dd7ceec16c18c791feca919f7b70cfafc38656eb50e",
+    "dom_sampling.py": "7f90a51c607040e3f7afa9f5b10cded8cff7667978e6efd422f7fde0d4c67079",
+    "market_data.py": "4a34a8c88301fa9298906ad48b937640f8ac22ce8a40847c13b7a35c678157c6",
+    "model.py": "645fbf644b8af8e98a1c9aef052d97e0d24dbc1a8f5e1393845782861dd30a58",
+    "portfolio.py": "8fb9e43fe319128babe0a4c7dd74c373f365d598ba7a4748ec95590be5683467",
+    "reporting.py": "bd52d4422020ed8836ff8c4eb40f8f4c5892648a9ffd5857b7f0d0ab57719a99",
+    "research.py": "087859199142d750d085d95cc4948433b4513ff600843972d504f5990e0f777f",
+    "studies.py": "b09d4ed6b06caee45ef80d208890e61014f17b8f7b76dd48ce548b1623628c25",
+    "taxes.py": "1c34c0f5a8a378f4eed166a1a50d28fbe5318eeaf4d5f5c785c321751416a1c6"
+  }
+}

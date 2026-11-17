@@ -20,6 +20,11 @@ jobs:
         run: python -m compileall -q p107 tests tools
       - name: Unit/regression tests (no external prices)
         run: python -m unittest discover -s tests -v
+      - name: Web API, exports and deterministic sponsor studies
+        run: |
+          python -m unittest discover -s web/tests -v
+          python tools/verify_sponsor_studies.py --out /tmp/sponsor-verification
+          node --check web/dist/studies.js
       - name: Run sponsor scenario and synthetic historical cohort examples
         run: |
           python tools/dom_feedback.py scenario --config configs/example_hypothetical.json --out /tmp/dom_scenarios.json --event-year 2 --stepup-long-fraction 0.8
@@ -31,7 +36,7 @@ jobs:
           h=json.load(open('/tmp/dom_history.json'))
           c=json.load(open('/tmp/dom_cohort.json'))
           assert len(a['one_time_gains']) == 3
-          assert len(a['exit_scenarios']) == 6
+          assert len(a['exit_scenarios']) == 7
           assert h['summary']['target_long_pct'] == 130
           assert len(c['results']) == 20
           assert c['seed'] == 4511

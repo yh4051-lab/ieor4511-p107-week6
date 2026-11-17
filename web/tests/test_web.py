@@ -331,6 +331,46 @@ class HttpTests(unittest.TestCase):
             self.assertEqual(status, 400)
             self.assertIn('error', json.loads(data))
 
+    def test_sponsor_study_pages_and_validation(self):
+        for path in ('/studies', '/studies.js', '/studies.css', '/api/studies/defaults'):
+            self.assertEqual(self.request('GET', path)[0], 200)
+        headers = {'Content-Type': 'application/json'}
+        for body in ('{}', '[]', '{bad', '{"mode":"unknown","config":{}}'):
+            self.assertEqual(self.request('POST', '/api/studies/run', body, headers)[0], 400)
+        self.assertEqual(self.request('POST', '/api/studies/run', '{}',
+                         {**headers, 'Origin': 'https://foreign.example'})[0], 403)
+        self.assertEqual(self.request('GET', '/api/studies/download/missing')[0], 404)
+
+    def test_sponsor_historical_download_is_exact_offline_replay(self):
+        payload = dict(mode='historical', data_source='synthetic',
+                       config=server.study_defaults()['historical'])
+        status, raw, _ = self.request('POST', '/api/studies/run', json.dumps(payload),
+                                     {'Content-Type': 'application/json'})
+        self.assertEqual(status, 200, raw)
+        result = json.loads(raw)
+        self.assertEqual(len(result['rows']), 3)
+        path = '/api/studies/download/' + result['run_id']
+        status, body, _ = self.request('GET', path)
+        self.assertEqual(status, 200)
+        self.assertEqual(body, self.request('GET', path)[1])
+        with zipfile.ZipFile(io.BytesIO(body)) as archive:
+            manifest = json.loads(archive.read('FILE_MANIFEST.json'))
+            for filename, digest in manifest.items():
+                self.assertEqual(hashlib.sha256(archive.read(filename)).hexdigest(), digest)
+            self.assertIn('harvest_trades.csv', archive.namelist())
+            replay = json.loads(archive.read('request.json'))
+            with patch('p107.studies.load_history', side_effect=AssertionError('No network during replay')):
+                self.assertEqual(server.run_study(replay), result)
+
+    def test_sponsor_exit_and_one_time_routes(self):
+        config = server.study_defaults()['annual']
+        for mode, count in (('exits', 21), ('one_time', 12)):
+            payload = dict(mode=mode, config=config, stepup_long_fraction=.8, event_year=2)
+            status, raw, _ = self.request('POST', '/api/studies/run', json.dumps(payload),
+                                         {'Content-Type': 'application/json'})
+            self.assertEqual(status, 200, raw)
+            self.assertEqual(len(json.loads(raw)['rows']), count)
+
 
 if __name__ == '__main__':
     unittest.main()

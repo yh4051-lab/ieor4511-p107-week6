@@ -261,16 +261,22 @@
   "randomness": "none",
   "source": "PUBLIC ILLUSTRATIVE ACCOUNTING EXAMPLE - NOT PROVIDER ESTIMATES OR HISTORICAL PERFORMANCE",
   "source_code_sha256": {
-    "__init__.py": "7d36be4630d08e93b1a6f73346dfd132b00956f53f5c9652c34c876ab5dba907",
-    "__main__.py": "b84dc05cc3e739e3bc0083a36a5d2cd1058f8e69b971ffaa323513767eb55d08",
-    "analysis.py": "af16117a9b31d7571667bd7b06c1a56ffd9da37d1b8efbdc8d98c7714c84903d",
-    "model.py": "e0afce3c87d4e78d9e2c79771fcd1178ffdd826bb04952e48f28b58dd7f1d824",
+    "__init__.py": "6ee3180d50388564b7b025780d857cbbe0ef40f5ab5926f657847240953c9d43",
+    "__main__.py": "f82538710ebe1018cdd6d2741b04a807fbada0a9d351dea3ef31549f46bfeac5",
+    "analysis.py": "c70188a5194506dd0aa9368fc87affd79da8330a2ef0e9148aa4c828efaff849",
+    "dom_historical.py": "4e25e7e22dbb73401fa43dd7ceec16c18c791feca919f7b70cfafc38656eb50e",
+    "dom_sampling.py": "7f90a51c607040e3f7afa9f5b10cded8cff7667978e6efd422f7fde0d4c67079",
+    "market_data.py": "4a34a8c88301fa9298906ad48b937640f8ac22ce8a40847c13b7a35c678157c6",
+    "model.py": "645fbf644b8af8e98a1c9aef052d97e0d24dbc1a8f5e1393845782861dd30a58",
+    "portfolio.py": "8fb9e43fe319128babe0a4c7dd74c373f365d598ba7a4748ec95590be5683467",
     "reporting.py": "bd52d4422020ed8836ff8c4eb40f8f4c5892648a9ffd5857b7f0d0ab57719a99",
-    "taxes.py": "77e06ce23863be93e7abfda72075bd2c1ebce3e8b639b7733a88b00c3074ebf0"
+    "research.py": "087859199142d750d085d95cc4948433b4513ff600843972d504f5990e0f777f",
+    "studies.py": "b09d4ed6b06caee45ef80d208890e61014f17b8f7b76dd48ce548b1623628c25",
+    "taxes.py": "1c34c0f5a8a378f4eed166a1a50d28fbe5318eeaf4d5f5c785c321751416a1c6"
   },
   "files_sha256": {
-    "annual_ledger.csv": "3bdf52524cd13bf44063d33f26594c8682a49b2fe792d6737c23b2c474c00523",
-    "baseline_comparison.csv": "5faff3516ee92061e77a259cd4b6f2532791f95dce1c2063e293f30d1ea4bbc4",
+    "annual_ledger.csv": "33d928646a9ba1d6b33cf076cf05c5e9eb8544d8d77a06e1f5ef88ae3b4bc06a",
+    "baseline_comparison.csv": "c566e44ec602ab09e64e77677dd5f9c5fb81048497affd798b6c36536f2a9fa3",
     "breakeven.json": "6019087a609375001a68bc73b17c8a423d6bd1a1e522613d2cd2ba8e53d5a43c",
     "breakeven_curve.csv": "bebeb86b85dfa855cb881da0829e6d972368dcb52f5cb0a5159c2bc0dac0a59e",
     "figures/financing_sensitivity.png": "13da1aa4197575adbb3b6347d9006059334eb45234478828597e5db74e32a5db",
@@ -279,13 +285,13 @@
     "figures/outside_gains_breakeven.svg": "15bb98bf02999d7986126943246e2cabcb4fc4af6d0e2a99dd0688d7b1f1a193",
     "figures/terminal_wealth.png": "a287a245d2edb7cffb676f19f269f95a359c48b7f00bf0fb09a7649250c25c38",
     "figures/terminal_wealth.svg": "fa0824b958ce5679f3d69d30e7db40bbad4908d0fa3734d5d13c419c49dbc950",
-    "scenario_comparison.csv": "07315fbb10e187da3360628b1d0c1b24b8c0c7f7b9f333597a114c1afd9b14b9",
-    "scenario_ledgers.csv": "f1d8a6a996eace71d010c4bbb82e7e7a25c44b3b2ad14524ee29fe7ce5a4f43c",
-    "sensitivity.csv": "8af5d5d04e32577306b114508b2cf32c7bc8ef8fcbf0779920088552e58c2db2"
+    "scenario_comparison.csv": "9b1885c151485f4334d563ce534466805eaf50ad1f26538eefe1bbb0d9be212f",
+    "scenario_ledgers.csv": "9076723fef9d3bcb80534f3f724157206a5092149c762295646eaf238503c0dd",
+    "sensitivity.csv": "837b353173e20ec6471c3fc6eb1319015204782b6466da536a5fdd2949c0dfdf"
   },
   "chart_dependencies": {
     "reportlab": "4.4.9",
-    "pypdfium2": "5.14.0",
-    "pillow": "12.3.0"
+    "pypdfium2": "5.13.0",
+    "pillow": "13.0.0"
   }
 }
