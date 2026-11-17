@@ -10,8 +10,8 @@ This is our initial Python model comparing a $1 million cash investment in an in
 
 ## Run the browser interface
 
-**November 17 update:** choose **Sponsor studies →** in the header for the four
-employer follow-ups. The `/studies` page runs rebalancing with replacement
+**November 17 update:** choose **Portfolio research →** in the header.
+The `/studies` page runs rebalancing with replacement
 securities, exit comparisons, one-time outside gains, and seeded random
 portfolios. It includes CSV exports and an exact offline replay package.
 See [the study guide and coverage](docs/DOM_FEEDBACK_2026_11_10.md).

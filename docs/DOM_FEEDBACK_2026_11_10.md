@@ -1,20 +1,25 @@
-# Sponsor studies: November 10 feedback
+# Portfolio research: November 10 feedback
 
 Updated November 17, 2026. This is a research model with explicit assumptions.
 Software tests do not establish investment performance or tax compliance.
 
 ## Open and use the studies
 
-Start `python web/launch.py`, then choose **Sponsor studies →** in the header.
+Start `python web/launch.py`, then choose **Portfolio research →** in the header.
 The page is `/studies` on the local address printed by the launcher.
 
-1. Choose one of the four studies.
-2. Review inputs and expand **Costs and tax assumptions**. These rates are
-   illustrative and can be changed. Run the study after changing inputs.
+1. Choose **Rebalancing**, **Exit planning**, **Liquidity events** or
+   **Portfolio sampling**.
+2. Review inputs and expand **Fees, financing and taxes**. These rates are
+   illustrative and can be changed. Select **Run analysis** after changing inputs.
 3. Read the comparison and run-specific assumptions below it. The same outside
    proceeds are included across strategies: total wealth is not just the return
    on starting capital.
-4. Choose **Download study ZIP** for CSVs, complete results, exact inputs, source
+4. In Exit planning, select a strategy to compare its policies, or select
+   **All strategies**. Liquidity events displays all three strategies side by side.
+   Expand the ledgers and **Assumptions and limitations** for detail. The visible
+   **Model coverage** table separates available functions from remaining work.
+5. Choose **Export results** for a ZIP with CSVs, complete results, exact inputs, source
    hashes and an offline replay command:
 
 ```sh

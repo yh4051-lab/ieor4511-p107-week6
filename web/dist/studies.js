@@ -8,12 +8,13 @@
   const clone = obj => JSON.parse(JSON.stringify(obj));
   const labels = {index:'Index',long_only_di:'Direct Indexing',core_130_30:'Core 130/30',harvest:'Harvest + rebalance',no_harvest:'Rebalance, no harvest',benchmark:'Index benchmark'};
   const descriptions = {
-    exits:['Compare the exit choices','Compare a full sale, 3–5-year sales, extension reduction, holding until death and gifting. All use the same annual assumptions.'],
-    one_time:['Find the one-time gain threshold','Test one taxable event and compare Core with both Index and Direct Indexing.'],
-    historical:['Keep 130/30 while harvesting','Compare periodic rebalancing with and without harvesting, plus a passive benchmark. Inspect replacement trades and exposure drift.'],
-    cohort:['Test more than hand-picked stocks','Run seeded random portfolios from the supplied formation-date universe. Compare every draw with its no-harvest case and benchmark.']
+    exits:['Exit strategy comparison','Set a common horizon and return assumption for each exit policy.','Annual return and loss assumptions. Historical tax-lot exits and estate/gift taxes are not included.'],
+    one_time:['One-time capital gains','Choose the year and tax character of a single outside gain.','One event at $0, $1M, $3M or $5M. Break-even uses the annual scenario model, not a historical backtest.'],
+    historical:['Rebalancing and loss harvesting','Set the portfolio, replacement securities and trading rules.','Scheduled 130/30 targets with replacement positions. Full wash-sale matching and borrow constraints remain outside this model.'],
+    cohort:['Portfolio sampling results','Set the universe, portfolio size and number of draws.','Random portfolios use the supplied universe. The included example is synthetic; verified historical index membership is not supplied.']
   };
-  let mode='exits', base, lastResult, busy=false;
+  let mode='exits', base, lastResult, busy=false, strategyView='core_130_30';
+  const positionDrafts={historical:null,cohort:null};
   function section(id,visible) {
     $(id).hidden=!visible;
     $(id).querySelectorAll('input,select,textarea').forEach(el => {el.disabled=!visible;});
@@ -21,17 +22,19 @@
   function markDirty() {
     if (!lastResult) return;
     $('download').disabled=true;
+    if($('strategy-view'))$('strategy-view').disabled=true;
     $('output').classList.add('dirty');
-    $('status').textContent='Inputs changed. Run again to update the results.';
+    $('status').textContent='Parameters changed. Run again to update results.';
   }
   function sourceFields() {
     const synthetic=$('data-source').value==='synthetic';
     const historical=['historical','cohort'].includes(mode);
     section('history-upload-label',historical && $('data-source').value==='uploaded');
     section('review-label',historical && !synthetic);
-    $('data-note').textContent=synthetic ? 'Synthetic prices and membership rows test the software. They are not actual stocks or S&P 500 history.' : 'Use documented prices and reviewed replacement mappings. Missing securities cause an error; the model will not silently drop them.';
+    $('data-note').textContent=synthetic ? 'Synthetic test data. These prices and membership records are not market observations.' : 'Use documented prices and reviewed replacements. Missing securities stop the calculation.';
   }
   function setMode(next) {
+    if(['historical','cohort'].includes(mode))positionDrafts[mode]=$('positions').value;
     mode=next;lastResult=null;$('download').disabled=true;
     document.querySelectorAll('[data-mode]').forEach(el => {
       if(el.dataset.mode===mode)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');
@@ -40,18 +43,23 @@
     section('annual-fields',annual);section('historical-fields',!annual);
     section('exit-fields',mode==='exits');section('gain-fields',mode==='one_time');
     section('cohort-fields',mode==='cohort');sourceFields();
-    if(base && $('data-source').value==='synthetic') {
-      $('positions').value=mode==='cohort' ? Object.entries(base.historical.substitutes).map(([t,v],i) => `${t},${i%2?'short':'long'},1,${v.ticker}`).join('\n') : 'T1,long,1,S1\nT2,short,1,S2';
+    if(base && !annual) {
+      $('positions').value=positionDrafts[mode] || (mode==='cohort' ? Object.entries(base.historical.substitutes).map(([t,v],i) => `${t},${i%2?'short':'long'},1,${v.ticker}`).join('\n') : 'T1,long,1,S1\nT2,short,1,S2');
     }
     $('result-title').textContent=descriptions[mode][0];
     $('study-description').textContent=descriptions[mode][1];
-    $('result-label').textContent=annual?'ILLUSTRATIVE ANNUAL MODEL':'HISTORICAL ENGINE · DATA SOURCE MATTERS';
+    $('result-label').textContent=annual?'Annual scenario':'Price-based model';
+    $('result-label').classList.remove('synthetic');
+    $('scope-note').textContent=descriptions[mode][2];
     $('error').hidden=true;$('output').classList.remove('dirty');
-    $('output').innerHTML='<div class="empty panel"><h3>Review the inputs, then run</h3><p>'+esc(descriptions[mode][1])+'</p><p>Every export includes inputs, results, source hashes and an offline replay command.</p></div>';
-    $('status').textContent='Ready. Results are calculated only when you run.';
+    $('output').innerHTML='<div class="empty panel"><h3>No results yet</h3><p>'+esc(descriptions[mode][1])+' Select Run analysis to view the comparison.</p><p class="note">Exports include results, assumptions and the data needed to reproduce the calculation.</p></div>';
+    $('status').textContent='Ready to calculate.';
   }
   function reset() {
-    $('study-form').reset();
+    HTMLFormElement.prototype.reset.call($('study-form'));
+    strategyView='core_130_30';
+    positionDrafts.historical=null;positionDrafts.cohort=null;
+    if(['historical','cohort'].includes(mode))$('positions').value='';
     setMode(mode);
   }
   async function fileJson(id) {
@@ -116,45 +124,78 @@
     return r;
   }
   function table(title,rows,cols,note='') {
-    return `<div class="panel table-panel"><h3>${esc(title)}</h3><p>${esc(note)}</p><div class="table-scroll"><table><thead><tr>${cols.map(c=>'<th>'+esc(c[1])+'</th>').join('')}</tr></thead><tbody>${rows.map(row=>'<tr>'+cols.map(([key,label,fmt])=>'<td>'+esc(fmt?fmt(row[key],row):row[key])+'</td>').join('')+'</tr>').join('')}</tbody></table></div></div>`;
+    const colors={index:'var(--index)',long_only_di:'var(--di)',core_130_30:'var(--core)',harvest:'var(--core)',no_harvest:'var(--di)',benchmark:'var(--index)'};
+    return `<div class="panel table-panel"><h3>${esc(title)}</h3><p>${esc(note)}</p><div class="table-scroll"><table><thead><tr>${cols.map(c=>'<th scope="col">'+esc(c[1])+'</th>').join('')}</tr></thead><tbody>${rows.map(row=>'<tr>'+cols.map(([key,label,fmt])=>{
+      const value=esc(fmt?fmt(row[key],row):row[key]);
+      return '<td>'+(key==='strategy'?`<span class="strategy-name" style="--strategy:${colors[row[key]]||'var(--ink)'}">${value}</span>`:value)+'</td>';
+    }).join('')+'</tr>').join('')}</tbody></table></div></div>`;
   }
   function cards(items){return '<div class="cards">'+items.map(([label,value,note])=>`<div class="card"><small>${esc(label)}</small><strong>${esc(value)}</strong><p>${esc(note)}</p></div>`).join('')+'</div>';}
+  function details(title,body){return '<details class="result-details"><summary>'+esc(title)+'</summary>'+body+'</details>';}
+  function policyLabel(value){return value.replace(' full-portfolio exit',' portfolio exit').replace('3-year extension reduction + final sale','Reduce extension, then sell');}
   function chart(lines) {
-    const colors=['#355c9b','#187a73','#bc8246'];
+    const colors={harvest:'#14786e',no_harvest:'#4465b2',benchmark:'#65748b'};
     const vals=lines.flatMap(l=>l.values),lo=Math.min(...vals),hi=Math.max(...vals),range=hi-lo||1;
-    return '<div class="panel"><h3>Investor wealth over time</h3><svg class="chart" viewBox="0 0 650 160" role="img" aria-label="Daily investor wealth for three matched comparisons">'+lines.map((l,j)=>'<polyline fill="none" stroke="'+colors[j]+'" stroke-width="2" points="'+l.values.map((v,i)=>`${10+i/Math.max(1,l.values.length-1)*630},${140-(v-lo)/range*125}`).join(' ')+'"/>').join('')+'</svg><div class="legend">'+lines.map((l,i)=>`<span style="--ink:${colors[i]}">${esc(l.name)}</span>`).join('')+'</div><p class="note">The final point includes liquidation and taxes. Outside proceeds are included on the same schedule for all portfolios.</p></div>';
+    const ticks=Array.from({length:5},(_,i)=>lo+range*i/4);
+    const dates=lines[0].dates,times=dates.map(d=>Date.parse(d+'T00:00:00Z')),start=times[0],span=times.at(-1)-start||1;
+    const x=i=>82+(times[i]-start)/span*614,y=v=>196-(v-lo)/range*166;
+    const tickLabel=v=>Math.abs(v)>=1000000?'$'+number(v/1000000)+'M':'$'+number(v/1000)+'k';
+    return '<div class="panel chart-panel"><h3>Investor wealth over time</h3><svg class="chart" viewBox="0 0 720 238" role="img" aria-label="Daily investor wealth for three matched comparisons; dates on the horizontal axis, USD on the vertical axis">'+
+      ticks.map(v=>`<line x1="82" y1="${y(v)}" x2="696" y2="${y(v)}" stroke="#e8edf3"/><text x="70" y="${y(v)+4}" text-anchor="end">${esc(tickLabel(v))}</text>`).join('')+
+      lines.map(l=>'<polyline fill="none" stroke="'+colors[l.key]+'" stroke-width="2" points="'+l.values.map((v,i)=>`${x(i)},${y(v)}`).join(' ')+'"/>').join('')+
+      [0,Math.floor((dates.length-1)/2),dates.length-1].map((i,j)=>`<text x="${x(i)}" y="224" text-anchor="${['start','middle','end'][j]}">${esc(dates[i])}</text>`).join('')+
+      '</svg><div class="legend">'+lines.map(l=>`<span style="--ink:${colors[l.key]}">${esc(l.name)}</span>`).join('')+'</div><p class="note">The final point includes liquidation and taxes. Outside proceeds follow the same schedule in all three comparisons.</p></div>';
   }
   function render(r) {
-    $('result-label').textContent=r.data_label;
+    const synthetic=r.data_label.toLowerCase().includes('synthetic');
+    $('result-label').textContent=['exits','one_time'].includes(mode)?'Annual scenario':synthetic?'Synthetic data · not market history':'Historical input · review provenance';
+    $('result-label').classList.toggle('synthetic',synthetic);
     let html='';
     if(mode==='exits') {
-      const core=r.rows.filter(x=>x.strategy==='core_130_30'),full=core.find(x=>x.policy==='Full sale'),staged=core.find(x=>x.policy==='3-year full-portfolio exit'),death=core.find(x=>x.policy==='Hold until death');
-      html+=cards([['Core · full sale',money(full.terminal_after_tax_wealth),'Includes outside cash and final taxes'],['Core · 3-year exit',staged?money(staged.terminal_after_tax_wealth):'Unavailable','Proceeds remain in side cash'],['Core · hold until death',money(death.terminal_after_tax_wealth),'Conditional basis-adjustment scenario']]);
-      html+=table('Exit comparison',r.rows,[['policy','Exit policy'],['strategy','Strategy',x=>labels[x]],['terminal_after_tax_wealth','After-tax wealth',money],['difference_vs_full_sale','Vs same strategy, full sale',money],['incremental_wealth_vs_index','Vs Index, same policy',money],['cumulative_total_tax','Total taxes',money],['cumulative_net_costs','Net costs',money]],'Compare both columns: the policy effect and the strategy effect answer different questions.');
-      html+='<details><summary>Annual exit ledger</summary>'+table('Cash, basis and taxes',r.annual,[['policy','Policy'],['strategy','Strategy',x=>labels[x]],['year','Year'],['nav_start','Starting NAV',money],['partial_exit_proceeds','Sale proceeds to cash',money],['net_equity_basis_pre_exit','Remaining basis',money],['actual_capital_tax','Capital tax',money]])+'</details>';
+      const selected=strategyView==='all'?'core_130_30':strategyView;
+      const selectedRows=r.rows.filter(x=>x.strategy===selected),rows=strategyView==='all'?r.rows:selectedRows;
+      const full=selectedRows.find(x=>x.policy==='Full sale'),staged=selectedRows.find(x=>x.policy==='3-year full-portfolio exit'),death=selectedRows.find(x=>x.policy==='Hold until death');
+      html+='<div class="result-controls"><label>Strategy<select id="strategy-view">'+['core_130_30','index','long_only_di','all'].map(s=>`<option value="${s}"${s===strategyView?' selected':''}>${labels[s]||'All strategies'}</option>`).join('')+'</select></label><span>'+esc(labels[selected])+' · after-tax wealth at the same horizon</span></div>';
+      html+=cards([['Full sale',money(full.terminal_after_tax_wealth),'Includes outside cash and final taxes'],['3-year portfolio exit',staged?money(staged.terminal_after_tax_wealth):'Unavailable','Sale proceeds remain in cash'],['Hold until death',money(death.terminal_after_tax_wealth),'Uses the stated basis adjustment']]);
+      const columns=[['policy','Exit policy',policyLabel]];
+      if(strategyView==='all')columns.push(['strategy','Strategy',x=>labels[x]]);
+      columns.push(['terminal_after_tax_wealth','After-tax wealth',money],['difference_vs_full_sale','Vs full sale',money],['incremental_wealth_vs_index','Vs Index',money]);
+      html+=table('Exit policies',rows,columns,'Vs full sale compares the same strategy. Vs Index compares the same exit policy. Gift rows show combined donor and recipient wealth.');
+      html+=details('Taxes and costs',table('Cumulative amounts',rows,[['policy','Exit policy',policyLabel],['strategy','Strategy',x=>labels[x]],['cumulative_total_tax','Total taxes',money],['cumulative_net_costs','Net costs',money]]));
+      html+=details('Annual ledger',table('Cash, basis and taxes',r.annual.filter(x=>strategyView==='all'||x.strategy===selected),[['policy','Policy',policyLabel],['strategy','Strategy',x=>labels[x]],['year','Year'],['nav_start','Starting NAV',money],['partial_exit_proceeds','Sale proceeds to cash',money],['net_equity_basis_pre_exit','Remaining basis',money],['actual_capital_tax','Capital tax',money]]));
     } else if(mode==='one_time') {
-      html+=cards(r.searches.map(s=>['Core vs '+labels[s.comparator],s.roots_usd.length?s.roots_usd.map(money).join(', '):'No crossing',`One-time ${s.character.toUpperCase()} gain in year ${s.event_year}; search $0–$5M`]).concat([['Gain frequency','Once','Other years receive zero outside gains']]));
-      html+=table('One-time gain scenarios',r.rows,[['outside_gain','Outside gain',money],['strategy','Strategy',x=>labels[x]],['terminal_after_tax_wealth','After-tax wealth',money],['incremental_wealth_vs_index','Difference vs Index',money],['cumulative_total_tax','Total taxes',money]],'Identical gain proceeds are included in every strategy. A larger ending balance by itself is not evidence of better investment returns.');
-      html+='<details><summary>Break-even search diagnostics</summary><pre class="scope-json">'+esc(JSON.stringify(r.searches.map(({curve,...s})=>s),null,2))+'</pre></details>';
+      const million=r.rows.find(x=>x.strategy==='core_130_30'&&x.outside_gain===1000000);
+      html+=cards(r.searches.map(s=>['Break-even · Core vs '+labels[s.comparator],s.roots_usd.length?s.roots_usd.map(money).join(', '):'No crossing',`One ${s.character.toUpperCase()} gain in year ${s.event_year}; search $0–$5M`]).concat([['Core vs Index · $1M gain',money(million.incremental_wealth_vs_index),'Difference in terminal after-tax wealth']]));
+      const amounts=[...new Set(r.rows.map(x=>x.outside_gain))];
+      const rows=amounts.map(amount=>{
+        const by=Object.fromEntries(r.rows.filter(x=>x.outside_gain===amount).map(x=>[x.strategy,x.terminal_after_tax_wealth]));
+        return {outside_gain:amount,...by,vs_index:by.core_130_30-by.index,vs_di:by.core_130_30-by.long_only_di};
+      });
+      html+=table('Wealth by outside gain',rows,[['outside_gain','One-time gain',money],['index','Index',money],['long_only_di','Direct Indexing',money],['core_130_30','Core 130/30',money],['vs_index','Core vs Index',money],['vs_di','Core vs DI',money]],'The same gain proceeds enter each strategy. Compare the differences between strategies, not balances across different gain amounts.');
+      html+=details('Tax totals',table('Taxes by scenario',r.rows,[['outside_gain','Outside gain',money],['strategy','Strategy',x=>labels[x]],['cumulative_total_tax','Total taxes',money]]));
+      html+=details('Break-even search details','<pre class="scope-json">'+esc(JSON.stringify(r.searches.map(({curve,...s})=>s),null,2))+'</pre>');
     } else if(mode==='historical') {
       const h=r.results.harvest.summary;
       html+=cards([['Harvest + rebalance',money(h.terminal_after_tax_wealth),'Terminal wealth after all modeled taxes'],['Harvesting benefit',money(r.harvesting_benefit),'Vs same portfolio without harvesting'],['Difference vs benchmark',money(h.incremental_wealth_vs_benchmark),'Stock selection and leverage also contribute']]);
       html+=table('Matched comparisons',r.rows,[['strategy','Strategy',x=>labels[x]],['terminal_after_tax_wealth','After-tax wealth',money],['total_taxes','All taxes',money],['total_financing_and_fees_net_rebate','Net costs',money],['cumulative_harvested_losses','Harvested losses',money],['remaining_carry_st','Unused ST carry',money]]);
-      html+=chart(Object.entries(r.results).map(([name,run])=>({name:labels[name],values:run.daily.map(x=>x.total_investor_wealth)})));
-      html+='<details open><summary>Harvest portfolio · annual ledger</summary>'+table('Tax utilization',r.results.harvest.annual,[['year','Year'],['realized_st_loss','Realized ST losses',money],['realized_lt_loss','Realized LT losses',money],['loss_used_st','ST losses used',money],['loss_used_lt','LT losses used',money],['tax','Capital tax',money]])+'</details>';
-      html+='<details><summary>Trades and replacement events</summary>'+table('Trade ledger',r.results.harvest.trades,[['date','Date'],['ticker','Ticker'],['side','Side'],['reason','Reason'],['shares','Shares',number],['fee','Fee',money]])+'</details>';
-      html+='<details><summary>Exposure, financing and cash</summary>'+table('Daily ledger',r.results.harvest.daily,[['date','Date'],['long_pct','Long %',number],['short_pct','Short %',number],['debt','Financing debt',money],['investor_side_cash','Outside / investor cash',money],['active_substitutes','Temporary positions',v=>v.join(', ')]])+'</details>';
+      html+=chart(Object.entries(r.results).map(([name,run])=>({key:name,name:labels[name],dates:run.daily.map(x=>x.date),values:run.daily.map(x=>x.total_investor_wealth)})));
+      html+=details('Annual tax ledger',table('Tax utilization',r.results.harvest.annual,[['year','Year'],['realized_st_loss','Realized ST losses',money],['realized_lt_loss','Realized LT losses',money],['loss_used_st','ST losses used',money],['loss_used_lt','LT losses used',money],['tax','Capital tax',money]]));
+      html+=details('Trades and replacements',table('Trade ledger',r.results.harvest.trades,[['date','Date'],['ticker','Ticker'],['side','Side'],['reason','Reason',v=>v.replaceAll('_',' ')],['shares','Shares',number],['fee','Fee',money]]));
+      html+=details('Exposure, financing and cash',table('Daily ledger',r.results.harvest.daily,[['date','Date'],['long_pct','Long %',number],['short_pct','Short %',number],['debt','Financing debt',money],['investor_side_cash','Outside / investor cash',money],['active_substitutes','Temporary positions',v=>v.join(', ')] ]));
     } else {
-      html+=cards([['Median difference',money(r.median_delta),'Harvest portfolio minus benchmark'],['Benchmark win fraction',number(r.benchmark_win_fraction*100)+'%',`${r.draws} seeded draws; not a probability forecast`],['5th–95th percentile',money(r.p05_delta)+' to '+money(r.p95_delta),'Distribution of benchmark differences']]);
+      html+=cards([['Median vs benchmark',money(r.median_delta),'Difference in after-tax wealth'],['Portfolios ahead of benchmark',number(r.benchmark_win_fraction*100)+'%',`${r.draws} seeded draws; not a probability forecast`],['5th–95th percentile',money(r.p05_delta)+' to '+money(r.p95_delta),'Distribution of benchmark differences']]);
       html+=table('Every sampled portfolio',r.rows,[['sample_id','Draw'],['long_names','Long stocks',v=>v.join(', ')],['short_names','Short stocks',v=>v.join(', ')],['after_tax_terminal_wealth','After-tax wealth',money],['incremental_wealth_vs_benchmark','Vs benchmark',money],['harvesting_benefit','Vs no harvest',money]],`Seed ${r.seed}; formation ${r.formation_date}. No failing portfolio is silently removed.`);
     }
-    html+='<div class="panel limits"><h3>How to interpret this run</h3><ul>'+r.warnings.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
-    html+='<details><summary>Exact assumptions and source metadata</summary><pre class="scope-json">'+esc(JSON.stringify({config:r.request.config,data:r.data_metadata,metadata:r.metadata},null,2))+'</pre></details>';
+    html+=details('Assumptions and limitations','<ul class="limits">'+r.warnings.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>');
+    html+=details('Run details','<pre class="scope-json">'+esc(JSON.stringify({config:r.request.config,data:r.data_metadata,metadata:r.metadata},null,2))+'</pre>');
     $('output').innerHTML=html;$('output').classList.remove('dirty');
-    $('download').disabled=false;$('status').textContent='Study complete. Review results and export the replay package.';
+    $('download').disabled=false;$('status').textContent='Results updated. Ready to export.';
+    if($('strategy-view'))$('strategy-view').addEventListener('change',event=>{if(!busy){strategyView=event.target.value;render(lastResult);}});
   }
   $('study-form').addEventListener('submit',async event=>{
     event.preventDefault();if(busy||!base)return;busy=true;$('run').disabled=true;$('download').disabled=true;$('error').hidden=true;
+    if($('strategy-view'))$('strategy-view').disabled=true;
+    if(lastResult)$('output').classList.add('dirty');
     const enabled=[...$('study-form').querySelectorAll('input,select,textarea')].filter(el=>!el.disabled);
     enabled.forEach(el=>el.disabled=true);
     $('status').textContent='Running calculations…';
@@ -163,12 +204,13 @@
       const response=await fetch('/api/studies/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       const r=await response.json();if(!response.ok)throw Error(r.error||'The study could not finish.');
       lastResult=r;render(r);
+      if(window.matchMedia('(max-width:700px)').matches)$('results').scrollIntoView({behavior:'auto',block:'start'});
     } catch(error) {$('error').textContent=error.message;$('error').hidden=false;$('status').textContent='Please check the inputs and try again.';}
     finally {enabled.forEach(el=>el.disabled=false);busy=false;$('run').disabled=false;}
   });
   $('study-form').addEventListener('input',markDirty);$('study-form').addEventListener('change',markDirty);
   $('data-source').addEventListener('change',sourceFields);
-  document.querySelectorAll('[data-mode]').forEach(el=>el.addEventListener('click',()=>{if(!busy)setMode(el.dataset.mode);}));
+  document.querySelectorAll('[data-mode]').forEach(el=>el.addEventListener('click',()=>{if(!busy&&mode!==el.dataset.mode)setMode(el.dataset.mode);}));
   $('reset').addEventListener('click',()=>{if(!busy)reset();});
   $('download').addEventListener('click',()=>{if(lastResult)window.location.href='/api/studies/download/'+lastResult.run_id;});
   fetch('/api/studies/defaults').then(r=>{if(!r.ok)throw Error('Could not load the examples.');return r.json();}).then(r=>{base=r;setMode(mode);$('run').disabled=false;}).catch(e=>{$('error').hidden=false;$('error').textContent=e.message;});

@@ -1,0 +1,40 @@
+{
+  "checked_at_utc": "2026-11-17T06:34:21+00:00",
+  "scope": "Portfolio research UI and existing employer-request coverage; no financial-engine changes in this revision.",
+  "automated": {
+    "node_syntax": "pass",
+    "model_tests": 132,
+    "web_tests": 27,
+    "baseline_outputs_byte_identical": 14,
+    "study_replays_equal": 4,
+    "study_comparison_rows": 56,
+    "synthetic_cohort_draws": 20
+  },
+  "browser_checks": [
+    "All four analysis tabs executed with offline example inputs.",
+    "Exit filter showed 7 policies for a selected strategy and 21 rows for all strategies; Index summary values changed correctly.",
+    "Liquidity events displayed 4 gain amounts with all 3 strategies side by side.",
+    "Rebalancing chart showed 3 lines with observed date labels and USD axes.",
+    "Changing inputs disabled export and the result filter, and marked old results stale.",
+    "Reset restored the default horizon and positions; the form reset method is no longer shadowed by the reset button.",
+    "Rebalancing and sampling retained separate position drafts when switching tabs.",
+    "An invalid position weight showed a specific error and kept export disabled.",
+    "Clicking the active tab retained the current result.",
+    "Cohort export downloaded through the browser; all 5 ZIP entries passed CRC integrity checks.",
+    "390x844 responsive viewport: no page-level horizontal overflow; results scrolled into view after a successful run.",
+    "Default desktop viewport: run button visible with internally scrollable inputs; viewport override reset."
+  ],
+  "remaining_model_limits": [
+    "Wash-sale matching across rebalance trades, substitute disposals and household accounts is not implemented.",
+    "Exit and gift comparisons use annual aggregate assumptions rather than historical tax-lot paths; estate and gift taxes are excluded.",
+    "One-time gain break-even depends on assumed returns/losses and a finite search range; actual proceeds and basis require separate client inputs.",
+    "Random sampling is implemented, but authentic point-in-time index membership and delisted-security data have not been supplied."
+  ],
+  "assets_sha256": {
+    "web/dist/index.html": "1d46eab6df2a1cd4102d69cda0afb898b62c34a48cb626e7ece17cfec2abdb86",
+    "web/dist/studies.html": "52dac2622b1a6177ee9257aef01ad716509ea24b9fb7e654b47294ef4f194112",
+    "web/dist/studies.css": "15123e7d4ac6d30ff1e3baaf2db59676eca1ab23cc6eb1d8631d8f18bb346ca5",
+    "web/dist/studies.js": "a24ce5534cd52c95222b0dfaa8c6d45f39c533b736dece4f29bee1be1b60b26b"
+  },
+  "interpretation": "Software verification is not evidence of historical returns, actual tax savings, or complete sponsor acceptance."
+}

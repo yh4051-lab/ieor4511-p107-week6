@@ -1,18 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>P107 · Sponsor studies</title><link rel="stylesheet" href="/studies.css"><script src="/studies.js" defer></script></head>
+<title>P107 · Portfolio research</title><link rel="stylesheet" href="/studies.css"><script src="/studies.js" defer></script></head>
 <body>
 <a class="skip" href="#results">Skip to results</a>
-<header><a class="brand" href="/">P107 <span>Wedmont / Columbia</span></a><a href="/">← Main comparison</a></header>
+<header class="topbar"><a class="brand" href="/"><span class="brand-symbol">P107</span><span>Wedmont <span class="brand-divider">/</span> Columbia<small>IEOR E4511 · PROJECT STUDY</small></span></a><div class="top-links"><a href="/">Strategy comparison</a><span aria-current="page">Portfolio research</span></div></header>
 <main>
-<div class="heading"><div><p class="eyebrow">NOVEMBER 10 · EMPLOYER FOLLOW-UP</p><h1>Four questions. One research workspace.</h1><p>Explore rebalancing, exit choices, one-time gains and portfolio selection.</p></div><span class="badge">Local calculations</span></div>
-<nav aria-label="Choose a study" id="study-nav">
-<button type="button" data-mode="historical">01 · Rebalance & replace</button><button type="button" data-mode="exits" aria-current="page">02 · Exit choices</button><button type="button" data-mode="one_time">03 · One-time gains</button><button type="button" data-mode="cohort">04 · Random portfolios</button>
+<div class="heading"><div><p class="eyebrow">LONG-SHORT DIRECT INDEXING</p><h1>Portfolio research</h1><p>Compare portfolio rules, exit strategies and the timing of outside gains.</p></div><a class="scope-link" href="#model-coverage">Model coverage <span aria-hidden="true">↗</span></a></div>
+<nav aria-label="Research analysis" id="study-nav">
+<button type="button" data-mode="historical">Rebalancing</button><button type="button" data-mode="exits" aria-current="page">Exit planning</button><button type="button" data-mode="one_time">Liquidity events</button><button type="button" data-mode="cohort">Portfolio sampling</button>
 </nav>
 <div class="layout">
-<form id="study-form" class="panel">
-<div class="form-head"><h2 id="input-title">Study inputs</h2><button type="button" id="reset">Reset example</button></div>
+<form id="study-form" class="panel input-panel">
+<div class="form-head"><h2 id="input-title">Parameters</h2><button type="button" id="reset">Reset</button></div>
+<div class="inputs-scroll">
 <p id="study-description" class="muted"></p>
 <label>Starting investment ($)<input id="cash" type="number" min="10000" max="100000000" value="1000000" required></label>
 <div id="annual-fields">
@@ -20,11 +21,13 @@
 <p class="note">Illustrative annual returns and harvested losses, not historical stock prices. All strategies start with the same cash.</p>
 <div id="exit-fields">
 <label>Annual outside gains ($)<input id="annual-gain" type="number" min="0" max="100000000" value="100000" required></label>
+<details class="input-group"><summary>Inheritance and gifts</summary>
 <label>Core embedded gain attributed to eligible long holdings (%)<input id="stepup" type="number" min="0" max="100" step="any" value="80" required></label>
 <p class="note">Assumption for the death scenario. Long-only holdings use full FMV basis adjustment. Short liabilities receive no automatic adjustment.</p>
 <label>Gift at start of year<input id="gift-year" type="number" min="1" max="10" step="1" value="3" required></label>
 <div class="pair"><label>Recipient ST tax (%)<input id="recipient-st" type="number" min="0" max="60" step="any" value="40"></label><label>Recipient LT tax (%)<input id="recipient-lt" type="number" min="0" max="60" step="any" value="20"></label></div>
 <p class="note">Gift wealth combines donor and recipient assets after separate taxes. It is not cash retained by the donor alone. Estate and gift taxes are excluded.</p>
+</details>
 </div>
 <div id="gain-fields" hidden>
 <label>One-time gain in year<input id="event-year" type="number" min="1" max="10" step="1" value="2" required></label>
@@ -39,7 +42,7 @@
 <label>Benchmark ticker<input id="benchmark" value="SPY" required></label>
 <label>Positions and replacements<textarea id="positions" rows="5" spellcheck="false" required>T1,long,1,S1
 T2,short,1,S2</textarea></label>
-<p class="note">One row per stock: ticker, long/short, relative weight, replacement ticker. In Random portfolios, this defines the replacement map; the membership file defines the sample universe.</p>
+<p class="note">One row per stock: ticker, long/short, relative weight, replacement ticker. For portfolio sampling, these rows define replacements; the membership file defines the universe.</p>
 <label class="check" id="review-label" hidden><input id="replacement-reviewed" type="checkbox"> I have reviewed these replacement assumptions. This does not certify household wash-sale compliance.</label>
 <label id="history-upload-label" hidden>Price observations (.json)<input id="history-file" type="file" accept=".json,application/json"></label>
 <div class="pair"><label>Rebalance every (sessions)<input id="rebalance" type="number" min="1" max="10000" step="1" value="20" required></label><label>Loss trigger (%)<input id="threshold" type="number" min="0.01" max="100" step="any" value="8" required></label></div>
@@ -52,20 +55,32 @@ T2,short,1,S2</textarea></label>
 <p class="note">Optional for the synthetic example; required for other data. Columns: ticker, member_from, member_to, published_as_of, source_id, point_in_time_verified. Membership ends are exclusive; formation uses the start date. No genuine S&P 500 membership file is included.</p>
 </div>
 </div>
-<details><summary>Costs and tax assumptions</summary>
+<details class="input-group"><summary>Fees, financing and taxes</summary>
 <div class="pair"><label>ST / donor tax (%)<input id="tax-st" type="number" min="0" max="60" step="any" value="40"></label><label>LT / donor tax (%)<input id="tax-lt" type="number" min="0" max="60" step="any" value="20"></label></div>
 <div class="pair"><label>Manager fee (%)<input id="manager" type="number" min="0" max="10" step="any" value="0.4"></label><label>Advisor fee (%)<input id="advisor" type="number" min="0" max="10" step="any" value="0.1"></label></div>
 <div class="pair"><label>Financing (%)<input id="finance" type="number" min="0" max="30" step="any" value="5"></label><label>Borrow (%)<input id="borrow" type="number" min="0" max="20" step="any" value="1"></label></div>
 <div class="pair"><label>Short rebate (%)<input id="rebate" type="number" min="0" max="20" step="any" value="0"></label><label>Historical trading cost (%)<input id="trade" type="number" min="0" max="5" step="any" value="0.05"></label></div>
 <p class="note">Annual rates except per-trade cost. Index manager fee is 0.03%; DI is 0.25% in annual studies. These are assumptions, not current quotes. Historical studies apply the advisor fee to every comparison.</p>
 </details>
-<div class="run-bar"><button id="run" class="primary" type="submit" disabled>Run study →</button><p id="status" role="status" aria-live="polite">Loading examples…</p></div>
+</div>
+<div class="run-bar"><button id="run" class="primary" type="submit" disabled>Run analysis <span aria-hidden="true">→</span></button><p id="status" role="status" aria-live="polite">Loading parameters…</p></div>
 </form>
 <section id="results" tabindex="-1">
-<div class="results-head"><div><p class="eyebrow" id="result-label">ILLUSTRATIVE SCENARIOS</p><h2 id="result-title">Compare the exit choices</h2></div><button id="download" disabled>Download study ZIP ↓</button></div>
+<div class="results-head"><div><span class="data-badge" id="result-label">Annual scenario</span><h2 id="result-title">Exit strategy comparison</h2></div><button id="download" disabled>Export results <span aria-hidden="true">↓</span></button></div>
+<p id="scope-note" class="scope-note"></p>
 <div id="error" class="error" role="alert" hidden></div>
-<div id="output"><div class="empty panel"><h3>Start with a reproducible example</h3><p>Choose a study, review the inputs, then press Run study. Results include after-tax wealth, costs and an audit trail.</p><p>Historical examples use synthetic fixtures. Real-market conclusions require documented prices, membership and replacement assumptions.</p></div></div>
+<div id="output"><div class="empty panel"><h3>No results yet</h3><p>Review the parameters and select Run analysis.</p></div></div>
 </section>
 </div>
-<footer>IEOR E4511 · P107 research model · Prices, taxes and execution have stated limits. Passing software tests does not establish investment performance.</footer>
+<section id="model-coverage" class="coverage panel" tabindex="-1">
+<div class="section-heading"><div><p class="eyebrow">MODEL COVERAGE</p><h2>What the model currently covers</h2></div><span class="muted">Research model · November 2026</span></div>
+<div class="table-scroll"><table><thead><tr><th>Analysis</th><th>Available</th><th>Still needed</th></tr></thead><tbody>
+<tr><td>Rebalancing</td><td>130/30 targets, replacement positions and trade ledgers</td><td>Full wash-sale matching and historical borrow constraints</td></tr>
+<tr><td>Exit planning</td><td>3–5-year sales, extension reduction, death and gift scenarios</td><td>Historical tax-lot exits; estate and gift tax treatment</td></tr>
+<tr><td>Liquidity events</td><td>One-time $1M / $3M / $5M gains and break-even comparisons</td><td>Client-specific gain timing, proceeds and basis</td></tr>
+<tr><td>Portfolio sampling</td><td>Seeded random portfolios and matched controls</td><td>Verified PIT membership and delisted-security data</td></tr>
+</tbody></table></div>
+<p class="note">Synthetic examples check the software. They do not establish historical performance or actual tax savings.</p>
+</section>
+<footer><span>Wedmont / Columbia · IEOR E4511 · P107</span><span>All amounts in USD. Results depend on the stated inputs.</span></footer>
 </main></body></html>
