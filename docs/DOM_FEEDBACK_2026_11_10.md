@@ -64,10 +64,15 @@ historical run is only as reliable as those observations and assumptions.
   basis is adjusted at death. The residual fraction remains exposed to tax,
   including short-related liabilities. The fraction must be supplied; no
   exact security-level attribution is available in the aggregate model.
-- `{"mode":"gift","recipient_liquidates":true}` passes the original basis
-  to the gift recipient and models a **same-day recipient sale** for an
-  apples-to-apples after-tax comparison. Without immediate liquidation,
-  gifted property is not equivalent to spendable after-tax wealth.
+- `{"mode":"gift","gift_year":3,"recipient_liquidates":true,
+  "recipient_tax_st":0.25,"recipient_tax_lt":0.15}` transfers the original
+  basis in Year 3, **does not transfer personal donor capital-loss
+  carryforwards**, applies recipient rates in later years, and models a
+  recipient sale at the end of the original horizon for an apples-to-apples
+  after-tax comparison. The default gift year is the final year.
+  An unliquidated gift is not equivalent to spendable after-tax wealth.
+  Donor credits, any gift taxes and family-level tax netting require
+  separate analysis.
 - None of these calculate estate or gift tax, state-specific nuances,
   special dual-basis loss rules for gifts, inheritance exceptions,
   dividend timing, detailed short character, or full household tax returns.
@@ -163,3 +168,20 @@ and reproducible 20-portfolio cohort.
 
 **Public repo security:** only synthetic code/config/test data in this PR.
 Do not push restricted provider PDFs or real investor records.
+
+
+## Tax primary references
+
+- IRS Publication 550: <https://www.irs.gov/publications/p550> describes
+  the 30-day **before and after** wash-sale window, substantially identical
+  securities, spouses/IRA and special short-sale considerations. A 30-day
+  cooldown plus a user-reviewed replacement is **not** a compliance
+  guarantee. The replacement rule here is deliberately described as a
+  testable account-level proxy.
+- IRS Publication 551: <https://www.irs.gov/publications/p551> distinguishes
+  inherited basis (usually FMV at death) from gift basis (usually donor basis,
+  with special dual-basis rules when FMV is below donor basis). No generalized
+  death step-up is applied to short liabilities in the model.
+
+As of November 2026 these remain research references, not a complete
+tax treatment for each client or transaction. Consult specialized tax counsel.
