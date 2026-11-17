@@ -304,6 +304,26 @@ def _simulate(c, data, dates, level, benchmark=False):
 
 
 def run_research(inputs, history_provider=None):
+    if isinstance(inputs,dict) and inputs.get('engine_mode')=='rebalanced_13030':
+        from .dom_historical import historical_13030
+        if history_provider is None:
+            from .market_data import load_history
+            history_provider=load_history
+        try:
+            positions=inputs['positions'];alternates=inputs['substitutes']
+            tickers=list(dict.fromkeys([p['ticker'].strip().upper() for p in positions]+
+                          [alternates[p['ticker'].strip().upper()]['ticker'].strip().upper()
+                           for p in positions]))
+            benchmark=normalize_ticker(inputs.get('benchmark','SPY'))
+            tickers=[t for t in tickers if t!=benchmark]+[benchmark]
+            data=history_provider(tickers,inputs['start_date'],inputs['end_date'])
+        except (KeyError,TypeError,AttributeError) as error:
+            raise ValueError('Rebalanced engine requires positions, reviewed substitutes and dates') from error
+        result=historical_13030(inputs,data)
+        result['positions']=list(positions)
+        result['metadata']['inputs']=deepcopy(inputs)
+        result['metadata']['data_metadata']=data.get('metadata',{})
+        return result
     c = _config(inputs)
     if history_provider is None:
         from .market_data import load_history

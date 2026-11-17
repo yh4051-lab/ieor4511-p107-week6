@@ -80,3 +80,87 @@ def sensitivity_configs(config):
         for timing in ['initial','terminal']:
             add('outside_gains_timing',with_gains(config,500000,character,timing),f'{character}_{timing}_500000')
     return result
+
+
+def one_time_gain_comparison(config, amounts=(0, 1000000, 3000000, 5000000),
+                             event_year=1, character='st', target='core_130_30',
+                             comparator='long_only_di'):
+    """Evaluate a one-time outside gain, not a recurring annual gain.
+
+    IMPORTANT: the scenario prototype assumes gross proceeds of the outside
+    sale equal the modeled gain; real client proceeds must be supplied separately.
+    Compare *incremental* wealth, because both strategies receive the same
+    outside cash flow.
+    """
+    if target == comparator:
+        raise ValueError('Target and comparator must differ')
+    if type(event_year) is not int or not 1 <= event_year <= config['horizon_years']:
+        raise ValueError('event_year outside investment horizon')
+    rows = []
+    for amount in amounts:
+        c = with_gains(config, float(amount), character, 'year', event_year)
+        summary, _ = compare(c)
+        mapped = {x['strategy']: x for x in summary}
+        if target not in mapped or comparator not in mapped:
+            raise ValueError('Strategy name not found in model')
+        a, b = mapped[target], mapped[comparator]
+        rows.append(dict(outside_gain_usd=float(amount), event_year=event_year,
+                         character=character, target=target, comparator=comparator,
+                         target_terminal_wealth=a['terminal_after_tax_wealth'],
+                         comparator_terminal_wealth=b['terminal_after_tax_wealth'],
+                         incremental_after_tax_wealth=a['terminal_after_tax_wealth'] -
+                                                      b['terminal_after_tax_wealth'],
+                         target_harvested_losses=a['cumulative_harvested_st_loss'] +
+                                                 a['cumulative_harvested_lt_loss'],
+                         hypothetical=True))
+    return rows
+
+
+def one_time_gain_breakeven(config, event_year=1, character='st',
+                            target='core_130_30', comparator='long_only_di',
+                            maximum=5000000, step=25000):
+    """Find crossing(s) against *one* outside gain event with bounded grid.
+
+    Non-monotone outcomes can cross more than once. No root is not zero
+    breakeven; return an explicit not-found status and grid diagnostics.
+    """
+    if not isfinite(maximum) or maximum <= 0 or not isfinite(step) or step <= 0:
+        raise ValueError('Invalid positive finite search range or step')
+    if maximum / step > 10000:
+        raise ValueError('Grid too large; choose a larger step')
+    if type(event_year) is not int or not 1 <= event_year <= config['horizon_years']:
+        raise ValueError('Invalid event year')
+    def delta(x):
+        return one_time_gain_comparison(config, (x,), event_year, character,
+                                        target, comparator)[0]['incremental_after_tax_wealth']
+    points = [(0., delta(0.))]
+    count = int(maximum / step)
+    points += [(i * step, delta(i * step)) for i in range(1, count + 1)]
+    if points[-1][0] < maximum:
+        points.append((maximum, delta(maximum)))
+    roots = []
+    for (a, fa), (b, fb) in zip(points, points[1:]):
+        if abs(fa) < 1e-7:
+            roots.append(a)
+        if fa * fb < 0:
+            lo, hi, fl = a, b, fa
+            for _ in range(55):
+                mid = (lo + hi) / 2
+                fm = delta(mid)
+                if fl * fm <= 0:
+                    hi = mid
+                else:
+                    lo, fl = mid, fm
+            roots.append((lo + hi) / 2)
+    if abs(points[-1][1]) < 1e-7:
+        roots.append(points[-1][0])
+    roots = sorted(set(round(x, 4) for x in roots))
+    return dict(status='crossing_found' if roots else 'no_crossing_in_range',
+                event_year=event_year, character=character,
+                schedule='one_time_only', target=target, comparator=comparator,
+                roots_usd=roots, residuals_usd=[delta(x) for x in roots],
+                search_max=maximum, scan_step=step,
+                delta_at_zero_usd=points[0][1],
+                delta_at_max_usd=points[-1][1],
+                caveat='Finite-grid search detects sign-change roots, not tangencies; '
+                       'no crossing is not proof a strategy is always superior.'), points

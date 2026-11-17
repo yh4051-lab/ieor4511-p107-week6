@@ -84,3 +84,36 @@ files. The original illustrative annual model remains separate. Tax rules are
 simplified research assumptions; complete assumptions are retained in exported
 JSON and the run-specific **Assumptions & scope** tab. Legacy research-level
 API/CLI inputs remain supported for prior-run replay.
+
+
+## Follow-up work: November 10 sponsor feedback
+
+The repository includes an **opt-in research extension** addressing Dominic
+Corabi's four questions: 130/30 rebalancing and explicit temporary securities,
+full/gradual/death/gift exits, one-time $1M/$3M/$5M external-gain break-even,
+and reproducible multi-portfolio sampling from source-verified point-in-time
+membership rows.
+
+See **[Implementation and replication guide](docs/DOM_FEEDBACK_2026_11_10.md)**.
+
+The new modules and CLI are research prototypes, not verified tax or portfolio
+recommendations. The repository contains synthetic stock and membership
+fixtures only. **It does not contain genuine point-in-time S&P 500 constituents,
+complete historical borrow data, independently validated wash-sale substitutes,
+or real client tax-lot histories.** Presenting the synthetic cohort as observed
+S&P 500 performance would be incorrect.
+
+Quick offline reproducibility check:
+
+```sh
+python -m unittest discover -s tests -v
+python tools/dom_feedback.py scenario --config configs/example_hypothetical.json --event-year 2 --stepup-long-fraction 0.8 --out dom_scenario_results.json
+python tools/dom_feedback.py historical --config configs/example_dom_historical.json --historical-data examples/dom_synthetic_history.json --out dom_historical_results.json
+python tools/dom_feedback.py cohort --config configs/example_dom_historical.json --memberships examples/dom_synthetic_memberships.csv --historical-data examples/dom_synthetic_history.json --asof 2020-01-01 --long-count 3 --short-count 3 --samples 20 --seed 4511 --out dom_cohort_results.json
+```
+
+These commands use synthetic demonstration inputs and do not require network
+access or changes to the existing browser interface. Historical
+`/api/research/run` also accepts an opt-in
+`engine_mode: "rebalanced_13030"` payload; the legacy browser form retains
+its original input fields. Use the detailed guide for review safeguards.

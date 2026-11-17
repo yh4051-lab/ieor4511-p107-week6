@@ -1,0 +1,39 @@
+name: Verify Dom feedback research extensions
+
+on:
+  push:
+    branches: [dom-feedback-2026-11-10]
+  pull_request:
+    branches: [main]
+
+jobs:
+  research-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile source and all tests
+        run: python -m compileall -q p107 tests tools
+      - name: Unit/regression tests (no external prices)
+        run: python -m unittest discover -s tests -v
+      - name: Run sponsor scenario and synthetic historical cohort examples
+        run: |
+          python tools/dom_feedback.py scenario --config configs/example_hypothetical.json --out /tmp/dom_scenarios.json --event-year 2 --stepup-long-fraction 0.8
+          python tools/dom_feedback.py historical --config configs/example_dom_historical.json --historical-data examples/dom_synthetic_history.json --out /tmp/dom_history.json
+          python tools/dom_feedback.py cohort --config configs/example_dom_historical.json --memberships examples/dom_synthetic_memberships.csv --historical-data examples/dom_synthetic_history.json --out /tmp/dom_cohort.json --asof 2020-01-01 --long-count 3 --short-count 3 --samples 20 --seed 4511
+          python - <<'PY'
+          import json
+          a=json.load(open('/tmp/dom_scenarios.json'))
+          h=json.load(open('/tmp/dom_history.json'))
+          c=json.load(open('/tmp/dom_cohort.json'))
+          assert len(a['one_time_gains']) == 3
+          assert len(a['exit_scenarios']) == 6
+          assert h['summary']['target_long_pct'] == 130
+          assert len(c['results']) == 20
+          assert c['seed'] == 4511
+          print('Verified scenario, historic synthetic ledger and 20 deterministic cohorts.')
+          PY

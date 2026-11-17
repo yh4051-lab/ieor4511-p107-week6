@@ -1,0 +1,92 @@
+{
+  "engine_mode": "rebalanced_13030",
+  "initial_cash": 1000000,
+  "start_date": "2020-01-01",
+  "end_date": "2020-03-30",
+  "benchmark": "SPY",
+  "positions": [
+    {
+      "ticker": "T1",
+      "side": "long",
+      "weight": 1
+    },
+    {
+      "ticker": "T2",
+      "side": "short",
+      "weight": 1
+    }
+  ],
+  "substitutes": {
+    "T1": {
+      "ticker": "S1",
+      "reviewed_not_substantially_identical": true
+    },
+    "T2": {
+      "ticker": "S2",
+      "reviewed_not_substantially_identical": true
+    },
+    "T3": {
+      "ticker": "S3",
+      "reviewed_not_substantially_identical": true
+    },
+    "T4": {
+      "ticker": "S4",
+      "reviewed_not_substantially_identical": true
+    },
+    "T5": {
+      "ticker": "S5",
+      "reviewed_not_substantially_identical": true
+    },
+    "T6": {
+      "ticker": "S6",
+      "reviewed_not_substantially_identical": true
+    },
+    "T7": {
+      "ticker": "S7",
+      "reviewed_not_substantially_identical": true
+    },
+    "T8": {
+      "ticker": "S8",
+      "reviewed_not_substantially_identical": true
+    },
+    "T9": {
+      "ticker": "S9",
+      "reviewed_not_substantially_identical": true
+    },
+    "T10": {
+      "ticker": "S10",
+      "reviewed_not_substantially_identical": true
+    },
+    "T11": {
+      "ticker": "S11",
+      "reviewed_not_substantially_identical": true
+    },
+    "T12": {
+      "ticker": "S12",
+      "reviewed_not_substantially_identical": true
+    }
+  },
+  "long_exposure_pct": 130,
+  "short_exposure_pct": 30,
+  "rebalance_every_sessions": 20,
+  "cooldown_days": 30,
+  "minimum_holding_days": 31,
+  "financing_pct": 5,
+  "borrow_pct": 1,
+  "rebate_pct": 0,
+  "manager_pct": 0.4,
+  "transaction_pct": 0.05,
+  "tax_st_pct": 40,
+  "tax_lt_pct": 20,
+  "ordinary_tax_pct": 40,
+  "dividend_tax_pct": 20,
+  "harvest_threshold_pct": 8,
+  "outside_gain_events": [
+    {
+      "year": 2020,
+      "amount": 1000000,
+      "character": "st"
+    }
+  ],
+  "provenance": "SYNTHETIC_TEST_DATA_ONLY"
+}
