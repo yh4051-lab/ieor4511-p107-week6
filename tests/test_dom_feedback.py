@@ -88,13 +88,30 @@ class ExitScenarios(unittest.TestCase):
                                 regular['terminal_after_tax_wealth']-1e-7)
         self.assertNotEqual(rows[-1]['step_up_exempt_embedded_gain'],0)
 
-    def test_gift_carries_basis_and_immediate_recipient_sale(self):
-        c=illustrative();c['exit_policy']={'mode':'gift','recipient_liquidates':True}
-        gift,_=simulate(c,'core_130_30')
-        sold,_=simulate(illustrative(),'core_130_30')
+    def test_gift_carries_basis_and_recipient_liquidation(self):
+        c=illustrative()
+        # With no earlier harvesting, no personal donor loss carry is forfeited.
+        for strategy in c['strategies']:
+            strategy['harvest_st_rates']=[0.]*10
+            strategy['harvest_lt_rates']=[0.]*10
+        c['exit_policy']={'mode':'gift','gift_year':3,'recipient_liquidates':True}
+        gift,rows=simulate(c,'core_130_30')
+        same=deepcopy(c);same.pop('exit_policy')
+        sold,_=simulate(same,'core_130_30')
         self.assertAlmostEqual(gift['terminal_after_tax_wealth'],
                                sold['terminal_after_tax_wealth'])
         self.assertEqual(gift['exit_mode'],'gift')
+        self.assertEqual(rows[2]['gift_year'],3)
+
+    def test_recipient_tax_rates_change_gift_outcome(self):
+        c=illustrative()
+        c['exit_policy']={'mode':'gift','gift_year':3,'recipient_liquidates':True,
+                          'recipient_tax_st':.10,'recipient_tax_lt':.10,
+                          'recipient_ordinary_tax':.10}
+        gift,rows=simulate(c,'core_130_30')
+        self.assertGreater(gift['terminal_after_tax_wealth'],0)
+        self.assertEqual(rows[2]['gift_year'],3)
+        self.assertTrue(gift['exit_caveat'])
 
     def test_three_four_five_year_unwind(self):
         for years in [3,4,5]:
