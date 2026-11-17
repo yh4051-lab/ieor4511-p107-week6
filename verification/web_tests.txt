@@ -27,6 +27,6 @@ test_stock_launcher_rejects_prior_research_server (test_web.HttpTests.test_stock
 test_three_level_research_endpoint (test_web.HttpTests.test_three_level_research_endpoint) ... ok
 
 ----------------------------------------------------------------------
-Ran 27 tests in 1.511s
+Ran 27 tests in 1.579s
 
 OK

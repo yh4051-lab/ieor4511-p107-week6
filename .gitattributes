@@ -1,0 +1,4 @@
+# Keep hashed synthetic inputs byte-identical on Windows and Linux checkouts.
+configs/example_dom_historical.json text eol=lf
+examples/dom_synthetic_history.json text eol=lf
+examples/dom_synthetic_memberships.csv text eol=lf
