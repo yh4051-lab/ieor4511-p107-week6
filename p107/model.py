@@ -216,14 +216,29 @@ def compare(config):
     return [x[0] for x in results], [r for x in results for r in x[1]]
 
 
-def with_gains(config, amount, character='st', timing='annual'):
+def with_gains(config, amount, character='st', timing='annual', event_year=None):
+    """Add outside capital gains without treating a one-time event as an annuity.
+
+    A gain amount is also modeled as equal gross cash proceeds in this teaching
+    prototype. Real clients require independent sale proceeds and gain basis.
+    event_year is 1-indexed and may be used with timing='year'.
+    """
     c = deepcopy(config)
-    n = len(c['market_price_returns'])
-    c['outside_st_gains'] = [0.0]*n
-    c['outside_lt_gains'] = [0.0]*n
-    if character not in ('st','lt') or timing not in ('annual','initial','terminal'):
+    n = c['horizon_years']
+    if (not isfinite(amount)) or amount < 0:
+        raise ValueError('Outside gain must be finite and nonnegative')
+    if character not in ('st', 'lt') or timing not in ('annual', 'initial', 'terminal', 'year'):
         raise ValueError('Unsupported gain character or timing')
+    if event_year is not None and timing != 'year':
+        raise ValueError("event_year requires timing='year'")
+    if timing == 'year' and (type(event_year) is not int or not 1 <= event_year <= n):
+        raise ValueError('event_year must be a year within the holding period')
+    for suffix in ('st', 'lt'):
+        c[f'outside_{suffix}_gains'] = [0.0] * len(c['market_price_returns'])
     arr = c[f'outside_{character}_gains']
-    if timing == 'annual': arr[:] = [amount]*n
-    else: arr[0 if timing=='initial' else c['horizon_years']-1] = amount
+    if timing == 'annual':
+        arr[:n] = [float(amount)] * n
+    else:
+        idx = 0 if timing == 'initial' else n-1 if timing == 'terminal' else event_year-1
+        arr[idx] = float(amount)
     return c
