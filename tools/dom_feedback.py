@@ -64,7 +64,7 @@ def sampling(config, memberships_csv, asof, count, longs, shorts, seed, out):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('mode',choices=('scenario','historical','sample'))
+    parser.add_argument('mode',choices=('scenario','historical','sample','cohort'))
     parser.add_argument('--config',required=True,type=Path)
     parser.add_argument('--out',required=True,type=Path)
     parser.add_argument('--historical-data',type=Path)
@@ -85,6 +85,19 @@ def main():
     elif a.mode=='historical':
         if not a.historical_data:parser.error('--historical-data JSON is required')
         historical(c,a.historical_data,a.out)
+    elif a.mode=='cohort':
+        if not a.memberships or not a.historical_data:
+            parser.error('Cohort requires --memberships CSV and --historical-data JSON')
+        with a.memberships.open(encoding='utf-8-sig',newline='') as fp:
+            members=list(csv.DictReader(fp))
+        for row in members:
+            row['point_in_time_verified']=row.get('point_in_time_verified','').lower()=='true'
+        data=json.loads(a.historical_data.read_text(encoding='utf-8'))
+        analysis=evaluate_portfolio_cohort(
+            c,members,a.asof,a.long_count,a.short_count,
+            lambda spec:historical_13030(spec,deepcopy(data)),
+            draws=a.samples,seed=a.seed)
+        dump(a.out,analysis)
     else:
         if not a.memberships:parser.error('--memberships CSV is required')
         sampling(c,a.memberships,a.asof,a.samples,a.long_count,a.short_count,a.seed,a.out)
