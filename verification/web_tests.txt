@@ -9,6 +9,8 @@ test_launcher_skips_old_build_without_stopping_its_process (test_web.AdapterTest
 test_launcher_starts_on_free_default_port_and_opens_actual_url (test_web.AdapterTests.test_launcher_starts_on_free_default_port_and_opens_actual_url) ... ok
 test_long_term_switch_clears_short_term_gains (test_web.AdapterTests.test_long_term_switch_clears_short_term_gains) ... ok
 test_no_outside_gains_reverses_core_comparison (test_web.AdapterTests.test_no_outside_gains_reverses_core_comparison) ... ok
+test_assumptions_page_navigation_and_assets (test_web.HttpTests.test_assumptions_page_navigation_and_assets) ... ok
+test_assumptions_reference_preserves_distinct_engine_defaults (test_web.HttpTests.test_assumptions_reference_preserves_distinct_engine_defaults) ... ok
 test_bad_json_and_wrong_content_type_return_errors (test_web.HttpTests.test_bad_json_and_wrong_content_type_return_errors) ... ok
 test_integrated_exposure_allocation_endpoint_and_launcher (test_web.HttpTests.test_integrated_exposure_allocation_endpoint_and_launcher) ... ok
 test_landing_navigation_from_external_link_is_allowed (test_web.HttpTests.test_landing_navigation_from_external_link_is_allowed) ... ok
@@ -27,6 +29,6 @@ test_stock_launcher_rejects_prior_research_server (test_web.HttpTests.test_stock
 test_three_level_research_endpoint (test_web.HttpTests.test_three_level_research_endpoint) ... ok
 
 ----------------------------------------------------------------------
-Ran 27 tests in 1.527s
+Ran 29 tests in 1.588s
 
 OK

@@ -154,6 +154,38 @@ class AdapterTests(unittest.TestCase):
 
 
 class HttpTests(unittest.TestCase):
+    def test_assumptions_reference_preserves_distinct_engine_defaults(self):
+        status, raw, _ = self.request('GET', '/api/assumptions')
+        self.assertEqual(status, 200)
+        data = json.loads(raw)
+        rows = {r[0]: r[1:] for r in data['defaults']}
+        # Different pages really use different rebate, borrow and loss rules.
+        # Collapsing them into a universal default would misdescribe the model.
+        self.assertEqual(rows['Short rebate rate'], ['4%', '0%', '0%', '0%'])
+        self.assertEqual(rows['Short borrow rate'], ['0.2%', '1%', '1%', '1%'])
+        self.assertEqual(rows['Loss rule'][1], '5% loss trigger')
+        self.assertEqual(rows['Loss rule'][3], '8% loss trigger')
+        self.assertEqual(data['loss_curves'][2]['rates'][0], 15)
+        self.assertEqual(data['sampling_defaults']['seed'], 4511)
+        ids = [e['id'] for e in data['entries']]
+        self.assertEqual(len(ids), len(set(ids)))
+        modes = {m['id'] for m in data['modes']}
+        for entry in data['entries']:
+            self.assertTrue(set(entry['modes']) <= modes)
+            self.assertTrue(entry['method'] and entry['limit'])
+            for source in entry['sources']:
+                self.assertTrue((server.MODEL_ROOT/source).is_file(), source)
+
+    def test_assumptions_page_navigation_and_assets(self):
+        status, raw, _ = self.request('GET', '/assumptions', headers={
+            'Sec-Fetch-Site':'cross-site', 'Sec-Fetch-Mode':'navigate'})
+        self.assertEqual(status, 200)
+        self.assertIn(b'Assumptions &amp; methodology', raw)
+        for path in ('/assumptions.js','/assumptions.css'):
+            self.assertEqual(self.request('GET', path)[0], 200)
+        self.assertEqual(self.request('GET','/api/assumptions',headers={
+            'Sec-Fetch-Site':'cross-site','Sec-Fetch-Mode':'cors'})[0],403)
+
     @classmethod
     def setUpClass(cls):
         cls.server = server.AppServer(('127.0.0.1', 0))

@@ -156,7 +156,8 @@ footer { display: flex; justify-content: space-between; gap: 16px; border-top: 1
   .top-links { gap: 15px; font-size: 11px; }
 }
 @media (max-width:700px) {
-  .topbar { height: 66px; padding: 0 17px; }
+  .topbar { height: auto; min-height: 66px; padding: 14px 17px 12px; flex-wrap: wrap; gap: 12px; }
+  .top-links { width: 100%; flex-wrap: wrap; }
   .brand { gap: 10px; font-size: 12px; }
   .brand-symbol { width: 35px; height: 35px; font-size: 12px; }
   .brand-divider { margin: 0 3px; }

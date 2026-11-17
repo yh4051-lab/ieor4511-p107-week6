@@ -1,0 +1,24 @@
+{
+  "reviewed": "2026-11-17",
+  "page": "/assumptions",
+  "topics": 42,
+  "categories": 9,
+  "calculation_modes": 6,
+  "checks": [
+    "All 42 topics render, with short answers, methods, limitations and source links.",
+    "Search, calculation filters, clear, empty state, quick links and expand/collapse were exercised in the browser.",
+    "Rebalancing-only defaults show the corresponding shipped input values.",
+    "Desktop layout was visually inspected.",
+    "At 390 x 844, the reference, comparison and research pages have no document-width overflow and navigation remains available.",
+    "Main comparison and portfolio research links reach the reference page.",
+    "No browser console errors were observed."
+  ],
+  "automated_verification": {
+    "command": "python -B -X utf8 tools/verify_project.py",
+    "model_tests_passed": 132,
+    "web_tests_passed": 29,
+    "byte_identical_outputs": 14,
+    "javascript_syntax": "node --check web/dist/assumptions.js"
+  },
+  "scope": "Reference UI and documentation only; no changes to financial engines. Print-dialog behavior was not browser-tested. Tests do not validate investment assumptions."
+}

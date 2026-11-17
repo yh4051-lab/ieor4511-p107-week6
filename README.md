@@ -15,6 +15,10 @@ The `/studies` page runs rebalancing with replacement
 securities, exit comparisons, one-time outside gains, and seeded random
 portfolios. It includes CSV exports and an exact offline replay package.
 See [the study guide and coverage](docs/DOM_FEEDBACK_2026_11_10.md).
+Choose **Assumptions & methodology** in either page header for the searchable
+model reference at `/assumptions`: input defaults, loss calculations, trading
+rules, taxes, exit policies, sampling algorithms and source-code links. It
+describes starting settings; a completed run's export records the inputs used.
 The default historical/cohort examples are synthetic software tests, not market
 evidence. Exit and one-time-gain comparisons use the separate annual scenario
 model; they do not silently inherit historical stock returns.

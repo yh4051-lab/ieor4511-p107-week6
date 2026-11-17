@@ -2,7 +2,13 @@
 
 The public baseline uses independent illustrative inputs. It is not historical performance, a provider estimate, or a client recommendation. All strategies start with $1 million cash; the baseline ends with full liquidation.
 
-The November 17 **Sponsor studies** page adds optional exit policies and a
+The **Assumptions & methodology** page (`/assumptions`) collects the current
+rules across all three engines. Search by topic or filter by calculation. The
+starting-settings table reads the shipped configuration and form fields; for
+any completed run, its export records the actual inputs. The reference also
+distinguishes the main historical page from the rebalanced historical engine.
+
+The November 17 **Portfolio research** page adds optional exit policies and a
 separate rebalanced historical engine. Its displayed inputs and exported
 request are authoritative for that run; historical financing/borrow/rebate
 defaults differ from this original annual example. See

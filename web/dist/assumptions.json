@@ -1,0 +1,935 @@
+{
+  "reviewed": "2026-11-17",
+  "modes": [
+    {
+      "id": "scenario",
+      "name": "Illustrative scenario"
+    },
+    {
+      "id": "history",
+      "name": "Historical stock research"
+    },
+    {
+      "id": "rebalance",
+      "name": "Rebalancing"
+    },
+    {
+      "id": "exits",
+      "name": "Exit planning"
+    },
+    {
+      "id": "one_time",
+      "name": "Liquidity events"
+    },
+    {
+      "id": "sampling",
+      "name": "Portfolio sampling"
+    }
+  ],
+  "categories": [
+    {
+      "id": "comparison",
+      "name": "Comparison and wealth"
+    },
+    {
+      "id": "annual",
+      "name": "Annual scenario"
+    },
+    {
+      "id": "history",
+      "name": "Main historical engine"
+    },
+    {
+      "id": "rebalance",
+      "name": "Rebalancing and replacements"
+    },
+    {
+      "id": "tax",
+      "name": "Tax, costs and risk"
+    },
+    {
+      "id": "exits",
+      "name": "Exit policies"
+    },
+    {
+      "id": "gains",
+      "name": "Outside gains and break-even"
+    },
+    {
+      "id": "sampling",
+      "name": "Portfolio sampling"
+    },
+    {
+      "id": "data",
+      "name": "Data and reproducibility"
+    }
+  ],
+  "entries": [
+    {
+      "id": "same-start",
+      "category": "comparison",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time",
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "What is held constant across strategies?",
+      "answer": "Each comparison starts with the same investor equity and the same outside gain schedule. The standard starting equity is $1 million.",
+      "method": "Compare terminal wealth after the modeled costs and taxes. Outside proceeds are included equally. A larger balance caused by a larger outside gain is not an investment return.",
+      "limit": "Different pages use different default costs, gain schedules and engines. Align those inputs before comparing results across pages.",
+      "sources": [
+        "p107/model.py",
+        "p107/research.py",
+        "p107/dom_historical.py",
+        "web/server.py"
+      ],
+      "kind": "Comparison design"
+    },
+    {
+      "id": "controls",
+      "category": "comparison",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time",
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "What does each comparison actually isolate?",
+      "answer": "Core versus Index compares the entire strategy. Harvesting versus the same portfolio without harvesting is the closer control for the harvesting rule.",
+      "method": "The annual model compares Index, long-only Direct Indexing and Core 130/30. Historical engines compare the selected portfolio with and without harvesting, plus a 100%-long benchmark. The main historical page also evaluates SPY when a different benchmark is chosen.",
+      "limit": "Benchmark differences include stock selection, leverage, fees and market exposure. Even the no-harvest difference includes changed trades, cash exposure and dividends; it is not a pure tax number or risk-adjusted alpha.",
+      "sources": [
+        "p107/model.py",
+        "p107/research.py",
+        "p107/dom_historical.py"
+      ],
+      "kind": "Comparison design"
+    },
+    {
+      "id": "target-exposure",
+      "category": "comparison",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time",
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "Does 130/30 mean we stay at 130/30 every day?",
+      "answer": "No. It means 130% long and 30% short exposure relative to equity, with 100% net and 160% gross exposure. How often we restore those weights depends on the engine.",
+      "method": "The annual scenario resets aggregate notionals each year. Main-page historical research sizes at the first close and lets exposure drift. Rebalancing restores targets at scheduled closes and after a replacement switch, using equity after trading fees.",
+      "limit": "The main historical page allows other user-selected exposures. The rebalanced engine requires long exposure minus short exposure to equal 100%. Short proceeds are never free investor wealth.",
+      "sources": [
+        "p107/model.py",
+        "p107/research.py",
+        "p107/dom_historical.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "terminal-wealth",
+      "category": "comparison",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time",
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "How is terminal after-tax wealth defined?",
+      "answer": "It is the investor value remaining after the modeled costs and tax settlement, including common outside cash. For gifts, it is combined donor and recipient wealth.",
+      "method": "For a full sale: remaining portfolio value minus exit charges, plus investor cash, minus the final joint capital tax and applicable income taxes. Earlier tax relief is already reflected in cash and is not added again. Unused losses are not assigned a cash value.",
+      "limit": "It is not a full household balance sheet. The original principal of outside assets is excluded; the model treats the stated outside gain as an equal incremental cash inflow.",
+      "sources": [
+        "p107/model.py",
+        "p107/research.py",
+        "p107/dom_historical.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "annual-return",
+      "category": "annual",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time"
+      ],
+      "title": "Where do investment returns and manager alpha come from?",
+      "answer": "The public annual example assumes a constant 6% price return and zero manager alpha. These are inputs, not a forecast or fitted performance.",
+      "method": "Price P&L = beginning equity × (price return + assumed alpha). All three annual strategies use the same market path. There are no dividends, volatility simulation, security selection or tracking-error model in this engine.",
+      "limit": "Changing exposure does not reconstruct separate long and short security returns. Costs and assumed tax realizations distinguish the strategies. CLI sensitivities can vary alpha, but that is still an assumption.",
+      "sources": [
+        "configs/example_hypothetical.json",
+        "p107/model.py",
+        "p107/analysis.py"
+      ],
+      "kind": "Illustrative input"
+    },
+    {
+      "id": "loss-curves",
+      "category": "annual",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time"
+      ],
+      "title": "How are the assumed Core and DI losses calculated?",
+      "answer": "Annual harvested losses equal beginning-of-year equity multiplied by a stated loss rate. The public curves were chosen for an educational example; they were not measured from trades.",
+      "method": "Core ST rates for years 1–10 are 15, 10, 7, 4, 2, 2, 2, 2, 2, 2 percent. DI uses 5, 3, 2, 1, 0.5, 0.3, 0.3, 0.3, 0.3, 0.3 percent. Index intentional harvesting is zero. For example, 15% × $1 million = $150,000 of assumed first-year Core losses. LT loss rates and planned gain rates default to zero.",
+      "limit": "These curves are independent of the return path and are not calibrated to volatility. The main scenario loss slider scales Core only. Extension reduction also scales Core harvesting; full-portfolio exits reduce future beginning equity. Losses do not themselves create cash.",
+      "sources": [
+        "configs/example_hypothetical.json",
+        "p107/model.py",
+        "web/server.py"
+      ],
+      "kind": "Illustrative input"
+    },
+    {
+      "id": "annual-costs",
+      "category": "annual",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time"
+      ],
+      "title": "What amounts are annual fees and financing charged on?",
+      "answer": "Management, advisor and trading proxies use beginning equity. Financing uses the extra long exposure; short borrow and rebate use the short notional.",
+      "method": "For Core 130/30: financing = 0.30 × beginning equity × financing rate; borrow and rebate each use 0.30 × beginning equity × their own rate. Public annual management rates are 0.03% Index, 0.25% DI and 0.40% Core; advisor is 0.10%. Annual trading proxies are 0%, 0.03% and 0.05%. Exit charges use gross exposure at 0.01%, 0.01% and 0.02%.",
+      "limit": "The main annual example uses 4% rebate and 0.20% borrow; the research-page forms start at 0% rebate and 1% borrow. These are separate assumptions, not provider quotes. Real financing contracts may combine borrow and rebate terms.",
+      "sources": [
+        "configs/example_hypothetical.json",
+        "p107/model.py",
+        "web/dist/studies.js"
+      ],
+      "kind": "Illustrative input"
+    },
+    {
+      "id": "basis-proxy",
+      "category": "annual",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time"
+      ],
+      "title": "How do losses change cost basis and embedded gains?",
+      "answer": "The annual model uses one signed net-equity basis for the portfolio. Harvesting reduces that basis without changing market value, so embedded gains can rise.",
+      "method": "Before funding sales: new basis = old basis + reinvested rebate − harvested ST/LT losses + planned realized gains. Embedded gain = equity − basis. Expenses and tax withdrawals remove proportional basis. A signed net basis can be negative for a long/short portfolio; negative long-only basis is rejected.",
+      "limit": "This is an aggregate accounting proxy, not the legal cost basis of a stock lot. It cannot identify which long or short security generated each embedded gain.",
+      "sources": [
+        "p107/model.py",
+        "docs/METHODOLOGY.md"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "funding-sales",
+      "category": "annual",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time"
+      ],
+      "title": "How are expenses and tax payments funded?",
+      "answer": "The annual model sells a proportional slice of the account to pay expenses. It uses side cash for taxes first, then sells more if needed.",
+      "method": "For an expense E and pre-expense equity V, basis removed is E × B/V. That sale creates a realization. If taxes exceed cash, a 70-iteration bisection solves withdrawal + available cash = capital tax including the withdrawal + income tax. Infeasible funding is rejected.",
+      "limit": "This is not tax-lot optimization. The historical engines use cash and financing debt instead of this proportional-sale algorithm.",
+      "sources": [
+        "p107/model.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "annual-character",
+      "category": "annual",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time"
+      ],
+      "title": "How does the annual model decide ST versus LT?",
+      "answer": "It uses a fixed tax-character mix rather than actual holding dates. Realizations in year 1 are all short-term.",
+      "method": "After year 1, the default ST fractions for aggregate funding and exit realizations are 0% for Index, 5% for DI and 10% for Core; the rest is LT. Harvested ST/LT losses use their separate input curves.",
+      "limit": "These fractions are uncalibrated. They cannot represent special short-sale rules or the tax character of individual positions.",
+      "sources": [
+        "configs/example_hypothetical.json",
+        "p107/model.py"
+      ],
+      "kind": "Illustrative input"
+    },
+    {
+      "id": "annual-order",
+      "category": "annual",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time"
+      ],
+      "title": "What is the annual calculation order?",
+      "answer": "Return and costs are calculated first; outside cash and taxes are settled afterward. Exit scenarios add their sale or transfer rules to this sequence.",
+      "method": "Start with equity, basis and carryforwards → apply price P&L and rebate → record assumed losses/gains → fund expenses → process any staged sale → grow existing side cash and add outside proceeds → settle tax and any tax-funding sale. In the final year, recompute that year’s taxes with the entire exit included.",
+      "limit": "Annual timing is coarse. Outside events are not intrayear trades, and carryforwards cannot be consumed twice by treating final-year outside gains and liquidation as separate tax years.",
+      "sources": [
+        "p107/model.py",
+        "docs/METHODOLOGY.md"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "cash-deductions",
+      "category": "annual",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time"
+      ],
+      "title": "Do side cash and financing expenses generate extra benefits?",
+      "answer": "Side cash earns 0% after tax by default. The annual model caps the financing deduction at rebate income and never creates a refund for net financing expense.",
+      "method": "Income tax = max(rebate − financing × deduction fraction, 0) × ordinary rate. The public deduction fraction is 100%; the ordinary rate follows ST tax in the browser. Management, advisor, borrowing and trading proxies do not automatically generate tax deductions.",
+      "limit": "This is a limited research convention, not a full investment-interest deduction or carryforward calculation. Historical engines instead treat financing as nondeductible and tax the rebate separately.",
+      "sources": [
+        "configs/example_hypothetical.json",
+        "p107/model.py",
+        "p107/research.py",
+        "p107/dom_historical.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "history-sizing",
+      "category": "history",
+      "modes": [
+        "history"
+      ],
+      "title": "How does the main historical page form a portfolio?",
+      "answer": "The user selects the stocks. The model allocates each long/short budget across those stocks using relative weights, or accepts manually entered shares.",
+      "method": "Each leg budget = starting equity × requested leg exposure. Each position receives its normalized share of that budget; fractional shares = allocated dollars / first historical close. Targets are sized before opening fees. Positions then drift; they are not periodically reset to 130/30.",
+      "limit": "The interface does not optimize stock selection, hedge factors or estimate manager alpha. User-selected names and dates can introduce selection bias. The page permits 1–20 unique positions.",
+      "sources": [
+        "p107/research.py",
+        "web/dist/portfolio.js"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "history-harvest",
+      "category": "history",
+      "modes": [
+        "history"
+      ],
+      "title": "When does the main historical page harvest and buy back?",
+      "answer": "After holding a position for more than 30 calendar days, a closing-price loss can trigger a sale at the next available close. The position then stays out of the market during its cooldown.",
+      "method": "Signed loss = (close − entry price) / entry price for a long, with the sign reversed for a short. The UI default trigger is 5%. A pending signal closes the whole position next session, even if its price has changed. Reentry buys the same split-adjusted share quantity only after more than the selected cooldown days; the default is 30.",
+      "limit": "There is no replacement security in this engine. Sale cash may repay debt and the missing exposure affects returns. This is a simplified own-account timing rule, not full wash-sale matching.",
+      "sources": [
+        "p107/research.py",
+        "web/dist/index.html"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "history-ledger",
+      "category": "history",
+      "modes": [
+        "history"
+      ],
+      "title": "How are historical holdings, cash and costs recorded?",
+      "answer": "The main historical engine tracks each position’s quantity, entry price and open date, plus cash, financing debt and restricted short proceeds.",
+      "method": "Equity = free cash + restricted collateral − debt + long market value − short liability. Negative free cash creates debt; positive cash repays debt. Costs accrue over actual calendar days / 365 using debt, prior short market value, collateral, and prior account equity. Management includes account cash. Per-trade costs apply to traded notional.",
+      "limit": "There is no separate advisor fee in this engine. The default management fee on the main page is 0%. The example CLI config instead uses 0.40% management and a 10% trigger; it is a different example.",
+      "sources": [
+        "p107/research.py",
+        "web/dist/index.html",
+        "configs/example_stock_research.json"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "history-outside",
+      "category": "history",
+      "modes": [
+        "history"
+      ],
+      "title": "When are outside gains added in main historical research?",
+      "answer": "The entered ST and LT amounts repeat at every modeled calendar year-end, including partial first and last years.",
+      "method": "The model adds equal gain proceeds to account cash and settles capital tax at that point. Amounts are not prorated for a short calendar year. Cash can repay financing debt and affects later account costs; all comparisons receive the same schedule.",
+      "limit": "This differs from the separate investor side cash in Rebalancing and from the one-time event in Liquidity events. Historical return % subtracts gross outside proceeds, but is not TWR, IRR or CAGR.",
+      "sources": [
+        "p107/research.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "legacy-levels",
+      "category": "history",
+      "modes": [
+        "history"
+      ],
+      "title": "What happened to the original three research levels?",
+      "answer": "The current main interface runs the integrated level-3 model. Older API and saved runs can still specify levels 1 or 2.",
+      "method": "Level 1 is price-only history. Level 2 adds dividends, costs, taxes and final liquidation without harvesting. Level 3 adds the harvesting/reentry rule and the no-harvest control. A separate legacy quote calculator uses user entry prices, latest daily quotes, holding days/365, average starting/ending short notional, and estimated round-trip trade costs.",
+      "limit": "The quote calculator has no tax, dividend, intermediate cash-flow, historical rebalancing or margin model. Do not describe its result as a level-3 after-tax backtest.",
+      "sources": [
+        "p107/research.py",
+        "p107/portfolio.py",
+        "web/dist/portfolio.js"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "rebalance-algorithm",
+      "category": "rebalance",
+      "modes": [
+        "rebalance",
+        "sampling"
+      ],
+      "title": "How do we rebalance back to 130/30?",
+      "answer": "At each scheduled rebalance, the engine solves for long and short targets using equity after trading charges. It also rebalances after a replacement switch.",
+      "method": "For each position, target dollars = post-fee equity × leg exposure × within-leg weight. A 60-step bisection solves post-fee equity + cost of the required trades = current equity. Reductions execute before increases. The UI interval is 20 sessions, plus entry and replacement switches; the last date is a full sale.",
+      "limit": "This uses same-close valuations and executions, fractional shares and fixed proportional costs. Exposure drifts between rebalances. It assumes execution is available at those closes.",
+      "sources": [
+        "p107/dom_historical.py",
+        "web/dist/studies.html"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "replacement-rule",
+      "category": "rebalance",
+      "modes": [
+        "rebalance",
+        "sampling"
+      ],
+      "title": "How do replacement securities work during the wash-sale window?",
+      "answer": "A user supplies one replacement for each original stock. A harvest closes the original and opens the replacement on the same side, rather than leaving that position in cash.",
+      "method": "The trigger uses total position loss relative to aggregate lot cost, with sign reversed for shorts. The default trigger is 8%. The oldest lot must be at least 31 days old and every open lot must be older than 30 days. The signal executes next close. Reentry occurs after more than 30 calendar days; a switch is followed by a portfolio rebalance.",
+      "limit": "Replacement mappings must be unique and separate from original holdings. The user attests suitability; the software does not decide whether two securities are substantially identical. Pending signals can realize a different loss, or a gain, at execution.",
+      "sources": [
+        "p107/dom_historical.py",
+        "configs/example_dom_historical.json",
+        "web/dist/studies.js"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "fifo-lots",
+      "category": "rebalance",
+      "modes": [
+        "rebalance",
+        "sampling"
+      ],
+      "title": "Which lots are sold, and how are gains measured?",
+      "answer": "Every purchase creates a lot. Reductions consume the oldest lots first: FIFO.",
+      "method": "Long gain = shares sold × (sale price − lot entry price); shorts reverse the sign. Splits adjust shares and per-share basis. Long lots held more than 365 days are LT; other long lots and all shorts use ST. Trade fees are separate cash expenses, not capital-basis adjustments.",
+      "limit": "FIFO is a research choice, not optimal tax-lot selection. Losses can also arise from rebalancing and disposal of substitutes; these have no complete wash-sale matching.",
+      "sources": [
+        "p107/dom_historical.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "rebalance-cash",
+      "category": "rebalance",
+      "modes": [
+        "rebalance",
+        "sampling"
+      ],
+      "title": "Are outside proceeds invested in the rebalanced portfolio?",
+      "answer": "No. Rebalancing keeps outside proceeds in separate investor side cash, so the outside event does not enlarge the 130/30 trading account.",
+      "method": "At the event calendar year-end, add gain proceeds to side cash and settle tax. Tax uses side cash first; a shortfall uses portfolio cash and financing debt. Account equity excludes side cash, while total investor wealth includes it. Side cash does not earn interest here.",
+      "limit": "The historical UI supplies one ST event by calendar year. The API supports multiple ST/LT events. An event in a partial final year settles on the final modeled date; exact intrayear event timing is not modeled.",
+      "sources": [
+        "p107/dom_historical.py",
+        "web/dist/studies.js"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "historical-cost-bases",
+      "category": "rebalance",
+      "modes": [
+        "rebalance",
+        "sampling"
+      ],
+      "title": "What are the fee and financing bases in Rebalancing?",
+      "answer": "Annual financing is charged on actual debt, borrow on prior short market value, rebate on restricted short collateral, and management/advisor fees on prior account equity.",
+      "method": "Accrual uses actual calendar days / 365. Each trade pays notional × transaction rate, including opening, replacement, rebalancing and final closing trades. Rebate is taxed at the ordinary rate, which follows ST tax in the study form. Financing and other costs are nondeductible expenses in this engine.",
+      "limit": "Rates are flat inputs, not historical borrow quotes. A manager charge of 0.03% is added to the benchmark, plus the common advisor fee. An ETF’s observed prices may already reflect fund expenses; review this extra charge before using it as an expense-ratio estimate.",
+      "sources": [
+        "p107/dom_historical.py",
+        "web/dist/studies.js"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "tax-netting",
+      "category": "tax",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time",
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "How are losses used and carried forward?",
+      "answer": "ST losses offset ST gains and LT losses offset LT gains first. A remaining loss then offsets gains of the other character; unused losses carry forward.",
+      "method": "Start each tax period with gains − current losses − same-character carryforwards. Cross-net a remaining negative bucket against a positive bucket. Apply flat rates only to positive residual gains. Final-year sales join the same year’s settlement.",
+      "limit": "No capital-loss deduction against ordinary income, carryback, tax brackets, explicit state/NIIT calculation or complete household return is implemented. Unused carryforwards have zero terminal cash value.",
+      "sources": [
+        "p107/taxes.py",
+        "p107/model.py",
+        "p107/research.py",
+        "p107/dom_historical.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "flat-rates",
+      "category": "tax",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time",
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "Are the tax rates actual client tax rates?",
+      "answer": "No. The standard 40% ST and 20% LT rates are round effective scenario assumptions. They are editable.",
+      "method": "The annual browser ordinary rate follows ST. Historical rebate tax uses an ST/ordinary proxy, and dividend tax has a flat rate. The main historical dividend rate is independently editable; the study form sets it equal to LT. Rates do not vary with income, residency or future tax-law changes.",
+      "limit": "Historical long positions use a more-than-365-day holding rule. All short realizations use an ST proxy. These conventions do not implement all US holding-period or short-sale exceptions.",
+      "sources": [
+        "p107/taxes.py",
+        "p107/research.py",
+        "p107/dom_historical.py",
+        "web/dist/studies.js"
+      ],
+      "kind": "Illustrative input"
+    },
+    {
+      "id": "wash-sale",
+      "category": "tax",
+      "modes": [
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "Have we implemented the full wash-sale rules?",
+      "answer": "No. The historical engines implement conservative holding and reentry timing, but they do not establish that every realized loss is deductible.",
+      "method": "Main research waits before repurchasing the same stock. Rebalancing uses mapped substitutes and a cooldown. Neither performs complete before/after matching across household accounts, options or all economically related securities. Rebalance and substitute-disposal losses require additional matching.",
+      "limit": "The computed tax reduction is conditional on these simplified rules. Do not present the cooldown, replacement checkbox or tests as legal wash-sale certification.",
+      "sources": [
+        "p107/research.py",
+        "p107/dom_historical.py",
+        "docs/DOM_FEEDBACK_2026_11_10.md"
+      ],
+      "kind": "Known limitation"
+    },
+    {
+      "id": "distributions",
+      "category": "tax",
+      "modes": [
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "How are dividends, short payments and splits treated?",
+      "answer": "Historical dividends are cash distributions on the supplied ex-dates. They are not reinvested in more shares.",
+      "method": "Long dividends receive a flat dividend tax. Short dividends are cash payments without a modeled deduction. Splits change quantities and per-share entry basis before that day’s valuation/distribution. Rebate is taxed separately as income; it is not counted as price appreciation.",
+      "limit": "No qualified-dividend holding test, withholding calculation, dividend-in-lieu tax treatment or separate ETF capital-gain distribution classification is inferred from the price feed. The annual scenario has no dividends.",
+      "sources": [
+        "p107/research.py",
+        "p107/dom_historical.py",
+        "p107/market_data.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "margin",
+      "category": "tax",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time",
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "What happens if a short loses heavily or the account runs out of equity?",
+      "answer": "Historical runs stop when equity becomes nonpositive. They do not simulate a broker margin call or forced liquidation before that point.",
+      "method": "Historical short proceeds remain restricted collateral. Negative free cash is financed; positive free cash repays debt. Borrow is assumed available at the entered rate. Annual scenarios also reject insolvency and impossible long-only basis.",
+      "limit": "Maintenance margin, changing haircuts, intraday price paths, short recalls, borrow availability, bid/ask spreads and market impact are not implemented. Passing a run does not prove the strategy was tradable.",
+      "sources": [
+        "p107/model.py",
+        "p107/research.py",
+        "p107/dom_historical.py"
+      ],
+      "kind": "Known limitation"
+    },
+    {
+      "id": "full-sale",
+      "category": "exits",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time",
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "What does the baseline assume about exit?",
+      "answer": "The baseline sells all remaining positions at the end, pays modeled exit costs and settles that final year’s tax with the exit included.",
+      "method": "The annual model removes aggregate net basis; historical engines close each remaining position or FIFO lot. Incremental unwind tax is the difference between final tax with the sale and the counterfactual tax before it. It can be negative for a loss-making exit.",
+      "limit": "Historical engines currently use full liquidation only. Other exit policies below belong to the annual scenario engine and do not use the historical price run.",
+      "sources": [
+        "p107/model.py",
+        "p107/research.py",
+        "p107/dom_historical.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "staged-sales",
+      "category": "exits",
+      "modes": [
+        "exits"
+      ],
+      "title": "How does a 3–5-year gradual exit work?",
+      "answer": "During the last 3, 4 or 5 years, the model sells a proportional slice of the entire remaining portfolio each year and keeps the proceeds in side cash.",
+      "method": "After that year’s return and expenses, sale fraction = 1 / remaining exit years. For a three-year exit, sell 1/3 of the remaining portfolio, then 1/2, then all. Basis leaves proportionally, trading costs are deducted and realized gains enter that year’s tax settlement.",
+      "limit": "These are fractions of remaining value, not fixed dollar amounts. Future exposure, fees and assumed losses shrink with the account. There is no sale-lot optimization or historical execution path.",
+      "sources": [
+        "p107/model.py",
+        "p107/studies.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "extension-reduction",
+      "category": "exits",
+      "modes": [
+        "exits"
+      ],
+      "title": "How is reducing the extension different from selling the portfolio?",
+      "answer": "Extension reduction gradually removes the extra long/short sleeve while retaining a long-only core until the final sale.",
+      "method": "The three-year setting reduces the extension in equal steps. Financing, rebate, borrow and the Core loss curve scale with the remaining extension. Transition gains use an explicit assumption that 50% of net embedded gain belongs to the extension, multiplied by the fraction removed.",
+      "limit": "The 50% attribution is an aggregate assumption, not observed lot data, and is not exposed as a form field. It can be changed through the study API request. This policy is not a full withdrawal plan.",
+      "sources": [
+        "p107/model.py",
+        "p107/studies.py"
+      ],
+      "kind": "Illustrative input"
+    },
+    {
+      "id": "death-stepup",
+      "category": "exits",
+      "modes": [
+        "exits"
+      ],
+      "title": "What exactly does “hold until death” assume?",
+      "answer": "The scenario assumes a basis adjustment at the end of the horizon, then measures wealth after a modeled sale. No mortality model is used.",
+      "method": "Long-only portfolios use full fair-market-value basis adjustment. For Core, the form defaults to attributing 80% of net embedded gain to eligible long holdings. That share is removed from final taxable embedded gain. The adjustment also applies downward when the modeled eligible value is below basis.",
+      "limit": "The Core fraction is a proxy, not a lot-level eligibility calculation. It grants no automatic adjustment to short liabilities. Estate tax, legal exceptions and a complete decedent return are not modeled.",
+      "sources": [
+        "p107/model.py",
+        "p107/studies.py",
+        "web/dist/studies.html"
+      ],
+      "kind": "Illustrative input"
+    },
+    {
+      "id": "gift-basis",
+      "category": "exits",
+      "modes": [
+        "exits"
+      ],
+      "title": "What happens when shares are gifted?",
+      "answer": "At the selected year’s start, the recipient inherits the modeled portfolio basis. The recipient sells at the common final horizon, using the selected recipient tax rates.",
+      "method": "Donor loss carryforwards stay with the donor and may offset donor outside gains. Recipient portfolio gains and donor gains are settled separately. The displayed result adds donor and recipient wealth. Default gift year is 3; recipient ST/LT rates are 40%/20%.",
+      "limit": "This is not cash retained by the donor alone. Below-aggregate-basis gifts are rejected because dual-basis loss treatment is absent. Mixed gain/loss lots, estate/gift taxes and legal transfer of short liabilities need separate work.",
+      "sources": [
+        "p107/model.py",
+        "p107/studies.py",
+        "web/dist/studies.html"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "one-time-event",
+      "category": "gains",
+      "modes": [
+        "one_time"
+      ],
+      "title": "How is a one-time gain different from annual gains?",
+      "answer": "Liquidity events adds one gain in the selected investment year, with zero outside gains in the other years. It compares $0, $1M, $3M and $5M.",
+      "method": "The event can be ST or LT; the default is ST in year 2. All strategies receive the same incremental proceeds. This is the annual scenario engine with full final sale, not a historical intrayear cash event.",
+      "limit": "Proceeds are assumed equal to the taxable gain and outside original principal is excluded. An actual business or stock sale requires proceeds and cost basis separately.",
+      "sources": [
+        "p107/analysis.py",
+        "p107/model.py",
+        "p107/studies.py",
+        "web/dist/studies.js"
+      ],
+      "kind": "Illustrative input"
+    },
+    {
+      "id": "break-even",
+      "category": "gains",
+      "modes": [
+        "scenario",
+        "one_time"
+      ],
+      "title": "What algorithm finds break-even, and what does “no crossing” mean?",
+      "answer": "The engine searches where Core terminal after-tax wealth equals the comparator. It scans gain amounts, then uses bisection on intervals where the difference changes sign.",
+      "method": "Liquidity events compares Core with Index and DI over $0–$5M in $25,000 steps, with 55 bisection steps per crossing. The main annual web chart compares Core with Index, repeats gains each year, and uses maximum = max(starting cash, chosen annual gain, $100k), divided into 100 intervals. The CLI annual default instead scans $0–$1M in $5,000 steps and uses up to 60 bisections.",
+      "limit": "“No crossing” means no root found in that range; it is not a zero-dollar threshold or proof of superiority everywhere. Finite grids can miss tangencies and narrow crossings. Residuals and search limits are exported.",
+      "sources": [
+        "p107/analysis.py",
+        "web/server.py",
+        "p107/studies.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "sensitivities",
+      "category": "gains",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time"
+      ],
+      "title": "What do the sensitivities tell us?",
+      "answer": "They change one stated input at a time to show how sensitive the accounting result is. They are not forecasts or confidence intervals.",
+      "method": "The CLI varies horizons, tax-rate pairs, costs, financing/rebate/borrow, alpha, loss scale and character, return paths, cash returns, and outside-gain timing. The main web page compares 1/3/5/10-year horizons; other parameters can be changed and rerun.",
+      "limit": "The stress return path keeps the assumed loss curve fixed. It is an accounting stress, not a calibrated relation between volatility and harvestable losses. There is no optimizer choosing the best policy for a real client.",
+      "sources": [
+        "p107/analysis.py",
+        "web/server.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "sampling-method",
+      "category": "sampling",
+      "modes": [
+        "sampling"
+      ],
+      "title": "How are random portfolios selected?",
+      "answer": "A seeded random generator samples names uniformly from the eligible supplied universe. Long and short names are disjoint within each draw.",
+      "method": "The default is 20 draws, seed 4511, with 3 longs and 3 shorts. Weights are equal within each leg; the rebalanced engine supplies the 130/30 exposure. The browser allows 1–200 draws. Every draw runs harvesting, no-harvest and passive benchmark controls.",
+      "limit": "Names may recur across draws and complete portfolios can repeat. This is not sector, beta, risk or factor matching. The sample universe and replacement availability still determine what can be studied.",
+      "sources": [
+        "p107/dom_sampling.py",
+        "p107/studies.py",
+        "web/dist/studies.html"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "pit-membership",
+      "category": "sampling",
+      "modes": [
+        "sampling"
+      ],
+      "title": "What does point-in-time membership mean here?",
+      "answer": "A stock is eligible if its supplied membership interval contains the formation date. The program does not authenticate index membership.",
+      "method": "member_from is inclusive and member_to exclusive. Formation equals the requested history start. Each record requires source_id and point_in_time_verified=true; published_as_of, when supplied, must not be after formation. The study page requires documented membership input for non-synthetic sampling.",
+      "limit": "No authentic historical S&P 500 or delisted-security dataset is bundled. Membership is selected once at formation; the engine does not later add and remove stocks to track index membership. Today’s constituents cannot establish historical eligibility.",
+      "sources": [
+        "p107/dom_sampling.py",
+        "p107/studies.py",
+        "web/dist/studies.js"
+      ],
+      "kind": "Data requirement"
+    },
+    {
+      "id": "sample-statistics",
+      "category": "sampling",
+      "modes": [
+        "sampling"
+      ],
+      "title": "How should we interpret the sampled results?",
+      "answer": "The page reports the median, 5th/95th percentiles and fraction finishing ahead of the benchmark for the portfolios that were drawn.",
+      "method": "Quantiles linearly interpolate sorted results at position (N−1) × percentile. Benchmark win fraction counts strictly positive after-tax wealth differences. Each draw is retained; a failed required calculation stops the study rather than quietly dropping a bad portfolio.",
+      "limit": "These are descriptive statistics of a supplied universe and period, not probabilities of future success, statistical confidence bounds or independent market scenarios. All draws share the same history.",
+      "sources": [
+        "p107/dom_sampling.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "data-source",
+      "category": "data",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time",
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "Which data are actual observations and which are assumptions?",
+      "answer": "The annual curves, tax rates and fees are assumptions. Historical modes can use Yahoo prices or uploaded observations. The bundled Rebalancing and Sampling examples use synthetic prices.",
+      "method": "T1–T12 and S1–S12 are test symbols. Even the SPY series inside that synthetic fixture is a test series, not observed SPY history. Source labels and exported metadata identify the run’s dataset. Private provider originals and derived configurations are separate from the public example.",
+      "limit": "The presence of a real ticker name does not prove a series is real. Provider hypothetical estimates, synthetic software fixtures and historical market observations must not be presented as interchangeable.",
+      "sources": [
+        "p107/studies.py",
+        "examples/dom_synthetic_history.json",
+        "docs/RESTRICTED_DATA.md"
+      ],
+      "kind": "Data provenance"
+    },
+    {
+      "id": "prices-actions",
+      "category": "data",
+      "modes": [
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "How are historical prices and corporate actions processed?",
+      "answer": "The adapter uses daily Yahoo history for supported US USD stocks and ETFs. It reconstructs nominal prices so share splits and cash dividends can be handled explicitly.",
+      "method": "It requests Close, dividends and split actions with auto_adjust=false and back_adjust=false. It treats Yahoo Close and dividends as split-adjusted, then reverses later split factors, including splits after the analysis window. Later prices are not used in P&L. Current-day bars are excluded from historical research.",
+      "limit": "The adapter’s split convention and event timing are assumptions about the feed. Provider corrections may change a later download. Prices do not supply verified borrow rates, execution spreads or tax-lot records.",
+      "sources": [
+        "p107/market_data.py"
+      ],
+      "kind": "Model rule"
+    },
+    {
+      "id": "missing-data",
+      "category": "data",
+      "modes": [
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "What happens when prices or securities are missing?",
+      "answer": "The model fails instead of inventing prices, forward-filling bars or silently removing required securities.",
+      "method": "The Yahoo adapter requires exact matching session calendars. Study batches must match each other. Uploaded studies need complete prices, splits, dividends and metadata; at least two sessions must fall inside the requested interval, with no more than seven calendar days missing at either boundary.",
+      "limit": "Uploaded metadata and membership attestations are not independently authenticated. Common missing sessions in an uploaded dataset may still require a trading-calendar audit. Delisted or unavailable securities can prevent a run.",
+      "sources": [
+        "p107/market_data.py",
+        "p107/studies.py",
+        "p107/research.py"
+      ],
+      "kind": "Data requirement"
+    },
+    {
+      "id": "reproduction",
+      "category": "data",
+      "modes": [
+        "scenario",
+        "exits",
+        "one_time",
+        "history",
+        "rebalance",
+        "sampling"
+      ],
+      "title": "What makes a result reproducible?",
+      "answer": "A run export records the inputs and results. Historical exports include the observations needed to replay without another price download.",
+      "method": "Study ZIPs contain request.json, result.json, CSVs and hashes. Main research exports a JSON with inputs, data and result metadata. Annual ZIPs contain scenario.json and output tables. Seeded draws use the recorded seed. The engine checks accounting identities and the test suite includes offline replay.",
+      "limit": "Floating-point calculations retain full precision internally; UI amounts are rounded. Main historical SPY pass/fail rounds both terminal values to cents first. Tests verify implementation and examples, not empirical loss assumptions or sponsor acceptance.",
+      "sources": [
+        "web/server.py",
+        "p107/research.py",
+        "p107/studies.py",
+        "tools/verify_project.py",
+        "tools/verify_sponsor_studies.py"
+      ],
+      "kind": "Model rule"
+    }
+  ],
+  "glossary": [
+    [
+      "NAV / equity",
+      "Portfolio assets less liabilities. The equity used for fee and exposure calculations depends on the engine."
+    ],
+    [
+      "Core 130/30",
+      "A long/short account targeting 130% long and 30% short exposure. This label does not identify an actual manager product."
+    ],
+    [
+      "Direct indexing (DI)",
+      "Holding individual index-like stocks; the annual model represents it through an illustrative cost and loss schedule."
+    ],
+    [
+      "Tax-loss harvesting (TLH)",
+      "Realizing a capital loss through a sale or short close. A loss is not the same dollar amount as a tax saving."
+    ],
+    [
+      "ST / LT",
+      "Short-term / long-term tax-character buckets, classified using the model’s stated rules."
+    ],
+    [
+      "Cost basis",
+      "The modeled purchase-cost measure used to calculate a gain or loss; the annual version uses an aggregate proxy."
+    ],
+    [
+      "Embedded gain",
+      "Market value minus remaining basis, with short positions handled using the engine’s convention."
+    ],
+    [
+      "Carryforward",
+      "Unused losses retained for later modeled tax periods; not a separate cash asset."
+    ],
+    [
+      "Short rebate",
+      "Modeled income on restricted short collateral."
+    ],
+    [
+      "Borrow fee",
+      "The assumed charge for borrowing securities to hold a short position."
+    ],
+    [
+      "Wash sale",
+      "A tax-loss issue involving replacement acquisitions; the model only implements partial timing rules."
+    ],
+    [
+      "Step-up / basis adjustment",
+      "The conditional inherited-basis adjustment used in the death scenario."
+    ],
+    [
+      "PIT",
+      "Point-in-time: information and membership documented as of a historical date."
+    ],
+    [
+      "FIFO",
+      "First in, first out: close the oldest purchased lots first."
+    ],
+    [
+      "Bisection",
+      "Repeatedly halve a bracket to solve a one-variable equation."
+    ],
+    [
+      "ACT/365",
+      "Accrue an annual rate using actual elapsed calendar days divided by 365."
+    ]
+  ],
+  "quick_links": [
+    {
+      "title": "How do we get the losses?",
+      "id": "loss-curves"
+    },
+    {
+      "title": "Are we always at 130/30?",
+      "id": "target-exposure"
+    },
+    {
+      "title": "What happens at exit?",
+      "id": "full-sale"
+    },
+    {
+      "title": "Which data are real?",
+      "id": "data-source"
+    }
+  ]
+}

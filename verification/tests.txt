@@ -132,6 +132,6 @@ test_membership_invalid_effective_interval (test_sponsor_studies.StudyIntegratio
 test_one_time_results_cover_all_strategies_and_both_comparators (test_sponsor_studies.StudyIntegration.test_one_time_results_cover_all_strategies_and_both_comparators) ... ok
 
 ----------------------------------------------------------------------
-Ran 132 tests in 3.138s
+Ran 132 tests in 3.194s
 
 OK

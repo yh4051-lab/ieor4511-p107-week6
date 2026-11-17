@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P107 · Assumptions &amp; methodology</title>
+<link rel="stylesheet" href="/studies.css"><link rel="stylesheet" href="/assumptions.css"><script src="/assumptions.js" defer></script></head>
+<body>
+<a class="skip" href="#reference">Skip to reference</a>
+<header class="topbar"><a class="brand" href="/"><span class="brand-symbol">P107</span><span>Wedmont <span class="brand-divider">/</span> Columbia<small>IEOR E4511 · PROJECT STUDY</small></span></a><nav class="top-links" aria-label="Project pages"><a href="/">Strategy comparison</a><a href="/studies">Portfolio research</a><span aria-current="page">Assumptions</span></nav></header>
+<main>
+<div class="heading"><div><p class="eyebrow">MODEL REFERENCE</p><h1>Assumptions &amp; methodology</h1><p>What we assume, how we calculate it, and where each rule applies.</p></div><button id="print-reference" class="reference-button" type="button">Print reference</button></div>
+<p class="reference-context">This page describes the current implementation and starting settings. It does not read edits made in another tab. For a specific result, use that run’s exported inputs and assumptions.</p>
+<div id="quick-links" class="quick-links" aria-label="Common questions"></div>
+<div class="reference-layout">
+<aside class="reference-sidebar" aria-label="Reference navigation"><p class="eyebrow">ON THIS PAGE</p><nav id="section-nav"></nav><p id="review-date" class="note"></p><a href="/studies#model-coverage">View model coverage ↗</a></aside>
+<div id="reference" tabindex="-1">
+<section class="reference-tools panel" aria-label="Find an assumption">
+<div class="search-row"><label for="reference-search">Search the reference<input id="reference-search" type="search" placeholder="Try loss, fees, FIFO, gift or break-even" autocomplete="off"></label><label for="reference-mode">Calculation<select id="reference-mode"><option value="all">All calculations</option></select></label></div>
+<div class="search-meta"><span id="reference-count" role="status" aria-live="polite">Loading reference…</span><div><button id="clear-filters" type="button">Clear filters</button><button id="expand-methods" type="button">Expand methods</button></div></div>
+</section>
+<div id="reference-error" class="error" role="alert" hidden></div>
+<section id="engine-map" class="reference-section panel intro-reference"><p class="eyebrow">START HERE</p><h2>Three engines, different questions</h2><div class="engine-grid">
+<div><span class="engine-marker annual"></span><h3>Annual scenario</h3><p>Illustrative returns and loss curves. Used by Illustrative scenario, Exit planning and Liquidity events.</p><span>Aggregate basis · annual steps</span></div>
+<div><span class="engine-marker history"></span><h3>Main historical engine</h3><p>User-selected stocks and historical prices. Positions drift; harvested positions wait in cash before reentry.</p><span>Position accounting · daily steps</span></div>
+<div><span class="engine-marker rebalance"></span><h3>Rebalanced historical engine</h3><p>Scheduled 130/30 targets, FIFO lots and replacement securities. Also used by Portfolio sampling.</p><span>Lot accounting · daily steps</span></div>
+</div><p class="note">The two historical engines do not share every rule. Exit planning does not use prices from a historical run.</p></section>
+<section id="starting-settings" class="reference-section panel defaults-section"><h2>Starting settings</h2><p class="section-intro">These are illustrative defaults, not verified client rates or provider quotes. Changes made on one page do not carry over to another.</p><details id="defaults-detail"><summary>Compare defaults across pages</summary><div id="defaults-table" class="table-scroll" tabindex="0" role="region" aria-label="Defaults comparison, scroll horizontally"></div><div id="special-defaults"></div></details></section>
+<div id="reference-empty" class="empty panel" hidden><h3>No matching assumptions</h3><p>Try a shorter search or choose All calculations.</p></div>
+<div id="reference-sections"></div>
+<section id="glossary" class="reference-section panel glossary"><h2>Terms used in the model</h2><p class="section-intro">Short definitions for reading the results and discussing the methods.</p><details><summary>Open glossary</summary><dl id="glossary-list"></dl></details></section>
+<p class="reference-footnote">This reference describes implemented research conventions. Software tests do not establish historical performance, actual tax savings or complete tax compliance. The exported run remains the record of the inputs actually used.</p>
+</div></div>
+<footer><span>Wedmont / Columbia · IEOR E4511 · P107</span><a href="#">Back to top ↑</a></footer>
+</main></body></html>

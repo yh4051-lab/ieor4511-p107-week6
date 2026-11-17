@@ -28,6 +28,7 @@ from p107.research import run_research
 from p107.studies import defaults as study_defaults, run_study
 
 from build_info import build_id
+from methodology import reference as assumptions_reference
 
 APP_ID = 'p107-public-interface-v1'
 BUILD_ID = build_id()
@@ -216,7 +217,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send(403, json_bytes({'error': 'Please use the local application page.'}))
             return False
         # Opening the app from a bookmark/chat is a cross-site navigation, not an API call.
-        landing_navigation = self.command == 'GET' and self.path in ('/','/studies') and self.headers.get('Sec-Fetch-Mode') == 'navigate'
+        landing_navigation = self.command == 'GET' and urlsplit(self.path).path in ('/','/studies','/assumptions') and self.headers.get('Sec-Fetch-Mode') == 'navigate'
         if self.headers.get('Sec-Fetch-Site') == 'cross-site' and not landing_navigation:
             self.send(403, json_bytes({'error': 'Please use the local application page.'}))
             return False
@@ -232,6 +233,11 @@ class Handler(BaseHTTPRequestHandler):
             self.send(200, json_bytes({'inputs': defaults()}))
         elif path == '/api/studies/defaults':
             self.send(200,json_bytes(study_defaults()))
+        elif path == '/api/assumptions':
+            self.send(200,json_bytes(assumptions_reference()))
+        elif path in ('/assumptions','/assumptions.js','/assumptions.css'):
+            name,mime={'/assumptions':('assumptions.html','text/html'),'/assumptions.js':('assumptions.js','text/javascript'),'/assumptions.css':('assumptions.css','text/css')}[path]
+            self.send(200,(ROOT/'dist'/name).read_bytes(),mime+'; charset=utf-8')
         elif path in ('/studies','/studies.js','/studies.css'):
             name,mime={'/studies':('studies.html','text/html'),'/studies.js':('studies.js','text/javascript'),'/studies.css':('studies.css','text/css')}[path]
             self.send(200,(ROOT/'dist'/name).read_bytes(),mime+'; charset=utf-8')
