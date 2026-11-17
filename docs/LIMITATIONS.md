@@ -1,4 +1,20 @@
-# Current limitations and next steps
+# Current research boundaries
+
+The observed-price engine now supports all four employer analyses on actual daily prices and modeled FIFO tax lots, including same-ticker wash deferrals and daily-close maintenance liquidation. This completes the four functional research paths under documented assumptions, not a complete client tax or institutional portfolio system.
+
+Remaining material inputs and scope:
+
+- The random route uses a fixed 20-stock universe and 20 replacements. It has survival, selection and factor bias; no point-in-time S&P 500 or delisted-security claim is made.
+- Borrow rates, recalls, availability, bid/ask execution, intraday margin and actual account fee schedules are not observed.
+- Household/IRA/options/related-entity trades, substantially-identical relationship determinations and client-specific tax attributes are not supplied.
+- Death/gift comparisons occur at the horizon. Eligible ordinary long property is assumed; estate/gift taxes are optional supplied dollar costs, default zero. Exemptions, trusts, gift-tax basis adjustments and complex transfer rules need additional client information.
+- Outside incremental cash equals taxable gain, and the February capital-tax payment convention differs from actual estimated-tax timing.
+- The long-only harvesting control is a selected-stock basket, not calibrated broad-index replication. No manager alpha or actual realized tax savings is asserted.
+
+Read [Observed-price research](OBSERVED_RESEARCH.md) and the run export before interpreting results. Tests and offline replays check the implementation; they do not constitute sponsor acceptance.
+
+## Earlier annual and historical models
+
 
 Scope: this document describes the original annual scenario model in `p107/model.py`. The newer three-level historical research engine is documented in `../README-STOCK.md` and `../CODE-MAP.md`; its assumptions and limits are separate.
 

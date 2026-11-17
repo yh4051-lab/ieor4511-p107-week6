@@ -1,0 +1,17 @@
+{
+  "checked_date": "2026-11-17",
+  "surface": "Local browser at port 8765",
+  "observed_rebalancing": "PASS: real cached data, four comparison controls and tax-lot results",
+  "observed_exit_planning": "PASS: seven policies; latest server returned Core full-sale wealth 4203735.89",
+  "observed_liquidity_events": "PASS: four gain amounts and no-crossing search result displayed",
+  "observed_portfolio_sampling": "PASS: five browser draws completed; full 100-draw study separately verified by CLI",
+  "legacy_exit_planning": "PASS: earlier annual calculation still runs when explicitly selected",
+  "assumptions": "PASS: 56 topics, 14 current historical-lot topics, filtered starting settings match configuration",
+  "browser_console_errors": [],
+  "automated_model_tests": 160,
+  "automated_web_tests": 30,
+  "baseline_replay_files": 14,
+  "observed_exact_replay_rows": {"historical": 4, "exits": 21, "one_time": 12, "cohort": 100},
+  "sensitivity_rows": 33,
+  "scope": "Checks establish software behavior and repeatability. They do not establish investment suitability, causal tax alpha, or complete household tax compliance."
+}

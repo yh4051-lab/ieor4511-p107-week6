@@ -1,0 +1,238 @@
+{
+  "mode": "one_time",
+  "status": "PASS",
+  "observed_data_sha256": "35953c39a5e79b60181ee03e58788bc7d95c58be0449f73bc2df0ffaa1952eb4",
+  "actual_start": "2019-01-02",
+  "actual_end": "2025-12-31",
+  "sessions": 1760,
+  "row_count": 12,
+  "exact_offline_replay": true,
+  "summary_sha256": "27bc2420c9140d1d8e1d990d4bdb3b501c09740c66bffe86bc8f5c4c93701427",
+  "source_sha256": {
+    "__init__.py": "6ee3180d50388564b7b025780d857cbbe0ef40f5ab5926f657847240953c9d43",
+    "__main__.py": "f82538710ebe1018cdd6d2741b04a807fbada0a9d351dea3ef31549f46bfeac5",
+    "analysis.py": "c70188a5194506dd0aa9368fc87affd79da8330a2ef0e9148aa4c828efaff849",
+    "dom_historical.py": "4e25e7e22dbb73401fa43dd7ceec16c18c791feca919f7b70cfafc38656eb50e",
+    "dom_sampling.py": "7f90a51c607040e3f7afa9f5b10cded8cff7667978e6efd422f7fde0d4c67079",
+    "lot_accounting.py": "2989ac289992a3dc4ad6663fb138732e3fe21039283bd2107def10b97ae3435a",
+    "market_data.py": "4a34a8c88301fa9298906ad48b937640f8ac22ce8a40847c13b7a35c678157c6",
+    "model.py": "645fbf644b8af8e98a1c9aef052d97e0d24dbc1a8f5e1393845782861dd30a58",
+    "observed_engine.py": "d7095474f84a95ae284639737e9651d934727cf9a4dcee8e564cb33044186c87",
+    "observed_studies.py": "dcaba2db9fdb65002345161fafa5695e059c9a2fe8bcb9e0597b8eb6502f780b",
+    "portfolio.py": "8fb9e43fe319128babe0a4c7dd74c373f365d598ba7a4748ec95590be5683467",
+    "reporting.py": "bd52d4422020ed8836ff8c4eb40f8f4c5892648a9ffd5857b7f0d0ab57719a99",
+    "research.py": "087859199142d750d085d95cc4948433b4513ff600843972d504f5990e0f777f",
+    "studies.py": "5facdf675f65ff95bc1bb5f4ea331a02e6c54050556e948add9f937c8c4b1b34",
+    "taxes.py": "1c34c0f5a8a378f4eed166a1a50d28fbe5318eeaf4d5f5c785c321751416a1c6"
+  },
+  "assumptions": [
+    "Observed prices; hypothetical trades. This is not manager performance or an actual client tax return.",
+    "FIFO lots match same-ticker long purchases and short openings within 30 days before/after losses, including ordinary rebalances and substitute sales. Quantities, deferred losses and replacement basis are recorded.",
+    "The research account has no household/IRA/options activity, no simultaneous long/short position in the same security, and no trades for 30 days after final liquidation. Cross-account matching and corporate-relationship determinations require additional data.",
+    "Different-issuer substitutes are explicit research assumptions. They preserve invested notional, not identical market or factor exposure.",
+    "Prior-close harvest signals execute next close. Scheduled close rebalancing assumes execution at the observed close; bid/ask spreads, market impact and borrow recalls are not observed.",
+    "Annual capital tax is paid on the first observed session on/after February 1 of the following year so the December wash window can finish. All outstanding taxes settle at the horizon. This is a timing convention, not the actual estimated-tax calendar.",
+    "Outside events enter investor cash at calendar year-end; incremental proceeds equal taxable gain. Client proceeds and original outside basis are separate missing inputs.",
+    "Costs, flat tax rates, borrow availability and the maintenance threshold are assumptions. A daily-close maintenance breach liquidates the account; intraday margin and gap execution are not modeled.",
+    "SPY observed prices already reflect fund expenses; benchmark manager fee is only an additional entered fee. Long-only DI is an equal-weight harvesting basket of the same selected names, not a calibrated index-tracking product.",
+    "Positive dividends use the entered dividend rate; short payments in lieu reduce cash. Ordinary stock short positions closed within 45 days add those payments to closing basis; itemized interest deductions and extraordinary distributions require client review."
+  ],
+  "searches": [
+    {
+      "comparator": "index",
+      "event_year": 2021,
+      "character": "st",
+      "status": "no_crossing_in_range",
+      "roots_usd": [],
+      "residuals_usd": [],
+      "minimum_usd": 0,
+      "maximum_usd": 5000000.0,
+      "grid_step_usd": 250000.0,
+      "curve": [
+        {
+          "gain": 0.0,
+          "delta": 938950.6501551713
+        },
+        {
+          "gain": 250000.0,
+          "delta": 1087804.6886363113
+        },
+        {
+          "gain": 500000.0,
+          "delta": 1096216.7650893754
+        },
+        {
+          "gain": 750000.0,
+          "delta": 1096216.7650893754
+        },
+        {
+          "gain": 1000000.0,
+          "delta": 1096216.7650893754
+        },
+        {
+          "gain": 1250000.0,
+          "delta": 1096216.7650893754
+        },
+        {
+          "gain": 1500000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 1750000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 2000000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 2250000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 2500000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 2750000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 3000000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 3250000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 3500000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 3750000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 4000000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 4250000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 4500000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 4750000.0,
+          "delta": 1096216.765089376
+        },
+        {
+          "gain": 5000000.0,
+          "delta": 1096216.765089376
+        }
+      ],
+      "limitation": "Finite grid can miss a tangency or a narrow crossing; no extrapolation beyond the range."
+    },
+    {
+      "comparator": "long_only_di",
+      "event_year": 2021,
+      "character": "st",
+      "status": "no_crossing_in_range",
+      "roots_usd": [],
+      "residuals_usd": [],
+      "minimum_usd": 0,
+      "maximum_usd": 5000000.0,
+      "grid_step_usd": 250000.0,
+      "curve": [
+        {
+          "gain": 0.0,
+          "delta": 980067.8830681774
+        },
+        {
+          "gain": 250000.0,
+          "delta": 1094283.418396955
+        },
+        {
+          "gain": 500000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 750000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 1000000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 1250000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 1500000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 1750000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 2000000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 2250000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 2500000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 2750000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 3000000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 3250000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 3500000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 3750000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 4000000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 4250000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 4500000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 4750000.0,
+          "delta": 1102282.9456189247
+        },
+        {
+          "gain": 5000000.0,
+          "delta": 1102282.9456189247
+        }
+      ],
+      "limitation": "Finite grid can miss a tangency or a narrow crossing; no extrapolation beyond the range."
+    }
+  ]
+}

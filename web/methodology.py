@@ -57,4 +57,20 @@ def reference(root=ROOT):
     data['exit_defaults'] = dict(eligible_core_long_gain_pct=float(study['stepup']), gift_year=int(study['gift-year']), recipient_st_pct=float(study['recipient-st']), recipient_lt_pct=float(study['recipient-lt']), extension_gain_share_pct=50)
     data['sampling_defaults'] = dict(draws=int(study['samples']), seed=int(study['seed']), long_count=int(study['n-long']), short_count=int(study['n-short']))
     data['default_sources'] = ['configs/example_hypothetical.json','web/dist/index.html','web/dist/studies.html','web/dist/portfolio.js','web/dist/studies.js']
+    observed=json.loads((root/'configs/observed_study.json').read_text(encoding='utf-8'))
+    data['default_columns'][2]['name']='Earlier annual studies'
+    data['default_columns'][3]['name']='Earlier rebalancing / sampling'
+    data['default_columns'].append({'name':'Historical tax lots · current studies','modes':['observed']})
+    current=[dollars(observed['initial_cash']),observed['start_date']+' to '+observed['end_date'],
+             'Observed nominal daily closes', '130% / 30% Core; 100% / 0% long-only controls',
+             pct(observed['manager_pct'])+' Core; '+pct(observed['di_manager_pct'])+' long-only basket; '+pct(observed['benchmark_manager_pct'])+' additional SPY fee',
+             pct(observed['advisor_pct']),pct(observed['financing_pct']),pct(observed['borrow_pct']),pct(observed['rebate_pct']),
+             pct(observed['transaction_pct'])+' of each trade; included in basis/proceeds',
+             pct(observed['tax_st_pct'])+' / '+pct(observed['tax_lt_pct']),
+             '$1M ST once in '+str(observed['event_year'])+'; liquidity comparison varies amount',
+             pct(observed['harvest_threshold_pct'])+' trigger on tax-lot basis; wash deferrals matched',
+             'Every '+str(observed['rebalance_every_sessions'])+' sessions and after switches; reentry after >30 days']
+    for row,value in zip(data['defaults'],current):row.append(value)
+    data['observed_defaults']=dict(draws=observed['samples'],seed=observed['seed'],long_count=observed['long_count'],short_count=observed['short_count'],maintenance=observed['maintenance_equity_to_gross_pct'])
+    data['default_sources'].append('configs/observed_study.json')
     return data

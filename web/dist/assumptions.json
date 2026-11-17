@@ -2,6 +2,10 @@
   "reviewed": "2026-11-17",
   "modes": [
     {
+      "id": "observed",
+      "name": "Historical tax lots · all four studies"
+    },
+    {
       "id": "scenario",
       "name": "Illustrative scenario"
     },
@@ -11,22 +15,26 @@
     },
     {
       "id": "rebalance",
-      "name": "Rebalancing"
+      "name": "Earlier model · Rebalancing"
     },
     {
       "id": "exits",
-      "name": "Exit planning"
+      "name": "Earlier model · Exit planning"
     },
     {
       "id": "one_time",
-      "name": "Liquidity events"
+      "name": "Earlier model · Liquidity events"
     },
     {
       "id": "sampling",
-      "name": "Portfolio sampling"
+      "name": "Earlier model · Portfolio sampling"
     }
   ],
   "categories": [
+    {
+      "id": "observed",
+      "name": "Observed-price studies"
+    },
     {
       "id": "comparison",
       "name": "Comparison and wealth"
@@ -65,6 +73,232 @@
     }
   ],
   "entries": [
+    {
+      "id": "observed-data",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "Which inputs are real observations?",
+      "answer": "Daily prices, dividends and splits come from Yahoo Finance through yfinance. Holdings, trading rules, fees and client tax circumstances are model inputs.",
+      "method": "The local study covers 2019-01-02 through 2025-12-31, 1,760 sessions and 41 securities: 20 candidate stocks, 20 distinct replacements and SPY. Split-adjusted vendor observations are converted to nominal units, then split events apply once. Missing series or mismatched calendars stop the run.",
+      "limit": "Yahoo observations may be revised and are not an independently licensed institutional feed. The fixed universe is not point-in-time membership and does not supply delisted-security coverage or historical borrow availability.",
+      "sources": [
+        "p107/market_data.py",
+        "tools/fetch_market_study.py",
+        "configs/observed_study.json"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-loss",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "Where do the harvested losses come from?",
+      "answer": "From observed price changes and the modeled FIFO purchase lots, not from an assumed annual loss curve.",
+      "method": "Compare current position value with adjusted tax basis. If its loss exceeds the entered trigger and its lots are outside the recent-acquisition window, execute a switch into a mapped replacement at the following close. Recognize tax losses only after applying wash adjustments; economic harvested losses and deferred tax losses are reported separately.",
+      "limit": "The trades are model-generated, not manager trade records. Available losses depend on the sampled names, costs, rebalancing, execution timing and replacement assumptions. There is no assumed manager alpha.",
+      "sources": [
+        "p107/observed_engine.py",
+        "p107/lot_accounting.py"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-controls",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "What are the comparison portfolios?",
+      "answer": "Compare Core with the same portfolio without harvesting, a long-only harvesting basket, and a passive SPY benchmark.",
+      "method": "Match starting cash, dates, outside proceeds and advisor fees. The long-only basket equally weights the selected stock names at rebalances and uses its own 0.25% manager assumption. SPY buys at entry and sells according to the exit policy; no extra manager fee is added by default because observed fund prices already reflect its expenses.",
+      "limit": "The long-only basket is a DI proxy, not a broad index replication or tracking-error optimized portfolio. Benchmark differences include stock selection and leverage; the no-harvest control isolates the harvesting rule more directly.",
+      "sources": [
+        "p107/observed_studies.py",
+        "configs/observed_study.json"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-target",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "Are positions always at 130/30?",
+      "answer": "130/30 is the target at scheduled rebalances and after replacement switches; market moves cause drift between them.",
+      "method": "Solve post-trade-fee NAV by bisection, then size 130% long and 30% short against that NAV. Close reductions before adding exposure. The default schedule is every 21 observed sessions. A prior-close harvest signal executes at the next observed close.",
+      "limit": "Execution at daily close is idealized. This is not an intraday hedged account, and replacements can change market exposure. A maintenance liquidation stops further trading.",
+      "sources": [
+        "p107/observed_engine.py",
+        "p107/lot_accounting.py"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-wash",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "How are wash sales matched?",
+      "answer": "Match same-ticker quantities across the 30 days before and after every loss realization, including rebalances and replacement exits.",
+      "method": "FIFO closes economic and tax lots separately. Retained recent acquisitions match first; subsequent acquisitions match pending losses in order. Disallowed losses adjust replacement long basis or short proceeds, and long holding time is carried over. Partial matches, splits and cross-year losses are recorded. January matches update the prior sale year before payment.",
+      "limit": "The stock-only research account has no cross-account, spouse, IRA or option activity, and no overlapping long/short ticker. Different-issuer replacement relationships are stated assumptions. Tax compliance outside this bounded account requires the missing household and instrument information.",
+      "sources": [
+        "p107/observed_engine.py",
+        "p107/lot_accounting.py"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-tax-timing",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "When are taxes paid and losses used?",
+      "answer": "ST/LT gains and allowable losses are netted annually, with carryforwards kept by character.",
+      "method": "Capital taxes are paid on the first observed session on/after February 1 of the next year, after the December wash window. At the horizon, settle every outstanding year. Outside proceeds enter side cash at year-end. Taxes use side cash first and then account cash/debt. Unused carryforwards receive no terminal cash value.",
+      "limit": "This payment schedule is an explicit research convention, not the estimated-tax calendar. No ordinary-income capital-loss deduction, state brackets or personalized filing status is modeled. Final liquidation assumes no new trades during the following 30 days.",
+      "sources": [
+        "p107/observed_engine.py",
+        "p107/lot_accounting.py"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-income",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "How are dividends, fees and short payments treated?",
+      "answer": "Apply observed dividends and splits once; model trading fees in tax basis/net proceeds as well as cash costs.",
+      "method": "Long dividends use the stated dividend rate. Short dividend payments reduce cash; for ordinary positions closed within 45 days, those payments also adjust closing basis. Opening/closing fees adjust capital-gain basis/proceeds. Manager, advisor, debt financing, borrow and rebate amounts are separate.",
+      "limit": "Qualified-dividend holding tests, extraordinary distributions and client itemized deductions are not inferred. Financing/manager fees receive no automatic tax deduction. Cost rates are assumptions, not historical broker terms.",
+      "sources": [
+        "p107/observed_engine.py",
+        "p107/lot_accounting.py"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-margin",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "Do we model margin calls and borrowing?",
+      "answer": "A close-of-day maintenance breach triggers liquidation; availability and borrowing rates remain explicit assumptions.",
+      "method": "Default maintenance equity is 30% of gross long plus short market value. Costs accrue by elapsed calendar days on actual debt and short notional. If equity cannot cover liquidation costs, the run fails and a sampled portfolio remains in the failure report.",
+      "limit": "No intraday margin monitoring, lender recall, historical locate inventory, security-specific borrow curve or gap execution model is supplied. The maintenance ratio is educational, not a broker quote.",
+      "sources": [
+        "p107/observed_engine.py",
+        "p107/lot_accounting.py"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-exits",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "How does gradual wind-down work?",
+      "answer": "Sell the portfolio over the final three, four or five observed calendar years and keep withdrawn proceeds in side cash.",
+      "method": "At each scheduled year-end, close 1 / remaining exit years of every position. Transfer net proceeds after trading costs to side cash; remaining holdings, fees, debt and harvesting scale with the remaining account. Extension reduction instead lowers long/short targets toward 100/0 before final liquidation.",
+      "limit": "Year-end timing and zero return on side cash are assumptions. Different exit dates can change the outcome. Each policy follows its own historical trade and tax path rather than applying a percentage discount to the full-sale result.",
+      "sources": [
+        "p107/observed_engine.py",
+        "p107/lot_accounting.py"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-death",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "Which gains receive a step-up at death?",
+      "answer": "Adjust each eligible long lot to its observed horizon FMV. No percentage of aggregate Core gains is used.",
+      "method": "Close short liabilities in the donor account and settle donor capital taxes. Set long-lot tax basis to FMV, including a downward adjustment for underwater lots. The beneficiary then sells the long shares. Report the actual total basis adjustment and beneficiary tax separately.",
+      "limit": "Eligibility for ordinary inherited property is assumed. Estate tax is an optional entered dollar cost, default zero; exceptions, trusts, community property and alternative valuation require client inputs. Short liabilities receive no automatic basis adjustment.",
+      "sources": [
+        "p107/observed_engine.py",
+        "p107/lot_accounting.py"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-gift",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "What happens when shares are gifted?",
+      "answer": "At the horizon, cover shorts and fund donor debt and taxes before gifting the remaining unencumbered long shares.",
+      "method": "Recipient sale uses each lot’s donor basis for gains and the lower of gift-date FMV and donor basis for losses; a price between these bases has no gain/loss. Recipient rates apply only to recipient realizations. Donor outside gains and carryforwards stay with the donor. Wealth is combined donor/recipient wealth.",
+      "limit": "This compares a gift at the horizon followed by recipient sale, not a multigeneration estate plan. Gift tax is an optional entered dollar cost, default zero; exemption usage and household transfer history are not available. Gift-tax basis adjustments and unusual transfers need client-specific treatment.",
+      "sources": [
+        "p107/observed_engine.py",
+        "p107/lot_accounting.py"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-gain",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "How is the one-time gain threshold calculated?",
+      "answer": "Run the same historical portfolios with one outside gain in one selected calendar year, including final liquidation taxes.",
+      "method": "Compare $0, $1M, $3M and $5M. Scan $0–$5M at $250,000 intervals, then bisect each sign-changing interval to a sub-cent wealth residual or the iteration limit. Search Core versus SPY and versus the long-only harvesting basket. Re-run the ledger because tax funding can affect later account values.",
+      "limit": "A finite grid may miss tangencies or narrow crossings. No crossing means none found in the displayed range. Event cash equals incremental taxable gain; actual sale proceeds and original outside basis require separate client inputs.",
+      "sources": [
+        "p107/observed_studies.py",
+        "configs/observed_study.json"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-sampling",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "How are random portfolios selected?",
+      "answer": "Draw disjoint long and short sets uniformly without replacement inside each portfolio, using a fixed random seed.",
+      "method": "The default uses 100 draws, seed 4511, three long and three short stocks from a documented 20-name fixed universe. Every draw compares harvesting, the same stocks without harvesting, and SPY. Failed portfolios remain visible; quantiles use completed runs and the win fraction uses all draws.",
+      "limit": "This universe was selected from currently identifiable stocks and has selection/survivorship bias. It is not historical S&P 500 membership. Randomization does not remove factor bias or make the win fraction a forecast.",
+      "sources": [
+        "p107/observed_studies.py",
+        "configs/observed_study.json"
+      ],
+      "kind": "Implemented method"
+    },
+    {
+      "id": "observed-replay",
+      "category": "observed",
+      "modes": [
+        "observed"
+      ],
+      "title": "Can we reproduce the exact result?",
+      "answer": "Each export contains the exact observations, configuration and source hashes used by the run.",
+      "method": "Replay the exported request offline with tools/run_study.py. The observed study runner also compares full result objects across two runs, writes summary CSVs and records data and code hashes. Raw observations stay in the local data/raw cache or a private export.",
+      "limit": "A new download may contain vendor revisions. The recorded observation hash identifies the exact snapshot; it does not independently authenticate the provider.",
+      "sources": [
+        "p107/observed_studies.py",
+        "configs/observed_study.json",
+        "tools/run_observed_studies.py"
+      ],
+      "kind": "Implemented method"
+    },
     {
       "id": "same-start",
       "category": "comparison",
@@ -916,20 +1150,20 @@
   ],
   "quick_links": [
     {
-      "title": "How do we get the losses?",
-      "id": "loss-curves"
+      "id": "observed-loss",
+      "title": "How do we get the losses?"
     },
     {
-      "title": "Are we always at 130/30?",
-      "id": "target-exposure"
+      "id": "observed-wash",
+      "title": "How are wash sales handled?"
     },
     {
-      "title": "What happens at exit?",
-      "id": "full-sale"
+      "id": "observed-exits",
+      "title": "What happens at exit?"
     },
     {
-      "title": "Which data are real?",
-      "id": "data-source"
+      "id": "observed-data",
+      "title": "Which data are real?"
     }
   ]
 }

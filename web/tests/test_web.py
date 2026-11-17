@@ -154,6 +154,24 @@ class AdapterTests(unittest.TestCase):
 
 
 class HttpTests(unittest.TestCase):
+    def test_observed_study_http_and_tax_lot_export(self):
+        payload=dict(mode='historical',engine='historical_lots',data_source='synthetic',
+                     config=server.study_defaults()['historical'])
+        status,raw,_=self.request('POST','/api/studies/run',json.dumps(payload),{'Content-Type':'application/json'})
+        self.assertEqual(status,200,raw.decode()[:300])
+        result=json.loads(raw)
+        self.assertEqual(result['engine'],'historical_lots')
+        self.assertEqual(len(result['rows']),4)
+        self.assertIn('SYNTHETIC',result['data_label'])
+        status,body,_=self.request('GET','/api/studies/download/'+result['run_id'])
+        self.assertEqual(status,200)
+        with zipfile.ZipFile(io.BytesIO(body)) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertIn('harvest_realizations.csv',archive.namelist())
+            saved=json.loads(archive.read('request.json'))
+            self.assertEqual(saved['engine'],'historical_lots')
+            self.assertEqual(saved['data_source'],'uploaded')
+
     def test_assumptions_reference_preserves_distinct_engine_defaults(self):
         status, raw, _ = self.request('GET', '/api/assumptions')
         self.assertEqual(status, 200)
@@ -161,8 +179,10 @@ class HttpTests(unittest.TestCase):
         rows = {r[0]: r[1:] for r in data['defaults']}
         # Different pages really use different rebate, borrow and loss rules.
         # Collapsing them into a universal default would misdescribe the model.
-        self.assertEqual(rows['Short rebate rate'], ['4%', '0%', '0%', '0%'])
-        self.assertEqual(rows['Short borrow rate'], ['0.2%', '1%', '1%', '1%'])
+        self.assertEqual(rows['Short rebate rate'], ['4%', '0%', '0%', '0%', '0%'])
+        self.assertEqual(rows['Short borrow rate'], ['0.2%', '1%', '1%', '1%', '1%'])
+        self.assertEqual(data['observed_defaults']['draws'],100)
+        self.assertIn('21 sessions',rows['Rebalance / reentry'][4])
         self.assertEqual(rows['Loss rule'][1], '5% loss trigger')
         self.assertEqual(rows['Loss rule'][3], '8% loss trigger')
         self.assertEqual(data['loss_curves'][2]['rates'][0], 15)

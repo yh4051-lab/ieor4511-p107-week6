@@ -169,8 +169,12 @@ def study_zip(result):
         files['annual.csv']=csv_bytes(result['annual'])
     if result['mode']=='historical':
         for name,run in result['results'].items():
-            for table in ('daily','annual','trades'):
-                if run[table]: files[f'{name}_{table}.csv']=csv_bytes(run[table])
+            for table in ('daily','annual','trades','realizations','wash_matches','events'):
+                if run.get(table): files[f'{name}_{table}.csv']=csv_bytes(run[table])
+    for index, (label, runs) in enumerate(result.get('policy_runs',{}).items(),1):
+        for name,run in runs.items():
+            for table in ('annual','trades','realizations','wash_matches','events'):
+                if run.get(table):files[f'policy_{index:02d}/{name}_{table}.csv']=csv_bytes(run[table])
     files['FILE_MANIFEST.json']=json_bytes({n:hashlib.sha256(b).hexdigest() for n,b in files.items()})
     output=io.BytesIO()
     with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as z:

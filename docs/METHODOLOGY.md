@@ -1,5 +1,13 @@
 # Accounting methodology
 
+## Current historical tax-lot methodology
+
+The current Portfolio research default uses observed 2019–2025 prices and one daily tax-lot engine for all four studies. See [Observed-price research](OBSERVED_RESEARCH.md) for the full algorithms, exact data provenance, wash matching, historical exits, one-time break-even, random sampling and remaining client-data assumptions. The searchable `/assumptions` page separates this engine from earlier models.
+
+The new engine matches same-ticker wash quantities, keeps economic and tax basis separate, and compares historical exit policies. Fees, borrow availability, taxes, transfer eligibility and maintenance rules remain inputs. The fixed universe is not historical S&P 500 membership. Raw observations remain local/private; aggregate results and verification records are in `results_observed/`.
+
+## Original annual scenario (retained for replay)
+
 Scope: this document describes the original annual scenario model in `p107/model.py`. The newer three-level historical research engine is documented in `../README-STOCK.md` and `../CODE-MAP.md`; its assumptions and limits are separate.
 
 November 17 extensions are documented in

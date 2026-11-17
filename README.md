@@ -4,9 +4,22 @@ IEOR E4511, P107 | Wedmont Private Capital
 
 Team: Yaozhong Hu and Chun-An Ko
 
-This is our initial Python model comparing a $1 million cash investment in an index strategy, long-only direct indexing, and a cash-funded Core 130/30 scenario. It tracks fees, financing, harvested losses, carryforwards, cost basis, and taxes through a full sale at the end of the holding period.
+This Python project includes illustrative scenarios and historical tax-lot studies comparing a $1 million cash investment in an index strategy, long-only direct indexing, and a cash-funded Core 130/30 scenario. It tracks fees, financing, harvested losses, carryforwards, cost basis, and taxes through a full sale at the end of the holding period.
 
 **The public example uses independent illustrative assumptions. It is not a historical backtest, provider performance, actual tax savings, or a completed final-project model.** The original source-based configuration and data are available separately to course reviewers through the [restricted data package](https://drive.google.com/file/d/1qM3_vRim7PjjDtkDC0bFYVb8deZpJyNk/view). See [reproduction instructions](docs/RESTRICTED_DATA.md).
+
+## Observed-price studies · November 17
+
+All four **Portfolio research** tabs now default to **Historical prices · tax lots**: 130/30 rebalancing/replacements, historical exit policies, one-time outside gains and random portfolios. The local 2019–2025 snapshot contains 41 securities and 1,760 sessions. These are observed prices with hypothetical trades, costs and client conditions; the fixed 20-stock universe is not point-in-time S&P 500 membership.
+
+```sh
+python -m pip install -r requirements-stock.txt
+python tools/fetch_market_study.py
+python tools/run_observed_studies.py --mode all --samples 100
+python web/launch.py
+```
+
+Read [Observed-price research](docs/OBSERVED_RESEARCH.md) for algorithms, data provenance, replay instructions and remaining assumptions. `results_observed/` contains aggregate CSVs and verification reports. Raw price observations and full replay files stay in ignored local/private folders. Earlier calculations remain selectable for prior-export reproduction.
 
 ## Run the browser interface
 
@@ -19,9 +32,7 @@ Choose **Assumptions & methodology** in either page header for the searchable
 model reference at `/assumptions`: input defaults, loss calculations, trading
 rules, taxes, exit policies, sampling algorithms and source-code links. It
 describes starting settings; a completed run's export records the inputs used.
-The default historical/cohort examples are synthetic software tests, not market
-evidence. Exit and one-time-gain comparisons use the separate annual scenario
-model; they do not silently inherit historical stock returns.
+The earlier models retain their synthetic and annual examples. The new historical tax-lot default uses observed prices across all four tabs; select the calculation basis explicitly.
 
 Download this repository using **Code > Download ZIP** and extract it into a new folder. On Windows with Python 3.12, double-click **START-STOCK.bat** to install the historical-data dependency and open the complete interface. To start from a terminal in the project folder, run:
 
@@ -99,7 +110,7 @@ JSON and the run-specific **Assumptions & scope** tab. Legacy research-level
 API/CLI inputs remain supported for prior-run replay.
 
 
-## Follow-up work: November 10 sponsor feedback
+## Earlier implementation: November 10 sponsor feedback
 
 The repository includes an **opt-in research extension** addressing Dominic
 Corabi's four questions: 130/30 rebalancing and explicit temporary securities,

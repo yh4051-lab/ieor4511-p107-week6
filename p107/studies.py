@@ -28,7 +28,9 @@ def membership_rows(text):
 
 
 def defaults():
+    from .observed_studies import observed_defaults, CACHE
     return dict(annual=read_json(ROOT/'configs/example_hypothetical.json'),
+                observed=observed_defaults(),observed_cache_available=CACHE.exists(),
                 historical=read_json(ROOT/'configs/example_dom_historical.json'),
                 memberships_csv=(ROOT/'examples/dom_synthetic_memberships.csv').read_text(encoding='utf-8'),
                 note='The included stock prices and memberships are synthetic software fixtures, not market history.')
@@ -80,6 +82,9 @@ def _history(request, config, names, provider):
 def run_study(request, history_provider=None):
     if not isinstance(request,dict):
         raise ValueError('Study request must be an object')
+    if request.get('engine')=='historical_lots':
+        from .observed_studies import run_observed_study
+        return run_observed_study(request,history_provider)
     request=deepcopy(request)
     mode=request.get('mode')
     c=deepcopy(request.get('config'))

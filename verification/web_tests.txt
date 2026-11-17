@@ -17,6 +17,7 @@ test_landing_navigation_from_external_link_is_allowed (test_web.HttpTests.test_l
 test_launcher_recognizes_running_public_server (test_web.HttpTests.test_launcher_recognizes_running_public_server) ... ok
 test_launcher_rejects_integrated_server_with_missing_or_different_build (test_web.HttpTests.test_launcher_rejects_integrated_server_with_missing_or_different_build) ... ok
 test_local_page_api_and_download (test_web.HttpTests.test_local_page_api_and_download) ... ok
+test_observed_study_http_and_tax_lot_export (test_web.HttpTests.test_observed_study_http_and_tax_lot_export) ... ok
 test_original_launcher_uses_integrated_server_and_honors_no_browser (test_web.HttpTests.test_original_launcher_uses_integrated_server_and_honors_no_browser) ... ok
 test_portfolio_api_and_assets (test_web.HttpTests.test_portfolio_api_and_assets) ... ok
 test_portfolio_bad_requests (test_web.HttpTests.test_portfolio_bad_requests) ... ok
@@ -29,6 +30,6 @@ test_stock_launcher_rejects_prior_research_server (test_web.HttpTests.test_stock
 test_three_level_research_endpoint (test_web.HttpTests.test_three_level_research_endpoint) ... ok
 
 ----------------------------------------------------------------------
-Ran 29 tests in 1.588s
+Ran 30 tests in 1.631s
 
 OK

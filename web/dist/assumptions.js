@@ -28,7 +28,10 @@
     $('defaults-table').innerHTML='<table><thead><tr><th scope="col">Input</th>'+columns.map(({c})=>'<th scope="col">'+esc(c.name)+'</th>').join('')+'</tr></thead><tbody>'+data.defaults.map(row=>'<tr><th scope="row">'+esc(row[0])+'</th>'+columns.map(({i})=>'<td>'+esc(row[i+1])+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
     $('defaults-table').querySelector('table').style.minWidth=columns.length===1?'350px':'780px';
     const d=data.exit_defaults,s=data.sampling_defaults;
-    $('special-defaults').innerHTML=`<p><strong>Exit policy defaults:</strong> Core eligible long gain ${d.eligible_core_long_gain_pct}%; gift at the start of year ${d.gift_year}; recipient ST/LT ${d.recipient_st_pct}% / ${d.recipient_lt_pct}%; extension gain attribution ${d.extension_gain_share_pct}%.</p><p><strong>Sampling defaults:</strong> ${s.draws} draws, seed ${s.seed}, ${s.long_count} longs and ${s.short_count} shorts per draw.</p><p>Default values are read from the shipped configuration and form fields. Exact settings for a completed run are in its export.</p>`;
+    $('special-defaults').innerHTML=`<p><strong>Earlier annual exit defaults:</strong> Core eligible long gain ${d.eligible_core_long_gain_pct}%; gift at the start of year ${d.gift_year}; recipient ST/LT ${d.recipient_st_pct}% / ${d.recipient_lt_pct}%; extension gain attribution ${d.extension_gain_share_pct}%.</p><p><strong>Earlier sampling defaults:</strong> ${s.draws} draws, seed ${s.seed}, ${s.long_count} longs and ${s.short_count} shorts per draw.</p><p>Default values are read from the shipped configuration and form fields. Exact settings for a completed run are in its export.</p>`;
+    const o=data.observed_defaults;
+    if(mode==='observed')$('special-defaults').innerHTML='';
+    if(mode==='observed'||mode==='all')$('special-defaults').innerHTML+=`<p><strong>Current observed studies:</strong> ${o.draws} draws, seed ${o.seed}, ${o.long_count} longs and ${o.short_count} shorts; maintenance equity/gross ${o.maintenance}%. Death and gift occur at the horizon. Transfer tax dollar costs default to zero and require client inputs.</p>`;
     $('expand-methods').textContent=expanded?'Collapse methods':'Expand methods';
   }
   function reveal(id){

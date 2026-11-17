@@ -62,6 +62,34 @@ test_loss_usage_capped_at_eligible_gains (test_model.TaxTests.test_loss_usage_ca
 test_negative_or_nan_rejected (test_model.TaxTests.test_negative_or_nan_rejected) ... ok
 test_same_character_before_cross_character (test_model.TaxTests.test_same_character_before_cross_character) ... ok
 test_unused_losses_have_no_cash_credit (test_model.TaxTests.test_unused_losses_have_no_cash_credit) ... ok
+test_below_basis_death_adjusts_down (test_observed.ObservedEngine.test_below_basis_death_adjusts_down) ... ok
+test_break_even_matches_known_root_and_no_crossing (test_observed.ObservedEngine.test_break_even_matches_known_root_and_no_crossing) ... ok
+test_death_adjusts_actual_long_lot_and_keeps_short_tax (test_observed.ObservedEngine.test_death_adjusts_actual_long_lot_and_keeps_short_tax) ... ok
+test_flat_all_exit_policies_preserve_wealth (test_observed.ObservedEngine.test_flat_all_exit_policies_preserve_wealth) ... ok
+test_gift_closes_debt_before_transfer (test_observed.ObservedEngine.test_gift_closes_debt_before_transfer) ... ok
+test_gift_donor_outside_gain_not_at_recipient_zero_rate (test_observed.ObservedEngine.test_gift_donor_outside_gain_not_at_recipient_zero_rate) ... ok
+test_gradual_releases_equal_thirds_in_flat_case (test_observed.ObservedEngine.test_gradual_releases_equal_thirds_in_flat_case) ... ok
+test_margin_breach_liquidates_and_does_not_restart (test_observed.ObservedEngine.test_margin_breach_liquidates_and_does_not_restart) ... ok
+test_observed_study_exact_offline_replay (test_observed.ObservedEngine.test_observed_study_exact_offline_replay) ... ok
+test_outside_gain_only_once_and_tax_next_february (test_observed.ObservedEngine.test_outside_gain_only_once_and_tax_next_february) ... ok
+test_post_fee_target_is_130_30 (test_observed.ObservedEngine.test_post_fee_target_is_130_30) ... ok
+test_shared_ticker_rejected (test_observed.ObservedEngine.test_shared_ticker_rejected) ... ok
+test_tax_on_known_long_gain (test_observed.ObservedEngine.test_tax_on_known_long_gain) ... ok
+test_wealth_identity_with_costs_splits_dividends (test_observed.ObservedEngine.test_wealth_identity_with_costs_splits_dividends) ... ok
+test_cross_year_wash_changes_sale_year (test_observed.WashLots.test_cross_year_wash_changes_sale_year) ... ok
+test_different_ticker_is_not_matched (test_observed.WashLots.test_different_ticker_is_not_matched) ... ok
+test_fees_enter_basis_and_net_proceeds (test_observed.WashLots.test_fees_enter_basis_and_net_proceeds) ... ok
+test_forward_long_match_defers_loss_and_recovers_on_sale (test_observed.WashLots.test_forward_long_match_defers_loss_and_recovers_on_sale) ... ok
+test_gift_dual_basis_gain_loss_and_middle (test_observed.WashLots.test_gift_dual_basis_gain_loss_and_middle) ... ok
+test_leap_year_anniversary_is_st_until_next_day (test_observed.WashLots.test_leap_year_anniversary_is_st_until_next_day) ... ok
+test_multiple_losses_match_one_acquisition_in_order (test_observed.WashLots.test_multiple_losses_match_one_acquisition_in_order) ... ok
+test_partial_future_purchase_does_not_duplicate_match (test_observed.WashLots.test_partial_future_purchase_does_not_duplicate_match) ... ok
+test_partial_prior_purchase_matches_held_shares_only (test_observed.WashLots.test_partial_prior_purchase_matches_held_shares_only) ... ok
+test_replacement_disposal_uses_same_matching_rules (test_observed.WashLots.test_replacement_disposal_uses_same_matching_rules) ... ok
+test_short_payment_in_lieu_basis_for_short_holding (test_observed.WashLots.test_short_payment_in_lieu_basis_for_short_holding) ... ok
+test_short_reopening_adjusts_short_proceeds (test_observed.WashLots.test_short_reopening_adjusts_short_proceeds) ... ok
+test_split_during_window_preserves_dollar_loss (test_observed.WashLots.test_split_during_window_preserves_dollar_loss) ... ok
+test_thirty_day_boundary_and_day_31 (test_observed.WashLots.test_thirty_day_boundary_and_day_31) ... ok
 test_130_30_return_and_no_free_short_proceeds (test_portfolio.PortfolioTests.test_130_30_return_and_no_free_short_proceeds) ... ok
 test_duplicate_symbols_and_nonfinite_equity (test_portfolio.PortfolioTests.test_duplicate_symbols_and_nonfinite_equity) ... ok
 test_explicit_cost_conventions (test_portfolio.PortfolioTests.test_explicit_cost_conventions) ... ok
@@ -132,6 +160,6 @@ test_membership_invalid_effective_interval (test_sponsor_studies.StudyIntegratio
 test_one_time_results_cover_all_strategies_and_both_comparators (test_sponsor_studies.StudyIntegration.test_one_time_results_cover_all_strategies_and_both_comparators) ... ok
 
 ----------------------------------------------------------------------
-Ran 132 tests in 3.194s
+Ran 160 tests in 3.215s
 
 OK

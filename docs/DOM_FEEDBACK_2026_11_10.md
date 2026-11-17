@@ -1,3 +1,9 @@
+# Portfolio research: current status
+
+The November 17 observed-price update supersedes the implementation described below. All four tabs now use historical tax lots by default. See [current coverage, algorithms, real-data provenance and reproduction](OBSERVED_RESEARCH.md). Earlier model exports remain reproducible.
+
+## Earlier implementation record
+
 # Portfolio research: November 10 feedback
 
 Updated November 17, 2026. This is a research model with explicit assumptions.

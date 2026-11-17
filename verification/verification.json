@@ -1,5 +1,5 @@
 {
-  "verification_time_utc": "2026-11-17T06:46:28+00:00",
+  "verification_time_utc": "2026-11-17T07:23:52+00:00",
   "python": "3.12.14",
   "commands": [
     {
@@ -64,9 +64,9 @@
     }
   ],
   "source_audit_rerun": false,
-  "tests_run": 132,
+  "tests_run": 160,
   "tests_passed": true,
-  "web_tests_run": 29,
+  "web_tests_run": 30,
   "web_tests_passed": true,
   "output_files_compared": 14,
   "all_outputs_byte_identical": true,
@@ -123,7 +123,7 @@
     },
     {
       "file": "run_metadata.json",
-      "sha256": "52c09a182bc8d9ecc7f3ff17ab170bd0c51769ac5d7ba64dad2d29406d485fab",
+      "sha256": "308007839602716bcc384ce84580acc583b51f01cf332414039cc3dcd413dfb6",
       "byte_identical": true
     },
     {
@@ -154,21 +154,29 @@
     "p107/analysis.py": "c70188a5194506dd0aa9368fc87affd79da8330a2ef0e9148aa4c828efaff849",
     "p107/dom_historical.py": "4e25e7e22dbb73401fa43dd7ceec16c18c791feca919f7b70cfafc38656eb50e",
     "p107/dom_sampling.py": "7f90a51c607040e3f7afa9f5b10cded8cff7667978e6efd422f7fde0d4c67079",
+    "p107/lot_accounting.py": "2989ac289992a3dc4ad6663fb138732e3fe21039283bd2107def10b97ae3435a",
     "p107/market_data.py": "4a34a8c88301fa9298906ad48b937640f8ac22ce8a40847c13b7a35c678157c6",
     "p107/model.py": "645fbf644b8af8e98a1c9aef052d97e0d24dbc1a8f5e1393845782861dd30a58",
+    "p107/observed_engine.py": "d7095474f84a95ae284639737e9651d934727cf9a4dcee8e564cb33044186c87",
+    "p107/observed_studies.py": "dcaba2db9fdb65002345161fafa5695e059c9a2fe8bcb9e0597b8eb6502f780b",
     "p107/portfolio.py": "8fb9e43fe319128babe0a4c7dd74c373f365d598ba7a4748ec95590be5683467",
     "p107/reporting.py": "bd52d4422020ed8836ff8c4eb40f8f4c5892648a9ffd5857b7f0d0ab57719a99",
     "p107/research.py": "087859199142d750d085d95cc4948433b4513ff600843972d504f5990e0f777f",
-    "p107/studies.py": "b09d4ed6b06caee45ef80d208890e61014f17b8f7b76dd48ce548b1623628c25",
+    "p107/studies.py": "5facdf675f65ff95bc1bb5f4ea331a02e6c54050556e948add9f937c8c4b1b34",
     "p107/taxes.py": "1c34c0f5a8a378f4eed166a1a50d28fbe5318eeaf4d5f5c785c321751416a1c6",
     "tests/test_dom_feedback.py": "195856007dca9a832328ccf67a7178fabfc4b457e7e409512a655d842bb14c54",
     "tests/test_market_history.py": "deaafc5d9c3dab7c7e7273307db3d8dc6d0e74acb2ef548ab9eb88886fa8ae98",
     "tests/test_model.py": "b09a7db3744a2ba61e7979f06b030b1eadccc7adc54d6b3b79445d31f1a08cb3",
+    "tests/test_observed.py": "d7a8f8903edc80f5a657d9169001aa821d951782c7e43be71af5e1d2c9a0f760",
     "tests/test_portfolio.py": "cb42b8f76fbfe958cc34b87c98006cbc70356a8f34706321c9b732e7fdaaf1c7",
     "tests/test_research.py": "d4d3a63d17499afc6f5f8eabb60c77a2bab742965d082b47dd7198e95eaeb366",
     "tests/test_sponsor_studies.py": "af3b516f162ff2d381a0643df903cd1ecb4d6d3d02669bf444e75c0f82277a7a",
     "tools/dom_feedback.py": "bf5662ba6cc95890dfb7499a163846d79f1a7efa35e153dbb94d208f6f5981c3",
+    "tools/fetch_market_study.py": "f54fa2a0aaa097c2d2dd805ffb8142cc6331291a080b068a366e526e3ada223d",
+    "tools/observed_sensitivity.py": "f961c271c8703a7064a29edbc97319de66f0100357722f65d876218582405343",
+    "tools/plot_observed_results.py": "ad1cc8d33a065dc2b64dbab34354c814fdbed446bd906973a1f159459faa1eb3",
     "tools/replay_research.py": "fc5c494b0db747fed0127b7a96d96bc6ea9932d82beccd758b6725a5f1d3ac02",
+    "tools/run_observed_studies.py": "449155e6b8ea08772b31c6eaf9e553c352873e1c36f04cc55d362561474b95d2",
     "tools/run_research.py": "4b8d50d4cfd8b1b71f2993c810de18ee9e72f0d229ca71e3a56119e5eaff2e98",
     "tools/run_study.py": "631dceb1eed486d06c4b6c4173f1b00008deb0c11b73a9726f95d83bd304a5b2",
     "tools/verify_project.py": "01a02ebd95b32c262f7aaa7aa1d1ce17dd95fe40c5dc8802eb96550971de3d16",
