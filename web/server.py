@@ -247,7 +247,7 @@ class Handler(BaseHTTPRequestHandler):
             with self.server.run_lock:
                 result = self.server.tax_lab_runs.get(path.rsplit('/', 1)[-1])
             if result is None:
-                self.send(404, json_bytes({'error': '請先重新執行研究，再匯出結果。'}))
+                self.send(404, json_bytes({'error': 'Run the study again before exporting its results.'}))
             else:
                 self.send(200, tax_lab_zip(result), 'application/zip',
                           f"P107_tax_lab_{result['run_id'][:8]}.zip")
@@ -296,7 +296,7 @@ class Handler(BaseHTTPRequestHandler):
             inputs = json.loads(self.rfile.read(length))
             if self.path == '/api/tax-lab/run':
                 if not self.server.tax_lab_busy.acquire(blocking=False):
-                    self.send(409, json_bytes({'error': '另一項研究仍在執行，請稍後再試。'}))
+                    self.send(409, json_bytes({'error': 'Another study is still running. Please try again after it finishes.'}))
                     return
                 try:
                     result = run_tax_lab(inputs)
@@ -319,7 +319,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path == '/api/portfolio/quotes':
                 if not isinstance(inputs, dict) or not isinstance(inputs.get('tickers'), list) or not 1 <= len(inputs['tickers']) <= 20:
-                    raise ValueError('請提供 1 至 20 個美股代號。')
+                    raise ValueError('Provide 1 to 20 US stock tickers.')
                 tickers = [normalize_ticker(s) for s in inputs['tickers']]
                 self.send(200, json_bytes({'quotes': [get_quote(s) for s in dict.fromkeys(tickers)]}))
                 return

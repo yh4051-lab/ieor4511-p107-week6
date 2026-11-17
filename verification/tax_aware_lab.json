@@ -125,5 +125,18 @@
     "status_unchanged": true,
     "file_mismatches": []
   },
-  "interpretation": "Software validation and synthetic model checks, not investment performance validation. D-C includes changed allocations and trades. The QP is a local risk/cost/positive-gain-tax surrogate, not a global lifetime after-tax-wealth optimum."
+  "interpretation": "Software validation and synthetic model checks, not investment performance validation. D-C includes changed allocations and trades. The QP is a local risk/cost/positive-gain-tax surrogate, not a global lifetime after-tax-wealth optimum.",
+  "english_localization": {
+    "document_language": "en",
+    "number_locale": "en-US",
+    "ui_and_guides_no_chinese_text": true,
+    "rendered_results_no_chinese_text": true,
+    "pdf_and_study_zip_no_chinese_text": true,
+    "web_tests_rerun_passed": 34,
+    "real_browser_flow_rerun_passed": true,
+    "actual_cost_cells": 9,
+    "actual_monte_carlo_paths": 2,
+    "mobile_width": 390,
+    "javascript_errors": []
+  }
 }

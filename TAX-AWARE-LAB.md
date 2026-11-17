@@ -1,14 +1,14 @@
-# 四策略稅後研究：獨立分支試用版
+# Four-Strategy After-Tax Research: Experimental Branch
 
-分支：`codex/tax-aware-lab`。本功能在獨立 Git worktree 建立，沒有修改、重設或合併原工作區與 main。原工作區先前已有的同股票多空修正已帶到此分支的舊主頁；新批次引擎仍要求原股與替代股各自唯一。
+Branch: `codex/tax-aware-lab`. This feature was built in a separate Git worktree without changing, resetting or merging the original workspace or main. The earlier same-ticker long/short correction has been carried into this branch's original home page; the new batch engine still requires distinct original and replacement securities.
 
-## 如何開始
+## Getting started
 
-Windows 使用者將完整 ZIP 解壓縮到新資料夾，雙擊 `START-TAX-LAB.bat`。需要 Python 3.12 與 Python Launcher；首次會在這個資料夾建立自己的虛擬環境並安裝 `requirements-lab.txt`，保持套件與 TLS 驗證。
+On Windows, extract the complete ZIP into a new folder and double-click `START-TAX-LAB.bat`. Python 3.12 and the Python Launcher are required. The first launch creates a virtual environment inside this folder and installs `requirements-lab.txt`, keeping package and TLS verification enabled.
 
-程式優先開啟另一個連接埠 8777，若已被其他服務使用會選擇其他可用連接埠。使用啟動器實際開啟的網址。既有主網站可繼續使用。
+The launcher prefers a separate local port, 8777. If another service already occupies that port, it selects an available port. Use the actual address opened by the launcher. Your existing application can continue running.
 
-終端機啟動方式：
+To launch from a terminal:
 
 ```powershell
 py -3.12 -m venv .venv
@@ -16,77 +16,77 @@ py -3.12 -m venv .venv
 .venv\Scripts\python.exe web\launch_tax_lab.py
 ```
 
-第一次建議保留合成示例，先取消「成本敏感度」與「情境路徑模擬」，執行四策略比較。成功後再勾選 3×3 成本網格，以及 2–5 條模擬路徑。計算過程會顯示已經過時間，不製造預估進度。
+For the first run, keep the synthetic example and turn off cost sensitivity and scenario-path simulation. Run the four-strategy comparison first, then enable the 3 × 3 cost grid and 2–5 simulation paths. The interface displays elapsed calculation time; it does not present an invented progress estimate.
 
-## 四個策略究竟差在哪裡
+## How the four strategies differ
 
-- A：100% 多頭指數 ETF，無刻意收割。
-- B：相同候選原股改為純多頭等權 basket，採規則式 TLH；這不是已校準追蹤誤差的完整商業直接指數化產品。
-- C：130/30 固定相對權重、按期再平衡，不啟用收割；仍照常記錄交易與實際模型稅款。
-- D：130/30，固定股票多空方向；CVXPY/CLARABEL 決定權重與稅務批次出售優先序，並搭配相同規則式 TLH、替代股票與實際年度稅務結算。
+- A: A 100% long index ETF, without deliberate loss harvesting.
+- B: The same candidate original securities, held as an equal-weight long-only basket with rule-based TLH. This is not a complete commercial direct-indexing product with calibrated tracking error.
+- C: A 130/30 portfolio with fixed relative weights and scheduled rebalancing, without deliberate harvesting. Trades and actual model taxes are still recorded.
+- D: A 130/30 portfolio with fixed long/short directions. CVXPY/CLARABEL selects weights and tax-lot sale priorities, alongside the same rule-based TLH, replacement securities and actual annual tax settlement.
 
-D 與 C 的差額包含最佳化權重、批次選擇、替代股票及交易變化，不能全部叫作純稅務 alpha。D 不保證勝過其他策略。
+The D–C difference includes optimized weights, lot selection, replacements and trading changes. It cannot all be described as pure tax alpha. D is not guaranteed to outperform the other strategies.
 
-## 模型與約束
+## Model and constraints
 
-每次調整的局部目標是：風險懲罰＋交易成本＋預估持有成本＋正實現利得稅代理值－預期報酬。
+The local objective at each adjustment is: risk penalty + trading costs + estimated holding costs + a positive-realized-gain tax surrogate − expected return.
 
-- 風險項：相對基準的共變異矩陣二次項；只使用交易日前資料，採共變異矩陣縮減與數值 PSD 正則化。
-- 預期 alpha 預設為零，沒有使用未來報酬挑權重。
-- 明確限制多頭合計 130%、空頭合計 30%；並非只用 gross ≤160% 就宣稱達成130/30。
-- 單股上限作用於再平衡目標；兩次交易之間的價格漂移可使實際集中度與總曝險超出目標。若候選股票數不足以上限湊出130/30，模型明確報錯。
-- 同一固定曝險下，統一融資／借券費率對權重通常是常數，但仍在目標紀錄中列出；帳本另按實際融資債務與空頭市值收費。
-- 優化器保守地只懲罰正實現利得，不給虧損出售即時現金抵減。實際損失是否使用、結轉及洗售遞延，交由完整帳本結算。
-- QP 目標不是終身稅後財富的全域最佳化，也沒有完整建模跨帳戶洗售、抵銷部位、券商借券與盤中風控。
+- The risk term is a benchmark-relative covariance quadratic. Estimates use only observations available before the decision date, with covariance shrinkage and numerical PSD regularization.
+- Expected alpha defaults to zero. Future returns are not used to select weights.
+- Long exposure must total 130% and short exposure 30%. A gross-exposure ceiling of 160% alone would not establish a 130/30 portfolio.
+- Single-security caps constrain rebalance targets. Between trades, price changes can push actual concentration and gross exposure beyond those targets. If the candidate set cannot satisfy 130/30 under the selected caps, the model reports an explicit error.
+- At fixed total exposures, uniform financing and borrow rates are generally constant with respect to weights. They remain in the recorded objective; the ledger separately charges actual financing debt and short market value.
+- The optimizer conservatively penalizes positive realized gains and does not give an immediate cash credit for selling a loss. Actual loss use, carryforwards and wash-sale deferrals are settled in the accounting engine.
+- The QP objective is not a global optimization of lifetime after-tax wealth. Cross-account wash sales, offsetting-position rules, securities-lending mechanics and intraday brokerage risk controls are not modeled in full.
 
-這個原型參考風險與成本權衡的凸最佳化框架；並非聲稱完整重現任何一篇 tax-aware 論文的方法。一般交易框架可參考 Boyd 等人的 *Multi-Period Trading via Convex Optimization*。
+This prototype follows the convex-optimization framework for trading off risk and costs. It does not claim to reproduce any particular tax-aware paper in full. For a general trading framework, see Boyd et al., *Multi-Period Trading via Convex Optimization*.
 
-## 稅務帳本與期末財富
+## Tax accounting and terminal wealth
 
-每筆持倉保存日期、股數、經濟成本與稅務成本；多頭未實現損益為 q×(P−B)，空頭方向相反。D 可按優化器的批次優先序出售；既有研究在未啟用配置器時維持 FIFO。
+Each lot retains its date, shares, economic basis and tax basis. Long unrealized profit is q × (P − B); the short-side sign is reversed. D can sell according to the optimizer's lot priorities. Existing studies retain FIFO when the allocator is not enabled.
 
-ST/LT 抵扣、損失結轉、同代號部分洗售遞延、股息、融資、借券與交易成本沿用既有引擎。最後將部位平倉，結清模型中的未付稅款。債務與已付成本已反映在淨財富，不能再扣一次；稅務利益也不能重複加回。
+The existing engine handles ST/LT netting, loss carryforwards, partial same-ticker wash-sale deferrals, dividends, financing, borrow and trading costs. Positions are closed at the end and outstanding model taxes are settled. Debt and costs already paid are reflected in net wealth and must not be deducted again; tax benefits must not be added twice.
 
-目前是現金投入案例，未提供真實客戶既有稅務批次匯入。外部收益仍以等額現金流入，此假設與原本整個資產出售的總收入不同。
+The current case starts with cash. Importing a real client's existing tax lots is not available. Outside gains are accompanied by an equal cash inflow; this differs from modeling the full gross proceeds of an asset sale.
 
-## 四張圖怎麼解釋
+## How to interpret the four charts
 
-1. **財富曲線**：期中是已扣實際支付稅款的帳面財富，仍含未實現稅負；最後一點為完整清倉後稅後財富。不可把所有期中數字當成當日完全變現的淨財富。
-2. **規則觸發收割損失與已付資本稅差**：損失金額不是現金節稅。已付稅差也含不同持倉報酬與交易路徑；年度帳本包含其他再平衡／最佳化交易實現的損失。
-3. **未實現正利得的潛在稅額**：每批正未實現利得乘模型稅率，尚未抵損失及結轉，也未完整估計出售費用；這是明示的稅負代理值，不是精確未來應付稅單。
-4. **成本敏感度熱圖**：只改融資與借券費率，各格共用同一凍結行情及其他客戶條件。可切 D−A 與 D−C。相鄰正負翻轉只表示可能交點區間，不冒充精確門檻；失敗格不填零。
+1. **Wealth curves:** Interim values are book wealth after taxes actually paid, with unrealized tax liabilities still embedded. The final point is after full liquidation and tax settlement. Interim values are not all equivalent to immediate liquidation proceeds.
+2. **Rule-triggered harvested losses and capital taxes paid:** A loss amount is not cash tax savings. Paid-tax differences also reflect different holdings, returns and trading paths. The annual ledger includes losses realized through other rebalancing and optimization trades.
+3. **Potential tax on positive unrealized gains:** Each positive lot gain is multiplied by its model tax rate, before loss and carryforward offsets and without a complete estimate of closing costs. This is an explicitly labeled liability proxy, not an exact future tax bill.
+4. **Cost-sensitivity heatmap:** Only financing and borrow rates change; all cells share the same frozen prices and other client conditions. Switch between D−A and D−C. Opposite signs at adjacent completed points identify a possible crossing interval, not an exact break-even threshold. Failed cells are not filled with zero.
 
-風險表使用當期稅費前的價格與股息投資報酬，排除外部現金流與帳外現金；TE、波動皆年化。回撤按這份投資報酬路徑計算。集中度為最大單一持倉市值／投資帳戶NAV，ETF沒有穿透到成分股。若回報無法定義，顯示未知，不製造零風險。
+The risk table uses price and dividend investment returns before current taxes and fees, excluding external cash flows and cash outside the investment account. Tracking error and volatility are annualized. Drawdown follows that investment-return path. Concentration is the largest single position's market value divided by investment-account NAV. ETFs are not decomposed into their underlying holdings. Undefined returns are reported as unknown, rather than converted into zero risk.
 
-## 多期、歷史資料與 Monte Carlo
+## Multiple periods, historical data and Monte Carlo
 
-可以修改研究日期；真實行情需含開始日前至少20個報酬觀測，完整lookback需要更長預熱資料。Yahoo來源會額外抓取預熱期間。資料不足會明確失敗；不拿未來資料填滿共變異矩陣。
+Research dates are editable. Observed-price studies require at least 20 return observations before the start date; a full lookback requires more warm-up data. The Yahoo source fetches an additional warm-up period. Insufficient data produces an explicit failure. Future observations are not used to complete the covariance estimate.
 
-本機2019–2025快照適合從2020年開始研究，以2019年預熱。十年研究需要更長資料；合成示例只有2019年預熱及2020–2022評估，不會偽造十年實證。
+The local 2019–2025 snapshot is suitable for a study starting in 2020, using 2019 as warm-up. A ten-year study needs longer data. The synthetic example provides 2019 warm-up and a 2020–2022 evaluation period; it does not manufacture ten years of historical evidence.
 
-模擬使用開始日前歷史資料，聯合抽取20交易日區塊，保留原股、替代股與基準的共同衝擊；在每條路徑重新執行A–D。這是條件於區塊模型的情境研究，不能當成未來真實機率。最多10條路徑為操作試用上限，小樣本分位數不構成穩健統計結論。
+Simulation jointly resamples 20-session blocks from pre-start observations, preserving common shocks across original securities, replacements and the benchmark. A–D are rerun on each simulated path. These are scenarios conditional on the block model, not real-world future probabilities. The ten-path limit is a usability limit for the prototype; small-sample quantiles do not establish robust statistical conclusions.
 
-## 合成示例的實際結果
+## Actual results from the synthetic example
 
-初始$1,000,000，2020-01-02至2022-12-30，無外部收益。這些全部是人造價格，僅供操作與模型驗證。
+Initial investment: $1,000,000. Period: January 2, 2020 through December 30, 2022. No outside gains. All prices in this example are artificial and are used only for operating and model checks.
 
-| 策略 | 期末稅後財富 |
+| Strategy | Terminal after-tax wealth |
 |---|---:|
-| A 指數 | $1,159,503.48 |
-| B 純多頭basket＋TLH | $1,183,624.28 |
-| C 130/30不收割 | $896,513.74 |
-| D QP＋規則TLH | $970,613.53 |
+| A Index | $1,159,503.48 |
+| B Long-only basket + TLH | $1,183,624.28 |
+| C 130/30 without harvesting | $896,513.74 |
+| D QP + rule-based TLH | $970,613.53 |
 
-D 比 C 多$74,099.79，但比 A 少$188,889.96。D 的改善不能全部歸為節稅。B 在這個合成路徑較高，但其規則觸發收割損失為零，因此也不能把勝出歸為TLH有效。
+D finishes $74,099.79 ahead of C, but $188,889.96 behind A. Its improvement cannot all be attributed to tax savings. B finishes higher on this synthetic path, but its rule-triggered harvested losses are zero; that outcome is not evidence that TLH caused its outperformance.
 
-## 匯出與重播
+## Export and replay
 
-研究ZIP包含 `input.json`（完整凍結行情與預熱資料）、`result.json`、四策略比較CSV、每個策略的每日／年度／交易／實現／洗售／最佳化帳本、敏感度與模擬CSV，以及檔案雜湊。
+The research ZIP contains `input.json` with the complete frozen observations and warm-up data, `result.json`, the four-strategy comparison CSV, each strategy's daily, annual, trade, realization, wash-sale and optimization ledgers, sensitivity and simulation CSVs, and file hashes.
 
 ```powershell
 .venv\Scripts\python.exe -m p107.tax_lab --input input.json --out replay.json
 ```
 
-結果記錄程式雜湊、Python、NumPy、CVXPY與Clarabel版本。不同套件或平台可能有微小浮點差異。
+Results record code hashes and the Python, NumPy, CVXPY and Clarabel versions. Different package versions or platforms may produce small floating-point differences.
 
-`TAX-LAB-DEMO.html`若隨包提供，可不啟動伺服器直接閱讀預先算好的合成報告；互動重算仍使用START-TAX-LAB。修改任何輸入後，舊結果會標示過期，需重算才能下載或列印。
+If included in your package, `TAX-LAB-DEMO.html` opens the precomputed synthetic report without starting a server. To change conditions and recalculate, use `START-TAX-LAB.bat`. Changing any input marks the previous results as stale; rerun before downloading or printing.

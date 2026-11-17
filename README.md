@@ -4,7 +4,7 @@ IEOR E4511, P107 | Wedmont Private Capital
 
 Team: Yaozhong Hu and Chun-An Ko
 
-**Experimental branch:** the independent [四策略稅後研究試用版](TAX-AWARE-LAB.md) adds a four-strategy comparison, CVXPY allocation, tax-lot ledgers, cost sensitivity and block-bootstrap scenarios. On Windows, run `START-TAX-LAB.bat`; it opens its own local port, preferring 8777. The first example uses explicitly synthetic prices.
+**Experimental branch:** the independent [Four-Strategy After-Tax Research prototype](TAX-AWARE-LAB.md) adds a four-strategy comparison, CVXPY allocation, tax-lot ledgers, cost sensitivity and block-bootstrap scenarios. On Windows, run `START-TAX-LAB.bat`; it opens its own local port, preferring 8777. The first example uses explicitly synthetic prices.
 
 This Python project includes illustrative scenarios and historical tax-lot studies comparing a $1 million cash investment in an index strategy, long-only direct indexing, and a cash-funded Core 130/30 scenario. It tracks fees, financing, harvested losses, carryforwards, cost basis, and taxes through a full sale at the end of the holding period.
 
