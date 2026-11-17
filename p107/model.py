@@ -66,8 +66,16 @@ def _exit_policy(config):
         share = policy.get('step_up_long_embedded_fraction')
         if not isinstance(share, (int, float)) or not isfinite(share) or not 0 <= share <= 1:
             raise ValueError('Specify long-book share of embedded gains; aggregate basis cannot infer it')
-    if mode == 'gift' and policy.get('recipient_liquidates', True) is not True:
-        raise ValueError('Comparable gift scenario requires immediate recipient liquidation')
+    if mode == 'gift':
+        if policy.get('recipient_liquidates', True) is not True:
+            raise ValueError('Comparable gift scenario requires final recipient liquidation')
+        gift_year=policy.get('gift_year',config['horizon_years'])
+        if type(gift_year) is not int or not 1<=gift_year<=config['horizon_years']:
+            raise ValueError('gift_year must be within the investment horizon')
+        for key in ('recipient_tax_st','recipient_tax_lt','recipient_ordinary_tax'):
+            val=policy.get(key,config['tax_st'] if key!='recipient_tax_lt' else config['tax_lt'])
+            if not isinstance(val,(int,float)) or not isfinite(val) or not 0<=val<1:
+                raise ValueError('Invalid recipient tax-rate assumption')
     return policy
 
 
@@ -91,8 +99,19 @@ def simulate(config, strategy_name):
     outside_aftertax_without_strategy = 0.0
     max_identity_error = 0.0
     for i in range(n):
-        start, basis_start, cs0, cl0, cash0 = nav, basis, carry_s, carry_l, cash
         year = i + 1
+        gift_year = policy.get('gift_year',n) if exit_mode=='gift' else None
+        if gift_year==year:
+            # Tax losses personal to donor are not transferred to a recipient.
+            # Cost basis of the gifted security portfolio DOES carry over.
+            carry_s=carry_l=0.
+        effective_tax_st = (policy.get('recipient_tax_st',config['tax_st'])
+                            if exit_mode=='gift' and year>=gift_year else config['tax_st'])
+        effective_tax_lt = (policy.get('recipient_tax_lt',config['tax_lt'])
+                            if exit_mode=='gift' and year>=gift_year else config['tax_lt'])
+        effective_ordinary_tax = (policy.get('recipient_ordinary_tax',config['ordinary_tax_rate'])
+                                  if exit_mode=='gift' and year>=gift_year else config['ordinary_tax_rate'])
+        start, basis_start, cs0, cl0, cash0 = nav, basis, carry_s, carry_l, cash
         # Exactly one year is ST; later years use an explicit, uncalibrated mixture.
         st_frac = 1.0 if year == 1 else s['realization_st_fraction']
         pnl = start * (config['market_price_returns'][i] + s['alpha_pre_cost'])
@@ -138,25 +157,25 @@ def simulate(config, strategy_name):
             gains_s += gs; gains_l += gl
             losses_s += lss; losses_l += lsl
         outside_s, outside_l = config['outside_st_gains'][i], config['outside_lt_gains'][i]
-        interest_tax = max(rebate - financing * s['interest_deduction_fraction'], 0) * config['ordinary_tax_rate']
+        interest_tax = max(rebate - financing * s['interest_deduction_fraction'], 0) * effective_ordinary_tax
         cash_interest = cash * config['cash_return_after_tax']
         available_cash = cash + cash_interest + outside_s + outside_l
         outside_aftertax_without_strategy = (
             outside_aftertax_without_strategy * (1+config['cash_return_after_tax'])
-            + outside_s * (1-config['tax_st']) + outside_l * (1-config['tax_lt']))
+            + outside_s * (1-effective_tax_st) + outside_l * (1-effective_tax_lt))
 
         def tax_at_sale(withdrawal, exit_cost=0, exempt_embedded=0):
             gain = withdrawal * (1-b/v) - exit_cost - exempt_embedded
             a, c, d, e = _split(gain, st_frac)
             return settle(outside_s + gains_s + a, outside_l + gains_l + c,
                           losses_s + d, losses_l + e, cs0, cl0,
-                          config['tax_st'], config['tax_lt'])
+                          effective_tax_st, effective_tax_lt)
 
         pre_exit = tax_at_sale(0)
         internal_only = settle(gains_s, gains_l, losses_s, losses_l, cs0, cl0,
-                               config['tax_st'], config['tax_lt'])
+                               effective_tax_st, effective_tax_lt)
         # Tax change caused by adding outside gains; bounds avoid attributing internal offsets to outside gains.
-        outside_tax_without_losses = outside_s*config['tax_st'] + outside_l*config['tax_lt']
+        outside_tax_without_losses = outside_s*effective_tax_st + outside_l*effective_tax_lt
         outside_relief = outside_tax_without_losses - (pre_exit.tax - internal_only.tax)
         tax_sale = tax_sale_gain = exit_cost = exit_tax = terminal = 0.0
         if year == n:
@@ -241,7 +260,7 @@ def simulate(config, strategy_name):
         rows.append(row)
     last = rows[-1]
     summary = dict(strategy=strategy_name, hypothetical=True, horizon_years=n,
-                    exit_mode=exit_mode,
+                    exit_mode=exit_mode, gift_year=gift_year,
                    initial_cash=config['initial_cash'],
                    outside_gross_gain_proceeds=sum(config['outside_st_gains'][:n])+sum(config['outside_lt_gains'][:n]),
                    terminal_after_tax_wealth=terminal,
