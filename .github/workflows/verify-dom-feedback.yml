@@ -2,7 +2,7 @@ name: Verify Dom feedback research extensions
 
 on:
   push:
-    branches: [dom-feedback-2026-11-10]
+    branches: [main, dom-feedback-2026-11-10]
   pull_request:
     branches: [main]
 
