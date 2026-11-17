@@ -261,7 +261,18 @@ def simulate(config, strategy_name):
     last = rows[-1]
     summary = dict(strategy=strategy_name, hypothetical=True, horizon_years=n,
                     exit_mode=exit_mode, gift_year=gift_year,
-                   initial_cash=config['initial_cash'],
+                    exit_caveat=(
+                        'Gift transfers donor basis at gift_year and liquidates recipient at horizon; '
+                        'donor personal loss carryforwards do not transfer. Estate/gift tax, dual-basis '
+                        'loss rules and family-level tax reconciliation are excluded.'
+                        if exit_mode=='gift' else
+                        'Death step-up applies only to user-specified eligible long-book share of '
+                        'aggregate embedded gains; short positions and estate tax require separate treatment.'
+                        if exit_mode=='death' else
+                        'Gradual extension reduction uses an illustrative proportional gain attribution, '
+                        'not executable lot-level optimization.' if exit_mode=='gradual' else
+                        'Full terminal liquidation under simplified aggregate basis.'),
+                    initial_cash=config['initial_cash'],
                    outside_gross_gain_proceeds=sum(config['outside_st_gains'][:n])+sum(config['outside_lt_gains'][:n]),
                    terminal_after_tax_wealth=terminal,
                    wealth_net_of_common_outside_cash=terminal-outside_aftertax_without_strategy,
