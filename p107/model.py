@@ -48,6 +48,29 @@ def validate(config):
                 raise ValueError(f'Invalid strategy series: {k}')
 
 
+def _exit_policy(config):
+    policy = config.get('exit_policy', {'mode': 'full_liquidation'})
+    if not isinstance(policy, dict):
+        raise ValueError('exit_policy must be an object')
+    mode = policy.get('mode', 'full_liquidation')
+    if mode not in ('full_liquidation', 'gradual', 'death', 'gift'):
+        raise ValueError('Unsupported exit policy')
+    if mode == 'gradual':
+        years = policy.get('years')
+        if type(years) is not int or years not in (3, 4, 5) or years > config['horizon_years']:
+            raise ValueError('Gradual exit requires 3-5 years within holding horizon')
+        share = policy.get('extension_embedded_gain_share')
+        if not isinstance(share, (int, float)) or not isfinite(share) or not 0 <= share <= 1:
+            raise ValueError('Specify hypothetical extension_embedded_gain_share in [0,1]')
+    if mode == 'death':
+        share = policy.get('step_up_long_embedded_fraction')
+        if not isinstance(share, (int, float)) or not isfinite(share) or not 0 <= share <= 1:
+            raise ValueError('Specify long-book share of embedded gains; aggregate basis cannot infer it')
+    if mode == 'gift' and policy.get('recipient_liquidates', True) is not True:
+        raise ValueError('Comparable gift scenario requires immediate recipient liquidation')
+    return policy
+
+
 def _split(amount, st_fraction):
     return (max(amount, 0) * st_fraction, max(amount, 0) * (1-st_fraction),
             max(-amount, 0) * st_fraction, max(-amount, 0) * (1-st_fraction))
@@ -55,6 +78,9 @@ def _split(amount, st_fraction):
 
 def simulate(config, strategy_name):
     validate(config)
+    policy = _exit_policy(config)
+    exit_mode = policy.get('mode', 'full_liquidation')
+    unwind_years = policy.get('years', 0) if exit_mode == 'gradual' else 0
     s = next(x for x in config['strategies'] if x['name'] == strategy_name)
     nav = basis = config['initial_cash']
     cash = carry_s = carry_l = 0.0
@@ -70,15 +96,23 @@ def simulate(config, strategy_name):
         # Exactly one year is ST; later years use an explicit, uncalibrated mixture.
         st_frac = 1.0 if year == 1 else s['realization_st_fraction']
         pnl = start * (config['market_price_returns'][i] + s['alpha_pre_cost'])
+        # Simplified proportional extension reduction; not security-level execution.
+        step = max(0, year - (n - unwind_years)) if unwind_years else 0
+        extension_scale = max(0., 1. - (step - 1) / unwind_years) if step else 1.
+        reduction = 1. / unwind_years if step else 0.
+        long_exposure = 1 + (s['long_exposure'] - 1) * extension_scale
+        short_exposure = s['short_exposure'] * extension_scale
         manager, advisor = start * s['manager_fee'], start * s['advisor_fee']
-        financing = start * (s['long_exposure'] - 1) * s['long_financing_rate']
-        rebate = start * s['short_exposure'] * s['short_rebate_rate']
-        borrow = start * s['short_exposure'] * s['short_borrow_rate']
+        financing = start * (long_exposure - 1) * s['long_financing_rate']
+        rebate = start * short_exposure * s['short_rebate_rate']
+        borrow = start * short_exposure * s['short_borrow_rate']
         trade_cost = start * s['transaction_cost_rate']
-        expenses = manager + advisor + financing + borrow + trade_cost
+        transition_cost = (start * (s['long_exposure'] - 1 + s['short_exposure']) *
+                           reduction * s['exit_transaction_rate']) if step and year < n else 0.
+        expenses = manager + advisor + financing + borrow + trade_cost + transition_cost
         # Rebate is cash income, not capital appreciation; reinvesting adds basis.
         v = start + pnl + rebate
-        hs, hl = start * s['harvest_st_rates'][i], start * s['harvest_lt_rates'][i]
+        hs, hl = start * s['harvest_st_rates'][i] * extension_scale, start * s['harvest_lt_rates'][i] * extension_scale
         rg_s, rg_l = start * s['realized_st_gain_rates'][i], start * s['realized_lt_gain_rates'][i]
         b = basis + rebate - hs - hl + rg_s + rg_l
         if v <= expenses or v <= 0:
@@ -93,6 +127,16 @@ def simulate(config, strategy_name):
         es, el, ls, ll = _split(expense_gain, st_frac)
         gains_s, gains_l = rg_s + es, rg_l + el
         losses_s, losses_l = hs + ls, hl + ll
+        transition_gain = 0.
+        if step and year < n:
+            # Proportion of current embedded gain attributable to extensions is
+            # an EXPLICIT illustrative input, not inferred from aggregate basis.
+            fraction_removed = min(1., reduction / extension_scale)
+            transition_gain = (v - b) * policy['extension_embedded_gain_share'] * fraction_removed
+            b += transition_gain
+            gs, gl, lss, lsl = _split(transition_gain, st_frac)
+            gains_s += gs; gains_l += gl
+            losses_s += lss; losses_l += lsl
         outside_s, outside_l = config['outside_st_gains'][i], config['outside_lt_gains'][i]
         interest_tax = max(rebate - financing * s['interest_deduction_fraction'], 0) * config['ordinary_tax_rate']
         cash_interest = cash * config['cash_return_after_tax']
@@ -101,8 +145,8 @@ def simulate(config, strategy_name):
             outside_aftertax_without_strategy * (1+config['cash_return_after_tax'])
             + outside_s * (1-config['tax_st']) + outside_l * (1-config['tax_lt']))
 
-        def tax_at_sale(withdrawal, exit_cost=0):
-            gain = withdrawal * (1-b/v) - exit_cost
+        def tax_at_sale(withdrawal, exit_cost=0, exempt_embedded=0):
+            gain = withdrawal * (1-b/v) - exit_cost - exempt_embedded
             a, c, d, e = _split(gain, st_frac)
             return settle(outside_s + gains_s + a, outside_l + gains_l + c,
                           losses_s + d, losses_l + e, cs0, cl0,
@@ -116,8 +160,12 @@ def simulate(config, strategy_name):
         outside_relief = outside_tax_without_losses - (pre_exit.tax - internal_only.tax)
         tax_sale = tax_sale_gain = exit_cost = exit_tax = terminal = 0.0
         if year == n:
-            exit_cost = v * (s['long_exposure']+s['short_exposure']) * s['exit_transaction_rate']
-            tax_final = tax_at_sale(v, exit_cost)
+            exit_cost = v * (long_exposure+short_exposure) * s['exit_transaction_rate']
+            # Death: assume only a supplied fraction belongs to eligible long
+            # holdings receiving basis adjustment. Shorts remain taxable.
+            stepped_up_gain = ((v-b) * policy['step_up_long_embedded_fraction']
+                               if exit_mode == 'death' else 0.)
+            tax_final = tax_at_sale(v, exit_cost, stepped_up_gain)
             exit_tax = tax_final.tax - pre_exit.tax  # may be negative in a loss-making exit
             terminal = v - exit_cost + available_cash - tax_final.tax - interest_tax
             if terminal < -1e-8:
@@ -148,7 +196,7 @@ def simulate(config, strategy_name):
         cumulative_costs += expenses - rebate + exit_cost
         cumulative_pnl += pnl
         cumulative_tax += tax_final.tax + interest_tax
-        cumulative_capital_realized += rg_s + rg_l - hs - hl + expense_gain + tax_sale_gain
+        cumulative_capital_realized += rg_s + rg_l - hs - hl + expense_gain + tax_sale_gain + transition_gain
         embedded = nav - basis
         identity_error = embedded + cumulative_capital_realized - cumulative_pnl
         max_identity_error = max(max_identity_error, abs(identity_error))
@@ -157,8 +205,10 @@ def simulate(config, strategy_name):
         row = dict(strategy=strategy_name, year=year, hypothetical=True,
                    nav_start=start, long_market_value=start*s['long_exposure'],
                    short_market_value_abs=start*s['short_exposure'],
-                   net_exposure=s['long_exposure']-s['short_exposure'],
-                   gross_exposure=s['long_exposure']+s['short_exposure'],
+                   net_exposure=long_exposure-short_exposure,
+                   gross_exposure=long_exposure+short_exposure,
+                    extension_scale=extension_scale, transition_realized_gain=transition_gain,
+                    transition_transaction_cost=transition_cost, exit_mode=exit_mode,
                    market_price_return=config['market_price_returns'][i], alpha_pre_cost=s['alpha_pre_cost'],
                    pre_cost_investment_pnl=pnl, manager_fee=manager, advisor_fee=advisor,
                    long_financing_cost=financing, short_rebate=rebate, short_borrow_cost=borrow,
@@ -181,6 +231,7 @@ def simulate(config, strategy_name):
                    investor_cash_start=cash0, investor_cash_interest=cash_interest,
                    investor_cash_pre_exit=cash, realization_st_fraction=st_frac,
                    exit_transaction_cost=exit_cost, incremental_unwind_tax=exit_tax,
+                    step_up_exempt_embedded_gain=stepped_up_gain if year==n else 0.,
                    exit_realized_st_gain=exit_gs,exit_realized_lt_gain=exit_gl,
                    exit_realized_st_loss=exit_ls,exit_realized_lt_loss=exit_ll,
                    nav_after_exit=0.0 if year==n else None,
@@ -190,6 +241,7 @@ def simulate(config, strategy_name):
         rows.append(row)
     last = rows[-1]
     summary = dict(strategy=strategy_name, hypothetical=True, horizon_years=n,
+                    exit_mode=exit_mode,
                    initial_cash=config['initial_cash'],
                    outside_gross_gain_proceeds=sum(config['outside_st_gains'][:n])+sum(config['outside_lt_gains'][:n]),
                    terminal_after_tax_wealth=terminal,
